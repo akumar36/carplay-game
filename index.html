@@ -19,6 +19,7 @@
 <link rel="apple-touch-icon" href="icon-180.png">
 <title>CarPlay Games</title>
 <style>
+  @font-face { font-family: 'Orbitron'; font-weight: 900; font-display: swap; src: url(fonts/orbitron-900.woff2) format('woff2'); }
   :root { --fg: #fff; --accent: #ffd319; --pink: #ff2975; --cyan: #00e5ff; --purple: #8c1eff; --card: rgba(18, 6, 42, 0.72); }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html { background: #12062a; }
@@ -43,7 +44,7 @@
 
   header { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 6px; }
   h1 {
-    margin: 0; font-size: clamp(32px, 8vw, 58px); letter-spacing: 2px; font-weight: 900; font-style: italic; line-height: 1.05;
+    margin: 0; font-family: 'Orbitron', system-ui, sans-serif; font-size: clamp(32px, 8vw, 58px); letter-spacing: 2px; font-weight: 900; font-style: italic; line-height: 1.05;
     background: linear-gradient(180deg, #ffffff 0%, #fff3a0 30%, #ffd319 48%, #ff2975 78%, #c23cff 100%);
     -webkit-background-clip: text; background-clip: text; color: transparent;
     filter: drop-shadow(0 0 14px rgba(255, 41, 117, 0.55));
@@ -63,7 +64,7 @@
   .thumb { display: block; width: 100%; aspect-ratio: 16 / 9; background: #120b24; }
   .thumb svg { display: block; width: 100%; height: 100%; }
   .info { padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
-  .info h2 { margin: 0; font-size: 20px; font-weight: 900; font-style: italic; letter-spacing: 0.5px; }
+  .info h2 { margin: 0; font-family: 'Orbitron', system-ui, sans-serif; font-size: 19px; font-weight: 900; font-style: italic; letter-spacing: 0.5px; }
   .info p { margin: 0; font-size: 14px; opacity: 0.8; line-height: 1.4; }
   .tags { display: flex; flex-wrap: wrap; gap: 6px; }
   .tags span {
@@ -171,7 +172,7 @@
   // The game list. To add a game, put it in its own folder and add an entry here.
   const GAMES = [
     {
-      title: 'CarPlay Racer',
+      title: 'Racer',
       href: 'racer/',
       desc: 'Tilt your phone like a steering wheel to dodge traffic, grab coins and hearts. Neon or classic look, with synthwave music.',
       tags: ['Tilt to steer', 'Landscape', '3 lives'],
@@ -315,7 +316,7 @@
       </svg>`,
     },
     {
-      title: 'CarPlay Racer Lite',
+      title: 'Racer Lite',
       href: 'racer-lite/',
       desc: 'The original racer: a simple daytime look with no music, so it is extra light on older phones and battery.',
       tags: ['Tilt to steer', 'Landscape', 'Lightest'],

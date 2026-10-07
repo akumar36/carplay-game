@@ -1,6 +1,6 @@
 <!doctype html>
 <!--
-  CarPlay Racer
+  Racer Lite (CarPlay Games)
   Copyright (c) 2026 @seltos.gtx (https://www.instagram.com/seltos.gtx/). All rights reserved.
   Copying, modifying or redistributing this code without permission is not allowed.
 -->
@@ -11,13 +11,14 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="CarPlay Racer">
+<meta name="apple-mobile-web-app-title" content="CarPlay Games">
 <meta name="theme-color" content="#111111">
 <link rel="manifest" href="../manifest.webmanifest">
 <link rel="icon" href="../icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="../icon-180.png">
-<title>CarPlay Racer Lite</title>
+<title>Racer Lite</title>
 <style>
+  @font-face { font-family: 'Orbitron'; font-weight: 900; font-display: swap; src: url(../fonts/orbitron-900.woff2) format('woff2'); }
   :root { --fg: #fff; --accent: #ffcc00; --panel: rgba(10, 12, 18, 0.82); }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body {
@@ -31,10 +32,10 @@
     gap: 12px; padding: 24px; text-align: center; background: var(--panel); z-index: 10;
   }
   .hidden { display: none !important; }
-  h1 { margin: 0; font-size: clamp(28px, 7vh, 56px); letter-spacing: 1px; }
+  h1 { margin: 0; font-family: 'Orbitron', system-ui, sans-serif; font-weight: 900; font-size: clamp(26px, 6.5vh, 52px); letter-spacing: 2px; }
   h1 span { color: var(--accent); }
   p { margin: 0; font-size: clamp(13px, 3.4vh, 18px); opacity: 0.9; max-width: 34em; line-height: 1.4; }
-  .big { font-size: clamp(36px, 10vh, 72px); font-weight: 800; color: var(--accent); }
+  .big { font-family: 'Orbitron', system-ui, sans-serif; font-size: clamp(34px, 10vh, 68px); font-weight: 900; color: var(--accent); }
   button {
     font: inherit; font-size: clamp(20px, 6vh, 30px); font-weight: 700; padding: 0.7em 1.8em; border: 0;
     border-radius: 999px; background: var(--accent); color: #111; cursor: pointer; margin-top: 6px;
@@ -184,7 +185,7 @@
 </a>
 
 <div id="menu" class="overlay">
-  <h1>CARPLAY <span>RACER</span> LITE</h1>
+  <h1>RACER <span>LITE</span></h1>
   <p class="byline small">by <a href="https://www.instagram.com/seltos.gtx/" target="_blank" rel="noopener">@seltos.gtx</a></p>
   <p>Hold your phone sideways like a steering wheel and <b>tilt to steer</b>.
      Dodge traffic, grab coins and hearts. You have <b>3 lives</b>.</p>
@@ -685,7 +686,7 @@
     ctx.textBaseline = 'top';
     // Score panel sits top right; the top-left corner is left empty on purpose.
     const pw = fs * 6.2, x0 = W - pad - pw + 8;
-    ctx.font = `800 ${fs}px system-ui, sans-serif`;
+    ctx.font = `900 ${Math.round(fs * 0.9)}px Orbitron, system-ui, sans-serif`;
     ctx.fillStyle = 'rgba(0,0,0,0.45)';
     roundRect(x0 - 8, pad - 6, pw, fs * 4.25, 10); ctx.fill();
     ctx.fillStyle = '#fff'; ctx.textAlign = 'left';
@@ -737,7 +738,7 @@
       const n = Math.ceil(G.countdown);
       const f = G.countdown - Math.floor(G.countdown);
       ctx.save(); ctx.translate(W / 2, H * 0.4); ctx.scale(1 + f * 0.4, 1 + f * 0.4);
-      ctx.font = `900 ${Math.round(H * 0.22)}px system-ui, sans-serif`;
+      ctx.font = `900 ${Math.round(H * 0.2)}px Orbitron, system-ui, sans-serif`;
       ctx.lineWidth = 8; ctx.strokeStyle = 'rgba(0,0,0,0.55)'; ctx.strokeText(String(n), 0, 0);
       ctx.fillStyle = '#ffcc00'; ctx.fillText(String(n), 0, 0);
       ctx.restore();
