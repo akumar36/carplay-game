@@ -92,16 +92,11 @@
   @media (orientation: portrait) and (pointer: coarse) { #rotate { display: flex; } }
 
   #topBar { position: fixed; top: max(8px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); z-index: 16; }
-  #soundBtn, #fsBtn {
+  #soundBtn {
     font: 700 17px system-ui, sans-serif; color: #fff; background: rgba(18, 6, 42, 0.6);
     border: 1px solid rgba(255, 41, 117, 0.6); box-shadow: none; margin: 0; cursor: pointer;
   }
   #soundBtn { min-height: 56px; padding: 0 22px; border-radius: 999px; white-space: nowrap; }
-  #fsBtn {
-    position: fixed; top: max(8px, env(safe-area-inset-top)); right: max(10px, env(safe-area-inset-right)); z-index: 16;
-    width: 56px; height: 56px; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 12px;
-  }
-  #fsBtn svg { width: 28px; height: 28px; }
 
   /* Branding: shown beside the menus; during play the billboard appears inside the game world instead */
   .ig-logo {
@@ -174,7 +169,6 @@
 <body>
 <canvas id="game"></canvas>
 
-<button id="fsBtn" class="hidden" type="button" aria-label="Enter fullscreen"></button>
 <div id="topBar"><button id="soundBtn" type="button" aria-label="Change sound setting">🔊 Sound on</button></div>
 
 <a id="brand" href="https://www.instagram.com/seltos.gtx/" target="_blank" rel="noopener">
@@ -411,27 +405,6 @@
       const p = req.call(el, { navigationUI: 'hide' });
       if (p && p.then) p.then(lockLandscape).catch(() => {});
     } catch (e) {}
-  }
-  // iPhone Safari has no fullscreen API for pages, so the button stays hidden there (and when installed).
-  const fsElement = () => document.fullscreenElement || document.webkitFullscreenElement;
-  const fsSupported = !!(document.fullscreenEnabled || document.webkitFullscreenEnabled) &&
-    !matchMedia('(display-mode: fullscreen), (display-mode: standalone)').matches;
-  const FS_ICONS = {
-    enter: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg>',
-    exit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4v5H4M15 4v5h5M20 15h-5v5M4 15h5v5"/></svg>',
-  };
-  function toggleFullscreen() {
-    try {
-      if (fsElement()) { (document.exitFullscreen || document.webkitExitFullscreen).call(document); return; }
-      const el = document.documentElement;
-      const p = (el.requestFullscreen || el.webkitRequestFullscreen).call(el, { navigationUI: 'hide' });
-      if (p && p.then) p.then(lockLandscape).catch(() => {});
-    } catch (e) {}
-  }
-  function updateFsBtn() {
-    const btn = $('fsBtn'), on = !!fsElement();
-    btn.innerHTML = on ? FS_ICONS.exit : FS_ICONS.enter;
-    btn.setAttribute('aria-label', on ? 'Exit fullscreen' : 'Enter fullscreen');
   }
   let wakeLock = null;
   async function keepAwake() {
@@ -883,7 +856,7 @@
       ctx.restore();
     }
 
-    const right = W - pad - (fsSupported ? 66 : 0);
+    const right = W - pad;
     ctx.textAlign = 'right'; ctx.fillStyle = '#6ff7ff';
     ctx.fillText('BEST ' + G.best, right, pad);
     const mode = input.source === 'none' ? (isTouch ? 'touch' : 'keys') : 'tilt';
@@ -984,14 +957,6 @@
   $('resumeBtn').addEventListener('click', startOrResume);
   $('soundBtn').textContent = muted ? '🔇 Muted' : '🔊 Sound on';
   $('soundBtn').addEventListener('click', (e) => { e.stopPropagation(); setMuted(!muted); });
-  if (fsSupported) {
-    $('fsBtn').classList.remove('hidden');
-    updateFsBtn();
-    $('fsBtn').addEventListener('click', (e) => { e.stopPropagation(); toggleFullscreen(); });
-    document.addEventListener('fullscreenchange', updateFsBtn);
-    document.addEventListener('webkitfullscreenchange', updateFsBtn);
-    window.addEventListener('keydown', (e) => { if (e.key === 'f' || e.key === 'F') toggleFullscreen(); });
-  }
 
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) {

@@ -137,13 +137,6 @@
     box-shadow: 0 0 12px rgba(255, 41, 117, 0.35); animation: none; letter-spacing: 0;
     min-height: 56px; padding: 0 20px; margin: 0; border-radius: 999px; cursor: pointer;
   }
-  #fsBtn {
-    position: fixed; top: max(8px, env(safe-area-inset-top)); right: max(10px, env(safe-area-inset-right)); z-index: 16;
-    width: 56px; height: 56px; padding: 0; margin: 0; display: flex; align-items: center; justify-content: center;
-    border-radius: 12px; color: #fff; cursor: pointer; animation: none;
-    background: rgba(18, 6, 42, 0.6); border: 1px solid rgba(255, 41, 117, 0.6); box-shadow: 0 0 12px rgba(255, 41, 117, 0.35);
-  }
-  #fsBtn svg { width: 28px; height: 28px; }
   body.playing #topBar { display: none; }
   .copyright { font-size: 11px; opacity: 0.6; margin-top: 4px; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6); }
   .byline a { color: var(--cyan); font-weight: 700; text-decoration: none; }
@@ -166,7 +159,7 @@
     background: linear-gradient(180deg, #ffd84d, #ffb800); color: #1d1a10; animation: none;
     box-shadow: 0 6px 18px rgba(255, 184, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.6);
   }
-  html[data-theme="classic"] #soundBtn, html[data-theme="classic"] #themeBtn, html[data-theme="classic"] #fsBtn {
+  html[data-theme="classic"] #soundBtn, html[data-theme="classic"] #themeBtn {
     background: rgba(0, 0, 0, 0.45); color: #fff; border-color: rgba(255, 255, 255, 0.28); box-shadow: none;
   }
   html[data-theme="classic"] #brand { background: rgba(0, 0, 0, 0.4); border-color: rgba(255, 255, 255, 0.14); box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25); }
@@ -224,7 +217,6 @@
 <body>
 <canvas id="game"></canvas>
 
-<button id="fsBtn" class="hidden" type="button" aria-label="Enter fullscreen"></button>
 
 <div id="topBar">
   <button id="soundBtn" type="button" aria-label="Change sound setting">♫ Sound on</button>
@@ -676,28 +668,6 @@
       const p = req.call(el, { navigationUI: 'hide' });
       if (p && p.then) p.then(lockLandscape).catch(() => {});
     } catch (e) {}
-  }
-  // Fullscreen button (top right). iPhone Safari has no fullscreen API for pages, so it stays hidden there,
-  // as it does when the game already runs full screen from the home screen.
-  const fsElement = () => document.fullscreenElement || document.webkitFullscreenElement;
-  const fsSupported = !!(document.fullscreenEnabled || document.webkitFullscreenEnabled) &&
-    !matchMedia('(display-mode: fullscreen), (display-mode: standalone)').matches;
-  const FS_ICONS = {
-    enter: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg>',
-    exit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4v5H4M15 4v5h5M20 15h-5v5M4 15h5v5"/></svg>',
-  };
-  function toggleFullscreen() {
-    try {
-      if (fsElement()) { (document.exitFullscreen || document.webkitExitFullscreen).call(document); return; }
-      const el = document.documentElement;
-      const p = (el.requestFullscreen || el.webkitRequestFullscreen).call(el, { navigationUI: 'hide' });
-      if (p && p.then) p.then(lockLandscape).catch(() => {});
-    } catch (e) {}
-  }
-  function updateFsBtn() {
-    const btn = document.getElementById('fsBtn'), on = !!fsElement();
-    btn.innerHTML = on ? FS_ICONS.exit : FS_ICONS.enter;
-    btn.setAttribute('aria-label', on ? 'Exit fullscreen' : 'Enter fullscreen');
   }
 
   let wakeLock = null;
@@ -1266,7 +1236,7 @@
     }
 
     ctx.textAlign = 'right'; ctx.fillStyle = T.best;
-    const hudRight = W - pad - (fsSupported ? 66 : 0);
+    const hudRight = W - pad;
     ctx.fillText('BEST ' + G.best, hudRight, pad);
     const mode = input.source === 'none' ? (isTouch ? 'touch' : 'keys') : 'tilt';
     ctx.fillStyle = 'rgba(255,255,255,0.55)';
@@ -1359,14 +1329,6 @@
   }
 
   $('startBtn').addEventListener('click', startOrResume);
-  if (fsSupported) {
-    $('fsBtn').classList.remove('hidden');
-    updateFsBtn();
-    $('fsBtn').addEventListener('click', (e) => { e.stopPropagation(); toggleFullscreen(); });
-    document.addEventListener('fullscreenchange', updateFsBtn);
-    document.addEventListener('webkitfullscreenchange', updateFsBtn);
-    window.addEventListener('keydown', (e) => { if (e.key === 'f' || e.key === 'F') toggleFullscreen(); });
-  }
   $('soundBtn').textContent = SOUND_LABELS[soundMode];
   setTheme(themeName);
   $('themeBtn').addEventListener('click', (e) => {
@@ -1402,7 +1364,7 @@
   setInterval(() => { if (G.state === 'menu') G.dist += 0.01; }, 16);
 
   // Hook for automated tests.
-  window.__tiltRacer = { G, input, fullscreen: () => !!fsElement(), theme: () => themeName, setTheme: (n) => setTheme(n), musicBuffer: () => musicBuf, audio: () => ({ ctx: ac && ac.state, mode: soundMode, music: !!music, musicBuf: !!musicBuf, engine: !!eng, engineHz: eng && +eng.o1.frequency.value.toFixed(1) }) };
+  window.__tiltRacer = { G, input, theme: () => themeName, setTheme: (n) => setTheme(n), musicBuffer: () => musicBuf, audio: () => ({ ctx: ac && ac.state, mode: soundMode, music: !!music, musicBuf: !!musicBuf, engine: !!eng, engineHz: eng && +eng.o1.frequency.value.toFixed(1) }) };
 })();
 </script>
 </body>

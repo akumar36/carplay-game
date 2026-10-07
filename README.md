@@ -65,7 +65,7 @@ The site goes live at `https://akumar36.github.io/carplay-game/` within a minute
 
 ## Racer controls
 
-Steer with tilt, ← → / A D, or touch. **T** switches theme (Neon / Classic), **M** cycles sound (*Sound on → Effects only → Muted*), **F** toggles fullscreen (the button is hidden on iPhone, whose Safari doesn't allow fullscreen for web pages). Theme and sound choices are remembered per device.
+Steer with tilt, ← → / A D, or touch. **T** switches theme (Neon / Classic), **M** cycles sound (*Sound on → Effects only → Muted*). Theme and sound choices are remembered per device.
 
 ## License
 
