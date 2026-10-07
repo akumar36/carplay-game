@@ -492,18 +492,9 @@
     }, 900);
   }
 
-  function nextTower() {
-    const px = G.dist + PX;
-    for (const o of G.towers) if (o.x + o.w > px - HIT_W) return o;
-    return null;
-  }
-
   function moveJet(dt) {
     G.vy += (input.steer * CLIMB - G.vy) * Math.min(1, dt * 8);
-    G.py += G.vy * dt;
-    // Altitude assist: with the phone held level, drift gently towards the next gap.
-    const o = nextTower();
-    if (o && Math.abs(input.steer) < 0.15 && o.x - (G.dist + PX) < 0.7) G.py += (o.gy - G.py) * Math.min(1, dt * 1.2);
+    G.py += G.vy * dt;   // no input = hold altitude; no auto-steering
     G.py = clamp(G.py, 0.05, GROUND - 0.05);
   }
 
