@@ -950,28 +950,64 @@
   }
 
   function makePalm() {
-    const R = H * 0.085, size = R * 2.6;
-    return makeSprite(size, size, (g) => {
-      const c = size / 2;
-      g.fillStyle = 'rgba(10,0,30,0.16)'; g.beginPath(); g.ellipse(c + R * 0.2, c + R * 0.2, R * 0.8, R * 0.8, 0, 0, 7); g.fill();
-      const fronds = 7;
-      for (let i = 0; i < fronds; i++) {
-        const a = (i / fronds) * Math.PI * 2;
-        g.save(); g.translate(c, c); g.rotate(a);
-        const leaf = g.createLinearGradient(0, 0, R, 0);
-        leaf.addColorStop(0, '#0f6e7a'); leaf.addColorStop(0.6, '#1fc9a8'); leaf.addColorStop(1, '#7dffd9');
-        g.fillStyle = leaf;
-        g.beginPath(); g.moveTo(0, 0);
-        g.quadraticCurveTo(R * 0.5, -R * 0.32, R, 0.05 * R);
-        g.quadraticCurveTo(R * 0.5, R * 0.12, 0, 0); g.fill();
-        g.strokeStyle = 'rgba(8,40,60,0.55)'; g.lineWidth = Math.max(1, R * 0.03);
-        g.beginPath(); g.moveTo(0, 0); g.quadraticCurveTo(R * 0.5, -R * 0.1, R * 0.95, 0.04 * R); g.stroke();
-        g.restore();
+    // Top-down palm: curved feathered fronds (rib + leaflets), coconut cluster, faint neon glow.
+    const R = H * 0.085, size = R * 2.9, c = size / 2, FRONDS = 10;
+    const mixHex = (a, b, t) => {
+      const x = parseInt(a.slice(1), 16), y = parseInt(b.slice(1), 16);
+      const ch = (sh) => Math.round(((x >> sh) & 255) + ((((y >> sh) & 255) - ((x >> sh) & 255)) * t));
+      return `rgb(${ch(16)},${ch(8)},${ch(0)})`;
+    };
+    const fronds = [];
+    for (let i = 0; i < FRONDS; i++) {
+      fronds.push({
+        a: (i / FRONDS) * Math.PI * 2 + (hash(i * 3.1) - 0.5) * 0.35,
+        len: R * (1.05 + hash(i * 7.7) * 0.3),
+        bend: R * 0.28 * (i % 2 ? 1 : -1) * (0.6 + hash(i * 1.9) * 0.6),
+      });
+    }
+    // Point and direction along a frond's curved rib (quadratic curve) at t in [0, 1].
+    const rib = (f, t) => {
+      const cx = f.len * 0.5, cy = f.bend;
+      const x = 2 * (1 - t) * t * cx + t * t * f.len, y = 2 * (1 - t) * t * cy;
+      const dx = 2 * (1 - t) * cx + 2 * t * (f.len - cx), dy = 2 * (1 - t) * cy - 2 * t * cy;
+      return [x, y, Math.atan2(dy, dx)];
+    };
+    const drawFrond = (g, f, shadow) => {
+      g.save(); g.translate(c, c); g.rotate(f.a);
+      if (shadow) g.translate(R * 0.1, R * 0.14);
+      g.lineCap = 'round';
+      for (let t = 0.12; t <= 0.97; t += 0.04) {
+        const [x, y, th] = rib(f, t);
+        const ll = R * 0.2 * Math.pow(Math.sin(Math.PI * Math.min(1, t * 1.02)), 0.8);
+        g.lineWidth = Math.max(1, R * (0.035 - t * 0.015));
+        g.strokeStyle = shadow ? 'rgba(6,0,22,0.38)' : mixHex('#0c6a6e', '#8dffd8', t);
+        for (const side of [-1, 1]) {
+          const d = th + side * 0.6;
+          g.beginPath(); g.moveTo(x, y); g.lineTo(x + Math.cos(d) * ll, y + Math.sin(d) * ll); g.stroke();
+        }
       }
-      g.fillStyle = '#ff901f'; g.beginPath(); g.arc(c, c, R * 0.11, 0, 7); g.fill();
-      g.fillStyle = '#ff6a3d'; g.beginPath(); g.arc(c + R * 0.1, c + R * 0.06, R * 0.08, 0, 7); g.fill();
+      if (!shadow) {
+        g.strokeStyle = '#0c5a5e'; g.lineWidth = Math.max(1, R * 0.03);
+        g.beginPath(); g.moveTo(0, 0); g.quadraticCurveTo(f.len * 0.5, f.bend, f.len, 0); g.stroke();
+      }
+      g.restore();
+    };
+    return makeSprite(size, size, (g) => {
+      const glow = g.createRadialGradient(c, c, R * 0.2, c, c, R * 1.25);
+      glow.addColorStop(0, 'rgba(255,41,117,0.22)'); glow.addColorStop(1, 'rgba(255,41,117,0)');
+      g.fillStyle = glow; g.beginPath(); g.arc(c, c, R * 1.25, 0, 7); g.fill();
+      for (const f of fronds) drawFrond(g, f, true);
+      for (const f of fronds) drawFrond(g, f, false);
+      g.fillStyle = '#3b2616'; g.beginPath(); g.arc(c, c, R * 0.14, 0, 7); g.fill();
+      for (const [dx, dy] of [[-0.07, -0.05], [0.08, -0.03], [0, 0.08]]) {
+        const nx = c + dx * R, ny = c + dy * R, nr = R * 0.075;
+        const cg = g.createRadialGradient(nx - nr * 0.4, ny - nr * 0.4, nr * 0.1, nx, ny, nr);
+        cg.addColorStop(0, '#ffb35c'); cg.addColorStop(1, '#b8571e');
+        g.fillStyle = cg; g.beginPath(); g.arc(nx, ny, nr, 0, 7); g.fill();
+      }
     });
   }
+
 
   function makeTree() {
     const R = H * 0.072, size = R * 2.9;
