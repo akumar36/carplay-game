@@ -34,3 +34,8 @@ The site goes live at `https://akumar36.github.io/carplay-game/` within a minute
 
 - `index.html`: the whole game (canvas rendering, sensor input, UI)
 - `manifest.webmanifest`, `icon*`: home-screen / PWA metadata
+
+## Beta
+
+New features are tried out at `https://akumar36.github.io/carplay-game/beta/` before going to the main link.
+The current beta adds **music and sound**: a synthwave loop that is composed in code once while the menu is showing, then just replayed (no music file to download); an engine sound that follows your speed with gear shifts; and crash, coin and countdown sounds. The button at the top cycles *Sound on → Effects only → Muted*, and Muted switches audio processing off completely.
