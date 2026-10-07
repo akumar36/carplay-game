@@ -57,7 +57,7 @@
     border-radius: 18px; background: rgba(0, 0, 0, 0.38); color: #fff; text-decoration: none;
     text-align: center; backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
   }
-  #brand .handle { font-weight: 800; font-size: 14px; letter-spacing: 0.2px; word-break: break-all; }
+  #brand .handle { font-weight: 800; font-size: 14px; letter-spacing: 0.2px; white-space: nowrap; }
   #brand .follow { font-size: 11px; font-weight: 600; opacity: 0.85; }
   #brand:active { transform: translateY(-50%) scale(0.96); }
   .igBtn {
@@ -67,6 +67,52 @@
   }
   .igBtn .ig-logo { width: 32px; height: 32px; border-radius: 10px; }
   .byline a { color: var(--accent); font-weight: 700; text-decoration: none; }
+
+  /* Roadside billboard: "ad here" banner on the right */
+  #adBanner {
+    position: fixed; top: 50%; right: 12px; transform: translateY(-50%); z-index: 15;
+    display: flex; flex-direction: column; align-items: center; text-decoration: none; color: #fff;
+  }
+  #adBanner .board {
+    position: relative; width: 100%; padding: 10px 8px 9px; border-radius: 14px; text-align: center;
+    border: 2px solid transparent;
+    background:
+      linear-gradient(160deg, #1a1030, #0d0b1a) padding-box,
+      linear-gradient(90deg, #ff2fd0, #ffcc00, #00e5ff, #ff2fd0, #ffcc00) border-box;
+    background-size: 100% 100%, 300% 100%;
+    animation: adBorder 4s linear infinite, adGlow 2.4s ease-in-out infinite;
+    display: flex; flex-direction: column; align-items: center; gap: 4px; overflow: hidden;
+  }
+  #adBanner .board::after {      /* light sweep across the board */
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(110deg, transparent 35%, rgba(255,255,255,0.18) 50%, transparent 65%);
+    transform: translateX(-120%); animation: adSweep 3.5s ease-in-out infinite;
+  }
+  #adBanner .tag {
+    font-size: 9px; font-weight: 800; letter-spacing: 1.5px; white-space: nowrap; padding: 2px 7px; border-radius: 999px;
+    background: #ff2fd0; color: #fff; box-shadow: 0 0 10px #ff2fd0;
+  }
+  #adBanner .main {
+    font-size: 17px; font-weight: 900; line-height: 1.05; text-transform: uppercase; letter-spacing: 0.5px;
+    background: linear-gradient(90deg, #ffcc00, #fff, #00e5ff, #ffcc00); background-size: 300% 100%;
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    animation: adText 3s linear infinite;
+  }
+  #adBanner .cta { font-size: 10px; font-weight: 600; opacity: 0.85; line-height: 1.3; }
+  #adBanner .cta b { color: #00e5ff; font-weight: 800; }
+  #adBanner .legs { display: flex; justify-content: space-between; width: 56%; height: 14px; }
+  #adBanner .legs i { width: 5px; height: 100%; background: #6b5a45; border-radius: 0 0 2px 2px; }
+  #adBanner:active .board { transform: scale(0.96); }
+  @keyframes adBorder { to { background-position: 0 0, 300% 0; } }
+  @keyframes adGlow {
+    0%, 100% { box-shadow: 0 0 8px rgba(255, 47, 208, 0.45), 0 0 18px rgba(0, 229, 255, 0.15); }
+    50% { box-shadow: 0 0 14px rgba(255, 204, 0, 0.6), 0 0 28px rgba(255, 47, 208, 0.35); }
+  }
+  @keyframes adSweep { 0%, 55% { transform: translateX(-120%); } 85%, 100% { transform: translateX(120%); } }
+  @keyframes adText { to { background-position: 300% 0; } }
+  @media (prefers-reduced-motion: reduce) {
+    #adBanner .board, #adBanner .board::after, #adBanner .main { animation: none; }
+  }
 </style>
 </head>
 <body>
@@ -76,6 +122,15 @@
   <span class="ig-logo"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.4" cy="6.6" r="1.1" fill="#fff" stroke="none"/></svg></span>
   <span class="handle">@seltos.gtx</span>
   <span class="follow">Follow on Instagram</span>
+</a>
+
+<a id="adBanner" href="https://www.instagram.com/seltos.gtx/" target="_blank" rel="noopener" aria-label="Advertise here: contact @seltos.gtx on Instagram">
+  <span class="board">
+    <span class="tag">AD SPACE</span>
+    <span class="main">Your<br>brand<br>here</span>
+    <span class="cta">Contact<br><b>@seltos.gtx</b></span>
+  </span>
+  <span class="legs"><i></i><i></i></span>
 </a>
 
 <div id="menu" class="overlay">
@@ -143,6 +198,7 @@
     carH = Math.min(H * 0.17, laneW * 1.45);
     carW = Math.min(carH * 0.56, laneW * 0.7);
     placeBrand();
+    placeAd();
   }
 
   // Centre the Instagram badge in the grass to the left of the road.
@@ -154,6 +210,21 @@
     const bw = Math.min(margin - 16, 150);
     brand.style.width = bw + 'px';
     brand.style.left = (margin - bw) / 2 + 'px';
+    brand.querySelector('.handle').style.fontSize = Math.min(14, (bw - 12) / 6.2) + 'px';
+  }
+
+  // Billboard in the grass to the right of the road, mirroring the Instagram badge.
+  function placeAd() {
+    const ad = document.getElementById('adBanner');
+    const margin = W - (roadX + roadW) - Math.max(6, roadW * 0.025);
+    if (margin < 84) { ad.classList.add('hidden'); return; }
+    ad.classList.remove('hidden');
+    const bw = Math.min(margin - 16, 140);
+    ad.style.width = bw + 'px';
+    ad.style.right = (margin - bw) / 2 + 'px';
+    ad.style.fontSize = '';
+    ad.querySelector('.tag').style.letterSpacing = bw < 110 ? '0.5px' : '';
+    ad.querySelector('.main').style.fontSize = Math.min(17, bw / 6) + 'px';
   }
   window.addEventListener('resize', resize);
   resize();
