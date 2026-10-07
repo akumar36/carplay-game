@@ -1,6 +1,6 @@
 {
-  "name": "Tilt Racer",
-  "short_name": "Tilt Racer",
+  "name": "CarPlay Racer",
+  "short_name": "CarPlay Racer",
   "start_url": "./",
   "scope": "./",
   "display": "fullscreen",

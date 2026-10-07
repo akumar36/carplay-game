@@ -1,4 +1,4 @@
-# Tilt Racer
+# CarPlay Racer
 
 by [@seltos.gtx](https://www.instagram.com/seltos.gtx/) on Instagram
 
