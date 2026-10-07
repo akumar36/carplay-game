@@ -900,31 +900,33 @@
     const pad = Math.max(12, H * 0.03);
     const fs = Math.max(14, Math.round(H * 0.05));
     ctx.textBaseline = 'top';
-    ctx.fillStyle = 'rgba(18,6,42,0.62)'; roundRect(pad - 8, pad - 6, fs * 6.2, fs * 3.4, 12); ctx.fill();
+    // Score panel sits top right; the top-left corner is left empty on purpose.
+    const pw = fs * 6.2, x0 = W - pad - pw + 8;
+    ctx.fillStyle = 'rgba(18,6,42,0.62)'; roundRect(x0 - 8, pad - 6, pw, fs * 4.25, 12); ctx.fill();
     ctx.strokeStyle = 'rgba(255,41,117,0.8)'; ctx.lineWidth = 1.5; ctx.stroke();
     ctx.font = `800 ${fs}px system-ui, sans-serif`;
     ctx.fillStyle = '#fff'; ctx.textAlign = 'left';
-    ctx.fillText(String(G.score), pad, pad);
+    ctx.fillText(String(G.score), x0, pad);
     ctx.font = `600 ${Math.round(fs * 0.62)}px system-ui, sans-serif`;
     ctx.fillStyle = '#ffd319';
-    ctx.fillText(`${G.kills} hit${G.kills === 1 ? '' : 's'}  •  ${G.coins} coin${G.coins === 1 ? '' : 's'}`, pad, pad + fs * 1.15);
+    ctx.fillText(`${G.kills} hit${G.kills === 1 ? '' : 's'}  •  ${G.coins} coin${G.coins === 1 ? '' : 's'}`, x0, pad + fs * 1.15);
     const hr = fs * 0.34;
     for (let i = 0; i < MAX_LIVES; i++) {
-      ctx.save(); ctx.translate(pad + hr + i * hr * 2.7, pad + fs * 2.4 + hr);
+      ctx.save(); ctx.translate(x0 + hr + i * hr * 2.7, pad + fs * 2.4 + hr);
       ctx.fillStyle = i < G.lives ? '#ff2975' : 'rgba(255,255,255,0.22)'; heartPath(hr); ctx.fill();
       ctx.restore();
     }
     if (G.double > 0) {
       ctx.fillStyle = '#6ff7ff'; ctx.font = `800 ${Math.round(fs * 0.6)}px system-ui, sans-serif`;
-      ctx.fillText(`×2  ${Math.ceil(G.double)}s`, pad + hr * 9, pad + fs * 2.4 - 1);
+      ctx.fillText(`×2  ${Math.ceil(G.double)}s`, x0 + hr * 9, pad + fs * 2.4 - 1);
     }
 
-    const right = W - pad;
-    ctx.textAlign = 'right'; ctx.fillStyle = '#6ff7ff';
-    ctx.fillText('BEST ' + G.best, right, pad);
     const mode = input.source === 'none' ? (isTouch ? 'touch' : 'keys') : 'tilt';
-    ctx.fillStyle = 'rgba(255,255,255,0.55)';
-    ctx.fillText('control: ' + mode, right, pad + fs * 0.85);
+    ctx.font = `700 ${Math.round(fs * 0.58)}px system-ui, sans-serif`;
+    ctx.fillStyle = '#6ff7ff'; ctx.fillText('BEST ' + G.best, x0, pad + fs * 3.3);
+    ctx.textAlign = 'right'; ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    ctx.fillText(mode, x0 - 16 + pw, pad + fs * 3.3);
+    ctx.textAlign = 'left';
 
     const wr = Math.max(18, H * 0.06);
     const wy = H - pad - 72 - wr * 1.4;   // above the pause button, if there's room below the billboard

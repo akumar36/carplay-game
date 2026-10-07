@@ -1236,27 +1236,29 @@
     const pad = Math.max(12, H * 0.03);
     const fs = Math.max(14, Math.round(H * 0.05));
     ctx.textBaseline = 'top';
-    glassPanel(pad - 8, pad - 6, fs * 6.2, fs * 3.4);
+    // Score panel sits top right; the top-left corner is left empty on purpose.
+    const pw = fs * 6.2, x0 = W - pad - pw + 8;
+    glassPanel(x0 - 8, pad - 6, pw, fs * 4.25);
     ctx.font = `800 ${fs}px system-ui, sans-serif`;
     ctx.fillStyle = '#fff'; ctx.textAlign = 'left';
-    ctx.fillText(String(G.score), pad, pad);
+    ctx.fillText(String(G.score), x0, pad);
     ctx.font = `600 ${Math.round(fs * 0.62)}px system-ui, sans-serif`;
     ctx.fillStyle = T.accent;
-    ctx.fillText(`${Math.round(G.speed * 60)} km/h  •  ${G.coins} coin${G.coins === 1 ? '' : 's'}`, pad, pad + fs * 1.15);
+    ctx.fillText(`${Math.round(G.speed * 60)} km/h  •  ${G.coins} coin${G.coins === 1 ? '' : 's'}`, x0, pad + fs * 1.15);
 
     const hr = fs * 0.34;
     for (let i = 0; i < MAX_LIVES; i++) {
-      ctx.save(); ctx.translate(pad + hr + i * hr * 2.7, pad + fs * 2.4 + hr);
+      ctx.save(); ctx.translate(x0 + hr + i * hr * 2.7, pad + fs * 2.4 + hr);
       ctx.fillStyle = i < G.lives ? T.heart : 'rgba(255,255,255,0.22)'; heartPath(hr); ctx.fill();
       ctx.restore();
     }
 
-    ctx.textAlign = 'right'; ctx.fillStyle = T.best;
-    const hudRight = W - pad;
-    ctx.fillText('BEST ' + G.best, hudRight, pad);
     const mode = input.source === 'none' ? (isTouch ? 'touch' : 'keys') : 'tilt';
-    ctx.fillStyle = 'rgba(255,255,255,0.55)';
-    ctx.fillText('control: ' + mode, hudRight, pad + fs * 0.85);
+    ctx.font = `700 ${Math.round(fs * 0.58)}px system-ui, sans-serif`;
+    ctx.fillStyle = T.best; ctx.fillText('BEST ' + G.best, x0, pad + fs * 3.3);
+    ctx.textAlign = 'right'; ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    ctx.fillText(mode, x0 - 16 + pw, pad + fs * 3.3);
+    ctx.textAlign = 'left';
 
     const wr = Math.max(18, H * 0.06);
     const wy = H - pad - 72 - wr * 1.4;   // above the pause button, if there's room below the billboard
