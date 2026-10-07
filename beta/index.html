@@ -17,6 +17,7 @@
 <link rel="icon" href="../icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="../icon-180.png">
 <title>CarPlay Racer (beta)</title>
+<script>try { if (localStorage.getItem('carplayTheme') === 'classic') document.documentElement.dataset.theme = 'classic'; } catch (e) {}</script>
 <style>
   :root { --fg: #fff; --accent: #ffd319; --pink: #ff2975; --cyan: #00e5ff; --purple: #8c1eff; }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -100,14 +101,43 @@
   }
   .igBtn .ig-logo { width: 32px; height: 32px; border-radius: 10px; }
   sup.beta { font-size: 0.32em; vertical-align: super; background: #ff2fd0; color: #fff; padding: 2px 6px; border-radius: 6px; letter-spacing: 1px; }
-  #soundBtn {
+  #topBar {
     position: fixed; top: max(8px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); z-index: 16;
-    font: 700 13px system-ui, sans-serif; color: #fff; background: rgba(18, 6, 42, 0.6); border: 1px solid rgba(255, 41, 117, 0.6);
+    display: flex; gap: 8px;
+  }
+  #soundBtn, #themeBtn {
+    white-space: nowrap; font: 700 13px system-ui, sans-serif; color: #fff; background: rgba(18, 6, 42, 0.6); border: 1px solid rgba(255, 41, 117, 0.6);
     box-shadow: 0 0 12px rgba(255, 41, 117, 0.35); animation: none; letter-spacing: 0;
     padding: 6px 14px; margin: 0; border-radius: 999px; cursor: pointer;
   }
   .copyright { font-size: 11px; opacity: 0.5; margin-top: 4px; }
   .byline a { color: var(--cyan); font-weight: 700; text-decoration: none; }
+
+  /* ----- Classic theme: the original daytime look, polished ----- */
+  html[data-theme="classic"] body { background: #10140f; }
+  html[data-theme="classic"] .overlay {
+    background:
+      radial-gradient(ellipse 90% 60% at 50% 120%, rgba(255, 204, 0, 0.18), transparent 70%),
+      linear-gradient(180deg, rgba(12, 18, 14, 0.9), rgba(16, 30, 20, 0.9));
+  }
+  html[data-theme="classic"] .sunset::before { display: none; }
+  html[data-theme="classic"] h1 {
+    background: none; color: #fff; font-style: normal; letter-spacing: 1.5px;
+    filter: drop-shadow(0 3px 0 rgba(0, 0, 0, 0.35));
+  }
+  html[data-theme="classic"] h1 span { color: #ffcc00; }
+  html[data-theme="classic"] .big { background: none; color: #ffcc00; font-style: normal; filter: drop-shadow(0 3px 0 rgba(0, 0, 0, 0.35)); }
+  html[data-theme="classic"] button {
+    background: linear-gradient(180deg, #ffd84d, #ffb800); color: #1d1a10; animation: none;
+    box-shadow: 0 6px 18px rgba(255, 184, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  }
+  html[data-theme="classic"] #soundBtn, html[data-theme="classic"] #themeBtn {
+    background: rgba(0, 0, 0, 0.45); color: #fff; border-color: rgba(255, 255, 255, 0.28); box-shadow: none;
+  }
+  html[data-theme="classic"] #brand { background: rgba(0, 0, 0, 0.4); border-color: rgba(255, 255, 255, 0.14); box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25); }
+  html[data-theme="classic"] .byline a { color: #ffcc00; }
+  html[data-theme="classic"] #rotate { background: #10140f; }
+  html[data-theme="classic"] #rotate .phone { border-color: #fff; box-shadow: none; }
 
   /* Roadside billboard: "ad here" banner on the right */
   #adBanner {
@@ -159,7 +189,10 @@
 <body>
 <canvas id="game"></canvas>
 
-<button id="soundBtn" type="button" aria-label="Change sound setting">♫ Sound on</button>
+<div id="topBar">
+  <button id="soundBtn" type="button" aria-label="Change sound setting">♫ Sound on</button>
+  <button id="themeBtn" type="button" aria-label="Switch visual theme">🎨 Neon</button>
+</div>
 
 <a id="brand" href="https://www.instagram.com/seltos.gtx/" target="_blank" rel="noopener">
   <span class="dev">DEVELOPED BY</span>
@@ -612,7 +645,6 @@
   }
 
   // ---------- Game state ----------
-  const COLORS = ['#00e5ff', '#ffd319', '#8c1eff', '#2de2a6', '#ff901f', '#e6e6ff', '#ff6ad5', '#3d7bfd'];
   const G = {
     state: 'menu', t: 0, dist: 0, speed: 0, score: 0, coins: 0, best: loadBest(),
     px: 0.5, traffic: [], items: [], popups: [], spawnIn: 0, shake: 0, flash: 0,
@@ -637,7 +669,7 @@
     const lanes = [0, 1, 2, 3].sort(() => Math.random() - 0.5).slice(0, Math.random() < pairChance ? 2 : 1);
     const ch = carH / H;
     for (const l of lanes) {
-      G.traffic.push({ x: laneX(l), y: -ch, color: COLORS[(Math.random() * COLORS.length) | 0] });
+      G.traffic.push({ x: laneX(l), y: -ch, ci: (Math.random() * 8) | 0 });
     }
     // Drop a pickup in a free lane: a heart if you've lost a life (rare), otherwise often a coin.
     const free = [0, 1, 2, 3].filter((l) => !lanes.includes(l));
@@ -746,10 +778,47 @@
     G.items = G.items.filter((it) => !it.taken && it.y < 1.2);
   }
 
-  // ---------- Drawing (neon synthwave theme) ----------
+  // ---------- Drawing (themes: neon synthwave / classic daytime) ----------
   // Cars, coins and palms are pre-rendered once into small cached canvases and just
   // stamped each frame, so the extra detail costs almost nothing at runtime.
   function hash(n) { const s = Math.sin(n * 127.1) * 43758.5453; return s - Math.floor(s); }
+
+  const THEMES = {
+    neon: {
+      label: '\uD83C\uDFA8 Neon', meta: '#12062a',
+      traffic: ['#00e5ff', '#ffd319', '#8c1eff', '#2de2a6', '#ff901f', '#e6e6ff', '#ff6ad5', '#3d7bfd'],
+      player: '#ff2975', underglow: true, beam: 0.38, tail: 0.55, tyre: '#0b0614',
+      glass: ['#2a1d5c', '#0d0a24'], rear: '#120c2a',
+      side: ['#3a0d5e', '#1d0838', '#0e0420'], road: ['#120b24', '#231840'],
+      hudFill: 'rgba(18,6,42,0.62)', hudEdge: ['rgba(255,41,117,0.9)', 'rgba(0,229,255,0.9)'],
+      accent: '#ffd319', best: '#6ff7ff', heart: '#ff2975',
+      wheel: '#6ff7ff', wheelHalo: 'rgba(0,229,255,0.25)', wheelMark: '#ff2975',
+      flash: '255,41,117', outline: 'rgba(18,6,42,0.8)', cd: ['#fff6b0', '#ffd319', '#ff2975'], cdHalo: 'rgba(255,41,117,0.35)', cdText: '#6ff7ff',
+    },
+    classic: {
+      label: '\uD83C\uDFA8 Classic', meta: '#10140f',
+      traffic: ['#3d7bfd', '#2ec27e', '#f6d32d', '#9141ac', '#f2f2f2', '#ff7800', '#5bc8f5', '#c0392b'],
+      player: '#e01b24', underglow: false, beam: 0.2, tail: 0.3, tyre: '#151515',
+      glass: ['#3c4d60', '#141a22'], rear: '#1b222b',
+      side: ['#5aae4f', '#4a9a42', '#3c8737'], road: ['#3e4146', '#585b61'],
+      hudFill: 'rgba(0,0,0,0.45)', hudEdge: ['rgba(255,255,255,0.22)', 'rgba(255,255,255,0.22)'],
+      accent: '#ffcc00', best: '#ffffff', heart: '#ff3b5c',
+      wheel: '#ffffff', wheelHalo: 'rgba(0,0,0,0.22)', wheelMark: '#ffcc00',
+      flash: '255,255,255', outline: 'rgba(0,0,0,0.6)', cd: ['#fff7c0', '#ffd84d', '#ffb000'], cdHalo: 'rgba(0,0,0,0.25)', cdText: '#ffffff',
+    },
+  };
+  const THEME_ORDER = ['neon', 'classic'];
+  let themeName = document.documentElement.dataset.theme === 'classic' ? 'classic' : 'neon';
+  let T = THEMES[themeName];
+
+  function setTheme(name) {
+    themeName = name; T = THEMES[name];
+    document.documentElement.dataset.theme = name;
+    try { localStorage.setItem('carplayTheme', name); } catch (e) {}
+    const meta = document.querySelector('meta[name="theme-color"]'); if (meta) meta.content = T.meta;
+    const btn = document.getElementById('themeBtn'); if (btn) btn.textContent = T.label;
+    SPR.key = ''; BG.key = '';       // rebuild sprites and gradients for the new look
+  }
 
   function rr(g, x, y, w, h, r) {
     g.beginPath();
@@ -773,12 +842,12 @@
     return { c, w, h };
   }
 
-  const SPR = { key: '', cars: new Map(), coin: null, palm: null };
+  const SPR = { key: '', cars: new Map(), coin: null, tree: null };
   function ensureSprites() {
-    const key = `${carW.toFixed(1)}x${carH.toFixed(1)}x${H}@${window.devicePixelRatio}`;
+    const key = `${themeName}:${carW.toFixed(1)}x${carH.toFixed(1)}x${H}@${window.devicePixelRatio}`;
     if (SPR.key === key) return;
     SPR.key = key; SPR.cars.clear();
-    SPR.coin = makeCoin(); SPR.palm = makePalm();
+    SPR.coin = makeCoin(); SPR.tree = themeName === 'neon' ? makePalm() : makeTree();
   }
 
   function makeCar(color, isPlayer) {
@@ -790,28 +859,33 @@
       if (isPlayer) {
         // Headlight beams
         const beam = g.createLinearGradient(0, y, 0, y - h * 1.1);
-        beam.addColorStop(0, 'rgba(255,245,200,0.38)'); beam.addColorStop(1, 'rgba(255,245,200,0)');
+        beam.addColorStop(0, `rgba(255,245,200,${T.beam})`); beam.addColorStop(1, 'rgba(255,245,200,0)');
         g.fillStyle = beam;
         for (const bx of [x + w * 0.22, x + w * 0.78]) {
           g.beginPath(); g.moveTo(bx - w * 0.08, y + h * 0.04); g.lineTo(bx + w * 0.08, y + h * 0.04);
           g.lineTo(bx + w * 0.32, y - h * 1.1); g.lineTo(bx - w * 0.32, y - h * 1.1); g.closePath(); g.fill();
         }
+      }
+      if (isPlayer && T.underglow) {
         // Neon underglow
         const ug = g.createRadialGradient(ox, oy, w * 0.2, ox, oy, w * 1.05);
         ug.addColorStop(0, 'rgba(0,229,255,0.6)'); ug.addColorStop(1, 'rgba(0,229,255,0)');
         g.save(); g.translate(ox, oy); g.scale(1, h / w * 0.75); g.translate(-ox, -oy);
         g.fillStyle = ug; g.beginPath(); g.arc(ox, oy, w * 1.05, 0, 7); g.fill(); g.restore();
       } else {
-        // Soft shadow + tail-light glow
+        // Soft shadow
         g.fillStyle = 'rgba(0,0,0,0.35)'; rr(g, x + w * 0.06, y + h * 0.05, w, h, w * 0.3); g.fill();
+      }
+      if (!isPlayer) {
+        // Tail-light glow
         for (const tx of [x + w * 0.2, x + w * 0.8]) {
           const tg = g.createRadialGradient(tx, y + h, 0, tx, y + h, w * 0.45);
-          tg.addColorStop(0, 'rgba(255,40,80,0.55)'); tg.addColorStop(1, 'rgba(255,40,80,0)');
+          tg.addColorStop(0, `rgba(255,40,80,${T.tail})`); tg.addColorStop(1, 'rgba(255,40,80,0)');
           g.fillStyle = tg; g.beginPath(); g.arc(tx, y + h, w * 0.45, 0, 7); g.fill();
         }
       }
       // Wheels
-      g.fillStyle = '#0b0614';
+      g.fillStyle = T.tyre;
       const ww = w * 0.17, wh = h * 0.2;
       for (const [wx, wy] of [[x - ww * 0.35, y + h * 0.13], [x + w - ww * 0.65, y + h * 0.13], [x - ww * 0.35, y + h * 0.67], [x + w - ww * 0.65, y + h * 0.67]]) {
         rr(g, wx, wy, ww, wh, ww * 0.35); g.fill();
@@ -824,13 +898,13 @@
       g.strokeStyle = 'rgba(255,255,255,0.35)'; g.lineWidth = 1; rr(g, x + 0.5, y + 0.5, w - 1, h - 1, w * 0.3); g.stroke();
       // Windscreen, roof, rear window
       const glass = g.createLinearGradient(0, y + h * 0.2, 0, y + h * 0.4);
-      glass.addColorStop(0, '#2a1d5c'); glass.addColorStop(1, '#0d0a24');
+      glass.addColorStop(0, T.glass[0]); glass.addColorStop(1, T.glass[1]);
       g.fillStyle = glass; rr(g, x + w * 0.13, y + h * 0.2, w * 0.74, h * 0.2, w * 0.14); g.fill();
       g.fillStyle = 'rgba(255,255,255,0.28)';
       g.beginPath(); g.moveTo(x + w * 0.24, y + h * 0.37); g.lineTo(x + w * 0.42, y + h * 0.22);
       g.lineTo(x + w * 0.52, y + h * 0.22); g.lineTo(x + w * 0.34, y + h * 0.37); g.closePath(); g.fill();
       g.fillStyle = shade(color, 0.15); rr(g, x + w * 0.17, y + h * 0.42, w * 0.66, h * 0.2, w * 0.12); g.fill();
-      g.fillStyle = '#120c2a'; rr(g, x + w * 0.18, y + h * 0.64, w * 0.64, h * 0.12, w * 0.1); g.fill();
+      g.fillStyle = T.rear; rr(g, x + w * 0.18, y + h * 0.64, w * 0.64, h * 0.12, w * 0.1); g.fill();
       if (isPlayer) {
         // Racing stripes
         g.fillStyle = 'rgba(255,255,255,0.85)';
@@ -899,36 +973,69 @@
     });
   }
 
+  function makeTree() {
+    const R = H * 0.072, size = R * 2.9;
+    return makeSprite(size, size, (g) => {
+      const c = size / 2;
+      g.fillStyle = 'rgba(0,0,0,0.22)'; g.beginPath(); g.arc(c + R * 0.3, c + R * 0.32, R * 1.02, 0, 7); g.fill();
+      const blobs = [[0, 0, 1], [-0.45, -0.22, 0.62], [0.42, -0.3, 0.6], [0.32, 0.42, 0.6], [-0.36, 0.4, 0.58], [0, -0.05, 0.5]];
+      for (const [dx, dy, k] of blobs) {
+        const bx = c + dx * R, by = c + dy * R, br = k * R;
+        const gr = g.createRadialGradient(bx - br * 0.35, by - br * 0.35, br * 0.1, bx, by, br);
+        gr.addColorStop(0, '#7fd66b'); gr.addColorStop(0.55, '#36963f'); gr.addColorStop(1, '#1f6d2b');
+        g.fillStyle = gr; g.beginPath(); g.arc(bx, by, br, 0, 7); g.fill();
+      }
+    });
+  }
+
   const BG = { key: '', side: null, road: null };
   function ensureGradients() {
-    const key = `${W}x${H}x${roadX}`;
+    const key = `${themeName}:${W}x${H}x${roadX}`;
     if (BG.key === key) return;
     BG.key = key;
     BG.side = ctx.createLinearGradient(0, 0, 0, H);
-    BG.side.addColorStop(0, '#3a0d5e'); BG.side.addColorStop(0.55, '#1d0838'); BG.side.addColorStop(1, '#0e0420');
+    BG.side.addColorStop(0, T.side[0]); BG.side.addColorStop(0.55, T.side[1]); BG.side.addColorStop(1, T.side[2]);
     BG.road = ctx.createLinearGradient(roadX, 0, roadX + roadW, 0);
-    BG.road.addColorStop(0, '#120b24'); BG.road.addColorStop(0.5, '#231840'); BG.road.addColorStop(1, '#120b24');
+    BG.road.addColorStop(0, T.road[0]); BG.road.addColorStop(0.5, T.road[1]); BG.road.addColorStop(1, T.road[0]);
   }
 
   function drawWorld() {
     ensureGradients(); ensureSprites();
     const scroll = G.dist * H;
 
-    // Night-purple roadside with a scrolling neon grid
     ctx.fillStyle = BG.side; ctx.fillRect(0, 0, W, H);
-    const gs = H * 0.12;
-    ctx.strokeStyle = 'rgba(255,41,117,0.3)'; ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    for (let y = (scroll % gs) - gs; y < H; y += gs) {
-      ctx.moveTo(0, y); ctx.lineTo(roadX, y);
-      ctx.moveTo(roadX + roadW, y); ctx.lineTo(W, y);
+    if (themeName === 'classic') {
+      // Mown-grass stripes and little flowers
+      ctx.fillStyle = 'rgba(0,0,0,0.06)';
+      const stripe = H * 0.25;
+      for (let y = (scroll % (stripe * 2)) - stripe * 2; y < H; y += stripe * 2) ctx.fillRect(0, y, W, stripe);
+      const fsp = 0.09, fb = Math.floor(G.dist / fsp), FL = ['#ffffff', '#ffe066', '#ff9ec4'];
+      for (let k = -1; k <= Math.ceil(1 / fsp) + 1; k++) {
+        const idx = fb - k, y = (G.dist - idx * fsp) * H;
+        for (const side of [-1, 1]) {
+          const margin = side < 0 ? roadX : W - roadX - roadW;
+          if (margin < H * 0.08) continue;
+          const fx = side < 0 ? 6 + hash(idx * 11 + 1) * (margin - 18) : roadX + roadW + 12 + hash(idx * 11 + 2) * (margin - 18);
+          ctx.fillStyle = FL[(hash(idx * 5 + side) * 3) | 0];
+          ctx.beginPath(); ctx.arc(fx, y, Math.max(1.5, H * 0.006), 0, 7); ctx.fill();
+        }
+      }
+    } else {
+      // Night-purple roadside with a scrolling neon grid
+      const gs = H * 0.12;
+      ctx.strokeStyle = 'rgba(255,41,117,0.3)'; ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      for (let y = (scroll % gs) - gs; y < H; y += gs) {
+        ctx.moveTo(0, y); ctx.lineTo(roadX, y);
+        ctx.moveTo(roadX + roadW, y); ctx.lineTo(W, y);
+      }
+      for (let x = roadX - gs; x > 0; x -= gs) { ctx.moveTo(x, 0); ctx.lineTo(x, H); }
+      for (let x = roadX + roadW + gs; x < W; x += gs) { ctx.moveTo(x, 0); ctx.lineTo(x, H); }
+      ctx.stroke();
     }
-    for (let x = roadX - gs; x > 0; x -= gs) { ctx.moveTo(x, 0); ctx.lineTo(x, H); }
-    for (let x = roadX + roadW + gs; x < W; x += gs) { ctx.moveTo(x, 0); ctx.lineTo(x, H); }
-    ctx.stroke();
 
-    // Palm trees on both sides
-    const spacing = 0.33, base = Math.floor(G.dist / spacing), P = SPR.palm;
+    // Trees on both sides (palms in neon, leafy trees in classic)
+    const spacing = 0.33, base = Math.floor(G.dist / spacing), P = SPR.tree;
     for (let k = -1; k <= Math.ceil(1 / spacing) + 1; k++) {
       const idx = base - k, y = (G.dist - idx * spacing) * H;
       for (const side of [-1, 1]) {
@@ -945,20 +1052,39 @@
 
     // Road
     ctx.fillStyle = BG.road; ctx.fillRect(roadX, 0, roadW, H);
-    // Glowing neon edges (wide soft pass + thin bright pass)
     const ew = Math.max(6, roadW * 0.025);
-    ctx.fillStyle = 'rgba(0,229,255,0.16)';
-    ctx.fillRect(roadX - ew, 0, ew * 2, H); ctx.fillRect(roadX + roadW - ew, 0, ew * 2, H);
-    ctx.fillStyle = '#6ff7ff';
-    ctx.fillRect(roadX - 1.5, 0, 3, H); ctx.fillRect(roadX + roadW - 1.5, 0, 3, H);
-    // Neon lane dashes
     const dashH = H * 0.09, gap = H * 0.11, dashW = Math.max(3, roadW * 0.012);
-    for (let pass = 0; pass < 2; pass++) {
-      ctx.fillStyle = pass ? '#ff8fd0' : 'rgba(255,41,117,0.16)';
-      const wv = pass ? dashW : dashW * 2.4;
+    if (themeName === 'classic') {
+      // Red/white kerbs with a little depth, plus solid white edge lines
+      const kerbH = H * 0.06;
+      for (let y = (scroll % (kerbH * 2)) - kerbH * 2, i = 0; y < H; y += kerbH, i++) {
+        ctx.fillStyle = (i + Math.floor(scroll / kerbH)) % 2 ? '#f2f2f2' : '#d7263d';
+        ctx.fillRect(roadX - ew, y, ew, kerbH + 1);
+        ctx.fillRect(roadX + roadW, y, ew, kerbH + 1);
+      }
+      ctx.fillStyle = 'rgba(0,0,0,0.18)';
+      ctx.fillRect(roadX - 2, 0, 2, H); ctx.fillRect(roadX + roadW, 0, 2, H);
+      ctx.fillStyle = 'rgba(255,255,255,0.85)';
+      ctx.fillRect(roadX + ew * 0.7, 0, 3, H); ctx.fillRect(roadX + roadW - ew * 0.7 - 3, 0, 3, H);
+      ctx.fillStyle = 'rgba(255,255,255,0.8)';
       for (let l = 1; l < LANES; l++) {
-        const lx = roadX + (roadW * l) / LANES - wv / 2;
-        for (let y = (scroll % (dashH + gap)) - (dashH + gap); y < H; y += dashH + gap) ctx.fillRect(lx, y, wv, dashH);
+        const lx = roadX + (roadW * l) / LANES - dashW / 2;
+        for (let y = (scroll % (dashH + gap)) - (dashH + gap); y < H; y += dashH + gap) ctx.fillRect(lx, y, dashW, dashH);
+      }
+    } else {
+      // Glowing neon edges (wide soft pass + thin bright pass)
+      ctx.fillStyle = 'rgba(0,229,255,0.16)';
+      ctx.fillRect(roadX - ew, 0, ew * 2, H); ctx.fillRect(roadX + roadW - ew, 0, ew * 2, H);
+      ctx.fillStyle = '#6ff7ff';
+      ctx.fillRect(roadX - 1.5, 0, 3, H); ctx.fillRect(roadX + roadW - 1.5, 0, 3, H);
+      // Neon lane dashes
+      for (let pass = 0; pass < 2; pass++) {
+        ctx.fillStyle = pass ? '#ff8fd0' : 'rgba(255,41,117,0.16)';
+        const wv = pass ? dashW : dashW * 2.4;
+        for (let l = 1; l < LANES; l++) {
+          const lx = roadX + (roadW * l) / LANES - wv / 2;
+          for (let y = (scroll % (dashH + gap)) - (dashH + gap); y < H; y += dashH + gap) ctx.fillRect(lx, y, wv, dashH);
+        }
       }
     }
 
@@ -993,7 +1119,7 @@
         halo.addColorStop(0, 'rgba(255,41,117,0.5)'); halo.addColorStop(1, 'rgba(255,41,117,0)');
         ctx.fillStyle = halo; ctx.beginPath(); ctx.arc(0, 0, r * 2, 0, 7); ctx.fill();
         ctx.fillStyle = '#fff'; heartPath(r * 1.22); ctx.fill();
-        ctx.fillStyle = '#ff2975'; heartPath(r); ctx.fill();
+        ctx.fillStyle = T.heart; heartPath(r); ctx.fill();
         ctx.restore();
         continue;
       }
@@ -1006,20 +1132,20 @@
 
   function drawWheel(cx, cy, r) {
     ctx.save(); ctx.translate(cx, cy); ctx.rotate(input.steer * Math.PI / 2);
-    ctx.strokeStyle = 'rgba(0,229,255,0.25)'; ctx.lineWidth = r * 0.5;
+    ctx.strokeStyle = T.wheelHalo; ctx.lineWidth = r * 0.5;
     ctx.beginPath(); ctx.arc(0, 0, r, 0, 7); ctx.stroke();
-    ctx.strokeStyle = '#6ff7ff'; ctx.lineWidth = r * 0.18;
+    ctx.strokeStyle = T.wheel; ctx.lineWidth = r * 0.18;
     ctx.beginPath(); ctx.arc(0, 0, r, 0, 7); ctx.stroke();
     ctx.lineWidth = r * 0.14;
     ctx.beginPath(); ctx.moveTo(-r, 0); ctx.lineTo(r, 0); ctx.moveTo(0, 0); ctx.lineTo(0, r); ctx.stroke();
-    ctx.fillStyle = '#ff2975'; ctx.fillRect(-r * 0.12, -r * 1.18, r * 0.24, r * 0.34);
+    ctx.fillStyle = T.wheelMark; ctx.fillRect(-r * 0.12, -r * 1.18, r * 0.24, r * 0.34);
     ctx.restore();
   }
 
   function glassPanel(x, y, w, h) {
-    ctx.fillStyle = 'rgba(18,6,42,0.62)'; roundRect(x, y, w, h, 12); ctx.fill();
+    ctx.fillStyle = T.hudFill; roundRect(x, y, w, h, 12); ctx.fill();
     const edge = ctx.createLinearGradient(x, y, x + w, y + h);
-    edge.addColorStop(0, 'rgba(255,41,117,0.9)'); edge.addColorStop(1, 'rgba(0,229,255,0.9)');
+    edge.addColorStop(0, T.hudEdge[0]); edge.addColorStop(1, T.hudEdge[1]);
     ctx.strokeStyle = edge; ctx.lineWidth = 1.5; roundRect(x, y, w, h, 12); ctx.stroke();
   }
 
@@ -1032,17 +1158,17 @@
     ctx.fillStyle = '#fff'; ctx.textAlign = 'left';
     ctx.fillText(String(G.score), pad, pad);
     ctx.font = `600 ${Math.round(fs * 0.62)}px system-ui, sans-serif`;
-    ctx.fillStyle = '#ffd319';
+    ctx.fillStyle = T.accent;
     ctx.fillText(`${Math.round(G.speed * 60)} km/h  •  ${G.coins} coin${G.coins === 1 ? '' : 's'}`, pad, pad + fs * 1.15);
 
     const hr = fs * 0.34;
     for (let i = 0; i < MAX_LIVES; i++) {
       ctx.save(); ctx.translate(pad + hr + i * hr * 2.7, pad + fs * 2.4 + hr);
-      ctx.fillStyle = i < G.lives ? '#ff2975' : 'rgba(255,255,255,0.22)'; heartPath(hr); ctx.fill();
+      ctx.fillStyle = i < G.lives ? T.heart : 'rgba(255,255,255,0.22)'; heartPath(hr); ctx.fill();
       ctx.restore();
     }
 
-    ctx.textAlign = 'right'; ctx.fillStyle = '#6ff7ff';
+    ctx.textAlign = 'right'; ctx.fillStyle = T.best;
     ctx.fillText('BEST ' + G.best, W - pad, pad);
     const mode = input.source === 'none' ? (isTouch ? 'touch' : 'keys') : 'tilt';
     ctx.fillStyle = 'rgba(255,255,255,0.55)';
@@ -1057,16 +1183,16 @@
     if (G.shake > 0) { const m = G.shake * H * 0.04; ctx.translate((Math.random() - 0.5) * m, (Math.random() - 0.5) * m); }
     drawWorld();
     drawPickups();
-    for (const c of G.traffic) drawCar(roadX + c.x * roadW, c.y * H, c.color, false);
-    if (!(G.inv > 0 && Math.floor(G.inv * 8) % 2)) drawCar(roadX + G.px * roadW, PLAYER_Y * H, '#ff2975', true);
+    for (const c of G.traffic) drawCar(roadX + c.x * roadW, c.y * H, T.traffic[c.ci % T.traffic.length], false);
+    if (!(G.inv > 0 && Math.floor(G.inv * 8) % 2)) drawCar(roadX + G.px * roadW, PLAYER_Y * H, T.player, true);
     ctx.restore();
-    if (G.flash > 0) { ctx.fillStyle = `rgba(255,41,117,${G.flash * 0.45})`; ctx.fillRect(0, 0, W, H); }
+    if (G.flash > 0) { ctx.fillStyle = `rgba(${T.flash},${G.flash * 0.45})`; ctx.fillRect(0, 0, W, H); }
 
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     for (const p of G.popups) {
       ctx.globalAlpha = Math.min(1, p.life * 2);
       ctx.font = `800 ${Math.round(H * 0.06)}px system-ui, sans-serif`;
-      ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(18,6,42,0.8)';
+      ctx.lineWidth = 4; ctx.strokeStyle = T.outline;
       ctx.strokeText(p.text, roadX + p.x * roadW, p.y * H);
       ctx.fillStyle = p.color; ctx.fillText(p.text, roadX + p.x * roadW, p.y * H);
     }
@@ -1078,16 +1204,16 @@
       const fsz = Math.round(H * 0.22);
       ctx.save(); ctx.translate(W / 2, H * 0.4); ctx.scale(1 + f * 0.4, 1 + f * 0.4);
       ctx.font = `900 ${fsz}px system-ui, sans-serif`;
-      ctx.lineWidth = 10; ctx.strokeStyle = 'rgba(255,41,117,0.35)'; ctx.strokeText(String(n), 0, 0);
-      ctx.lineWidth = 5; ctx.strokeStyle = 'rgba(18,6,42,0.85)'; ctx.strokeText(String(n), 0, 0);
+      ctx.lineWidth = 10; ctx.strokeStyle = T.cdHalo; ctx.strokeText(String(n), 0, 0);
+      ctx.lineWidth = 5; ctx.strokeStyle = T.outline; ctx.strokeText(String(n), 0, 0);
       const cg = ctx.createLinearGradient(0, -fsz / 2, 0, fsz / 2);
-      cg.addColorStop(0, '#fff6b0'); cg.addColorStop(0.45, '#ffd319'); cg.addColorStop(1, '#ff2975');
+      cg.addColorStop(0, T.cd[0]); cg.addColorStop(0.45, T.cd[1]); cg.addColorStop(1, T.cd[2]);
       ctx.fillStyle = cg; ctx.fillText(String(n), 0, 0);
       ctx.restore();
       ctx.font = `700 ${Math.round(H * 0.05)}px system-ui, sans-serif`;
-      ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(18,6,42,0.8)';
+      ctx.lineWidth = 4; ctx.strokeStyle = T.outline;
       ctx.strokeText('Hold your phone steady', W / 2, H * 0.58);
-      ctx.fillStyle = '#6ff7ff'; ctx.fillText('Hold your phone steady', W / 2, H * 0.58);
+      ctx.fillStyle = T.cdText; ctx.fillText('Hold your phone steady', W / 2, H * 0.58);
     }
 
     if (G.state !== 'menu') drawHUD();
@@ -1133,11 +1259,17 @@
 
   $('startBtn').addEventListener('click', startOrResume);
   $('soundBtn').textContent = SOUND_LABELS[soundMode];
+  setTheme(themeName);
+  $('themeBtn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    setTheme(THEME_ORDER[(THEME_ORDER.indexOf(themeName) + 1) % THEME_ORDER.length]);
+  });
   $('soundBtn').addEventListener('click', (e) => {
     e.stopPropagation();
     setSoundMode(SOUND_MODES[(SOUND_MODES.indexOf(soundMode) + 1) % SOUND_MODES.length]);
   });
   window.addEventListener('keydown', (e) => {
+    if (e.key === 't' || e.key === 'T') setTheme(THEME_ORDER[(THEME_ORDER.indexOf(themeName) + 1) % THEME_ORDER.length]);
     if (e.key === 'm' || e.key === 'M') setSoundMode(SOUND_MODES[(SOUND_MODES.indexOf(soundMode) + 1) % SOUND_MODES.length]);
   });
   if (/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) {
@@ -1161,7 +1293,7 @@
   setInterval(() => { if (G.state === 'menu') G.dist += 0.01; }, 16);
 
   // Hook for automated tests.
-  window.__tiltRacer = { G, input, musicBuffer: () => musicBuf, audio: () => ({ ctx: ac && ac.state, mode: soundMode, music: !!music, musicBuf: !!musicBuf, engine: !!eng, engineHz: eng && +eng.o1.frequency.value.toFixed(1) }) };
+  window.__tiltRacer = { G, input, theme: () => themeName, setTheme: (n) => setTheme(n), musicBuffer: () => musicBuf, audio: () => ({ ctx: ac && ac.state, mode: soundMode, music: !!music, musicBuf: !!musicBuf, engine: !!eng, engineHz: eng && +eng.o1.frequency.value.toFixed(1) }) };
 })();
 </script>
 </body>
