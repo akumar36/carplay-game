@@ -85,51 +85,57 @@
     background: radial-gradient(circle at 30% 107%, #fdf497 0%, #fdf497 5%, #fd5949 45%, #d6249f 60%, #285aeb 90%);
   }
   .ig-logo svg { width: 64%; height: 64%; }
-  .brandRow { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; align-items: stretch; }
-  .igBtn {
-    display: inline-flex; align-items: center; gap: 10px; padding: 8px 18px 8px 8px; border-radius: 999px;
-    background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.18); text-decoration: none;
-    font-weight: 700; font-size: 15px; align-self: center;
+  .brandRow { display: flex; flex-wrap: wrap; gap: 18px; justify-content: center; align-items: center; }
+  /* "Developed by" creator card, matching the games */
+  .creator {
+    display: inline-flex; align-items: center; gap: 12px; padding: 10px 12px 10px 10px; border-radius: 20px; text-decoration: none;
+    border: 2px solid transparent;
+    background: linear-gradient(170deg, #1c0b38, #0d0620) padding-box,
+                linear-gradient(135deg, #feda75, #fa7e1e, #d62976, #962fbf, #4f5bd5) border-box;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 22px rgba(214, 41, 118, 0.35);
   }
-  .igBtn small { display: block; font-size: 9px; font-weight: 800; letter-spacing: 1.5px; opacity: 0.7; }
+  .creator .ring { display: flex; padding: 3px; border-radius: 15px; background: linear-gradient(135deg, #feda75, #fa7e1e, #d62976, #962fbf, #4f5bd5); }
+  .creator .ring .ig-logo { width: 42px; height: 42px; border: 3px solid #160830; border-radius: 12px; }
+  .creator .who { display: flex; flex-direction: column; gap: 2px; }
+  .creator .dev { font-size: 9px; font-weight: 800; letter-spacing: 2px; color: #ffb3d9; }
+  .creator .handle { font-size: 17px; font-weight: 800; }
+  .creator .follow {
+    padding: 8px 16px; border-radius: 999px; font-size: 14px; font-weight: 800; white-space: nowrap;
+    background: linear-gradient(90deg, #fa7e1e, #d62976, #962fbf); box-shadow: 0 4px 12px rgba(214, 41, 118, 0.45);
+  }
+  .creator:active { transform: scale(0.97); }
 
-  /* "Ad space" billboard, matching the one in the games */
-  #adBanner { display: block; text-decoration: none; color: #fff; }
-  #adBanner .board {
-    position: relative; display: flex; align-items: center; gap: 12px; padding: 10px 18px; border-radius: 14px;
-    border: 2px solid transparent; overflow: hidden;
-    background:
-      linear-gradient(160deg, #1a1030, #0d0b1a) padding-box,
-      linear-gradient(90deg, #ff2fd0, #ffcc00, #00e5ff, #ff2fd0, #ffcc00) border-box;
-    background-size: 100% 100%, 300% 100%;
-    animation: adBorder 4s linear infinite, adGlow 2.4s ease-in-out infinite;
+  /* Roadside "ad space" billboard, matching the games (wide version) */
+  #adBanner { display: flex; flex-direction: column; align-items: center; text-decoration: none; color: #fff; }
+  #adBanner .lamps { display: flex; justify-content: space-around; width: 80%; height: 9px; position: relative; z-index: 1; }
+  #adBanner .lamps i { width: 14px; height: 9px; border-radius: 6px 6px 2px 2px; background: #2a2a38; position: relative; }
+  #adBanner .lamps i::before { content: ""; position: absolute; left: 3px; right: 3px; bottom: 0; height: 3px; border-radius: 2px; background: #fff3c4; box-shadow: 0 0 6px #ffe9a0; }
+  #adBanner .lamps i::after {
+    content: ""; position: absolute; left: 50%; top: 8px; width: 60px; height: 34px; transform: translateX(-50%); pointer-events: none;
+    background: radial-gradient(ellipse at 50% 0, rgba(255, 240, 200, 0.28), rgba(255, 240, 200, 0) 65%);
   }
-  #adBanner .board::after {
+  #adBanner .board { padding: 4px; border-radius: 6px; background: linear-gradient(180deg, #4a4458, #262230); box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5); }
+  #adBanner .panel {
+    position: relative; overflow: hidden; display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 3px;
+    background: linear-gradient(160deg, #ff2975 0%, #8c1eff 55%, #2b0a4e 100%);
+  }
+  #adBanner .panel::after {
     content: ""; position: absolute; inset: 0; pointer-events: none;
-    background: linear-gradient(110deg, transparent 35%, rgba(255,255,255,0.18) 50%, transparent 65%);
+    background: linear-gradient(110deg, transparent 35%, rgba(255, 255, 255, 0.22) 50%, transparent 65%);
     transform: translateX(-120%); animation: adSweep 3.5s ease-in-out infinite;
   }
-  #adBanner .tag {
-    font-size: 9px; font-weight: 800; letter-spacing: 1.5px; white-space: nowrap; padding: 2px 7px; border-radius: 999px;
-    background: #ff2fd0; color: #fff; box-shadow: 0 0 10px #ff2fd0;
-  }
-  #adBanner .main {
-    font-size: 17px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap;
-    background: linear-gradient(90deg, #ffcc00, #fff, #00e5ff, #ffcc00); background-size: 300% 100%;
-    -webkit-background-clip: text; background-clip: text; color: transparent;
-    animation: adText 3s linear infinite;
-  }
-  #adBanner .cta { font-size: 11px; font-weight: 600; opacity: 0.85; white-space: nowrap; }
-  #adBanner .cta b { color: #00e5ff; font-weight: 800; }
-  @keyframes adBorder { to { background-position: 0 0, 300% 0; } }
-  @keyframes adGlow {
-    0%, 100% { box-shadow: 0 0 8px rgba(255, 47, 208, 0.45), 0 0 18px rgba(0, 229, 255, 0.15); }
-    50% { box-shadow: 0 0 14px rgba(255, 204, 0, 0.6), 0 0 28px rgba(255, 47, 208, 0.35); }
+  #adBanner .tag { font-size: 9px; font-weight: 800; letter-spacing: 2px; color: #12062a; background: #ffd319; padding: 2px 7px; border-radius: 3px; white-space: nowrap; }
+  #adBanner .main { font: 900 17px 'Orbitron', system-ui, sans-serif; letter-spacing: 0.5px; white-space: nowrap; text-shadow: 0 2px 0 rgba(18, 6, 42, 0.5); }
+  #adBanner .cta { font-size: 12px; font-weight: 800; padding: 5px 11px; border-radius: 999px; background: #12062a; color: #6ff7ff; white-space: nowrap; }
+  #adBanner .walk { width: 94%; height: 5px; background: repeating-linear-gradient(90deg, #5a5368 0 3px, #2a2633 3px 6px); }
+  #adBanner .legs { display: flex; justify-content: space-between; width: 50%; height: 14px; }
+  #adBanner .legs i { width: 6px; background: linear-gradient(90deg, #3a3446, #6b6280, #3a3446); }
+  @media (max-width: 520px) {
+    #adBanner .panel { flex-wrap: wrap; justify-content: center; gap: 6px 10px; }
   }
   @keyframes adSweep { 0%, 55% { transform: translateX(-120%); } 85%, 100% { transform: translateX(120%); } }
-  @keyframes adText { to { background-position: 300% 0; } }
   @media (prefers-reduced-motion: reduce) {
-    #adBanner .board, #adBanner .board::after, #adBanner .main { animation: none; }
+    #adBanner .panel::after { animation: none; }
     .card { transition: none; }
   }
   footer { text-align: center; display: flex; flex-direction: column; gap: 6px; align-items: center; }
@@ -147,16 +153,20 @@
   <section class="grid" id="games" aria-label="Games"></section>
 
   <div class="brandRow">
-    <a class="igBtn" href="https://www.instagram.com/seltos.gtx/" target="_blank" rel="noopener">
-      <span class="ig-logo"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.4" cy="6.6" r="1.1" fill="#fff" stroke="none"/></svg></span>
-      <span><small>DEVELOPED BY</small>@seltos.gtx</span>
+    <a class="creator" href="https://www.instagram.com/seltos.gtx/" target="_blank" rel="noopener" aria-label="Developed by @seltos.gtx: follow on Instagram">
+      <span class="ring"><span class="ig-logo"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.4" cy="6.6" r="1.1" fill="#fff" stroke="none"/></svg></span></span>
+      <span class="who"><span class="dev">DEVELOPED BY</span><span class="handle">@seltos.gtx</span></span>
+      <span class="follow">＋ Follow</span>
     </a>
-    <a id="adBanner" href="https://www.instagram.com/seltos.gtx/" target="_blank" rel="noopener" aria-label="Advertise here: contact @seltos.gtx on Instagram">
-      <span class="board">
+    <a id="adBanner" href="https://www.instagram.com/seltos.gtx/" target="_blank" rel="noopener" aria-label="Advertise here: message @seltos.gtx on Instagram">
+      <span class="lamps"><i></i><i></i><i></i><i></i></span>
+      <span class="board"><span class="panel">
         <span class="tag">AD SPACE</span>
-        <span class="main">Your brand here</span>
-        <span class="cta">Contact <b>@seltos.gtx</b></span>
-      </span>
+        <span class="main">YOUR BRAND HERE</span>
+        <span class="cta">DM @seltos.gtx</span>
+      </span></span>
+      <span class="walk"></span>
+      <span class="legs"><i></i><i></i></span>
     </a>
   </div>
 

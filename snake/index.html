@@ -43,7 +43,7 @@
   }
   p { margin: 0; font-size: clamp(13px, 3.4vh, 18px); opacity: 0.9; max-width: 34em; line-height: 1.4; }
   .big {
-    font-family: 'Orbitron', system-ui, sans-serif; font-size: clamp(36px, 11vh, 80px); font-weight: 900; font-style: italic; color: transparent;
+    font-size: clamp(36px, 11vh, 80px); font-weight: 900; font-style: italic; color: transparent;
     background: linear-gradient(180deg, #fff3a0, #ffd319 45%, #ff2975); -webkit-background-clip: text; background-clip: text;
   }
   button {
@@ -107,15 +107,57 @@
     background: radial-gradient(circle at 30% 107%, #fdf497 0%, #fdf497 5%, #fd5949 45%, #d6249f 60%, #285aeb 90%);
   }
   .ig-logo svg { width: 64%; height: 64%; }
+  /* "Developed by" creator card (left). Sizes follow the card's width (container units), so it fits any gap. */
   #brand {
-    position: fixed; top: 50%; left: 12px; transform: translateY(-50%); z-index: 15;
-    display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 8px;
-    border-radius: 18px; background: rgba(18, 6, 42, 0.6); color: #fff; text-decoration: none;
-    border: 1px solid rgba(255, 255, 255, 0.14); text-align: center;
+    position: fixed; top: 50%; left: 12px; transform: translateY(-50%); z-index: 15; container-type: inline-size;
+    display: flex; flex-direction: column; align-items: center; gap: 7px; padding: 14px 8px 12px; border-radius: 20px;
+    color: #fff; text-decoration: none; text-align: center; border: 2px solid transparent;
+    background: linear-gradient(170deg, #1c0b38, #0d0620) padding-box,
+                linear-gradient(135deg, #feda75, #fa7e1e, #d62976, #962fbf, #4f5bd5) border-box;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 22px rgba(214, 41, 118, 0.35);
   }
-  #brand .handle { font-weight: 800; font-size: 14px; white-space: nowrap; }
-  #brand .dev { font-size: 9px; font-weight: 800; letter-spacing: 1.5px; opacity: 0.75; white-space: nowrap; }
-  #brand .follow { font-size: 11px; font-weight: 600; opacity: 0.85; }
+  #brand .dev { font-size: 8.5px; font-weight: 800; letter-spacing: 1px; letter-spacing: max(0.3px, min(2px, calc(2.6cqw - 1.4px))); color: #ffb3d9; white-space: nowrap; }
+  #brand .ring { display: flex; padding: 3px; border-radius: 16px; background: linear-gradient(135deg, #feda75, #fa7e1e, #d62976, #962fbf, #4f5bd5); }
+  #brand .ring .ig-logo { width: 42px; height: 42px; width: min(46px, 50cqw); height: min(46px, 50cqw); border: 3px solid #160830; border-radius: 13px; }
+  #brand .handle { font-weight: 800; font-size: 13px; font-size: min(15px, 16.5cqw); white-space: nowrap; }
+  #brand .follow {
+    display: inline-flex; padding: 0.5em 1.1em; border-radius: 999px; font-size: 11px; font-size: min(12px, 14cqw); font-weight: 800; white-space: nowrap;
+    background: linear-gradient(90deg, #fa7e1e, #d62976, #962fbf); box-shadow: 0 4px 12px rgba(214, 41, 118, 0.45);
+  }
+  #brand:active { transform: translateY(-50%) scale(0.96); }
+
+  /* Roadside "ad space" billboard (right): lamps, metal frame, catwalk and legs */
+  #adBanner {
+    position: fixed; top: 50%; right: 12px; transform: translateY(-50%); z-index: 15; container-type: inline-size;
+    display: flex; flex-direction: column; align-items: center; text-decoration: none; color: #fff;
+  }
+  #adBanner .lamps { display: flex; justify-content: space-around; width: 86%; height: 9px; position: relative; z-index: 1; }
+  #adBanner .lamps i { width: 12px; height: 9px; border-radius: 6px 6px 2px 2px; background: #2a2a38; position: relative; }
+  #adBanner .lamps i::before { content: ""; position: absolute; left: 3px; right: 3px; bottom: 0; height: 3px; border-radius: 2px; background: #fff3c4; box-shadow: 0 0 6px #ffe9a0; }
+  #adBanner .lamps i::after {
+    content: ""; position: absolute; left: 50%; top: 8px; width: 46px; height: 34px; transform: translateX(-50%); pointer-events: none;
+    background: radial-gradient(ellipse at 50% 0, rgba(255, 240, 200, 0.28), rgba(255, 240, 200, 0) 65%);
+  }
+  #adBanner .board { width: 100%; padding: 4px; border-radius: 6px; background: linear-gradient(180deg, #4a4458, #262230); box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5); }
+  #adBanner .panel {
+    position: relative; overflow: hidden; display: flex; flex-direction: column; align-items: center; gap: 5px;
+    padding: 10px 6px 9px; border-radius: 3px; text-align: center;
+    background: linear-gradient(160deg, #ff2975 0%, #8c1eff 55%, #2b0a4e 100%);
+  }
+  #adBanner .panel::after {      /* light sweep across the board */
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(110deg, transparent 35%, rgba(255, 255, 255, 0.22) 50%, transparent 65%);
+    transform: translateX(-120%); animation: adSweep 3.5s ease-in-out infinite;
+  }
+  #adBanner .tag { font-size: 8.5px; font-weight: 800; letter-spacing: 1px; letter-spacing: max(0.5px, min(2px, calc(2cqw - 0.8px))); color: #12062a; background: #ffd319; padding: 2px 7px; border-radius: 3px; white-space: nowrap; }
+  #adBanner .main { font: 900 13px/1.08 'Orbitron', system-ui, sans-serif; font-size: min(15px, 14cqw); letter-spacing: 0.5px; color: #fff; text-shadow: 0 2px 0 rgba(18, 6, 42, 0.5); }
+  #adBanner .cta { margin-top: 2px; font-size: 9.5px; font-size: min(10.5px, 9.6cqw); font-weight: 800; padding: 0.4em 0.8em; border-radius: 999px; background: #12062a; color: #6ff7ff; white-space: nowrap; }
+  #adBanner .walk { width: 92%; height: 5px; background: repeating-linear-gradient(90deg, #5a5368 0 3px, #2a2633 3px 6px); }
+  #adBanner .legs { display: flex; justify-content: space-between; width: 58%; height: 18px; }
+  #adBanner .legs i { width: 6px; background: linear-gradient(90deg, #3a3446, #6b6280, #3a3446); }
+  #adBanner:active .board { transform: scale(0.96); }
+  @keyframes adSweep { 0%, 55% { transform: translateX(-120%); } 85%, 100% { transform: translateX(120%); } }
+  @media (prefers-reduced-motion: reduce) { #adBanner .panel::after { animation: none; } }
   .igBtn {
     display: inline-flex; align-items: center; gap: 10px; padding: 0.45em 1.2em 0.45em 0.5em;
     border-radius: 999px; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.18); color: #fff; text-decoration: none;
@@ -123,50 +165,6 @@
   }
   .igBtn .ig-logo { width: 32px; height: 32px; border-radius: 10px; }
 
-  /* "Ad space" billboard, right of the playfield */
-  #adBanner {
-    position: fixed; top: 50%; right: 12px; transform: translateY(-50%); z-index: 15;
-    display: flex; flex-direction: column; align-items: center; text-decoration: none; color: #fff;
-  }
-  #adBanner .board {
-    position: relative; width: 100%; padding: 10px 8px 9px; border-radius: 14px; text-align: center;
-    border: 2px solid transparent;
-    background:
-      linear-gradient(160deg, #1a1030, #0d0b1a) padding-box,
-      linear-gradient(90deg, #ff2fd0, #ffcc00, #00e5ff, #ff2fd0, #ffcc00) border-box;
-    background-size: 100% 100%, 300% 100%;
-    animation: adBorder 4s linear infinite, adGlow 2.4s ease-in-out infinite;
-    display: flex; flex-direction: column; align-items: center; gap: 4px; overflow: hidden;
-  }
-  #adBanner .board::after {
-    content: ""; position: absolute; inset: 0; pointer-events: none;
-    background: linear-gradient(110deg, transparent 35%, rgba(255,255,255,0.18) 50%, transparent 65%);
-    transform: translateX(-120%); animation: adSweep 3.5s ease-in-out infinite;
-  }
-  #adBanner .tag {
-    font-size: 9px; font-weight: 800; letter-spacing: 1.5px; white-space: nowrap; padding: 2px 7px; border-radius: 999px;
-    background: #ff2fd0; color: #fff; box-shadow: 0 0 10px #ff2fd0;
-  }
-  #adBanner .main {
-    font-size: 17px; font-weight: 900; line-height: 1.05; text-transform: uppercase; letter-spacing: 0.5px;
-    background: linear-gradient(90deg, #ffcc00, #fff, #00e5ff, #ffcc00); background-size: 300% 100%;
-    -webkit-background-clip: text; background-clip: text; color: transparent;
-    animation: adText 3s linear infinite;
-  }
-  #adBanner .cta { font-size: 10px; font-weight: 600; opacity: 0.85; line-height: 1.3; }
-  #adBanner .cta b { color: #00e5ff; font-weight: 800; }
-  #adBanner .legs { display: flex; justify-content: space-between; width: 56%; height: 14px; }
-  #adBanner .legs i { width: 5px; height: 100%; background: #6b5a45; border-radius: 0 0 2px 2px; }
-  @keyframes adBorder { to { background-position: 0 0, 300% 0; } }
-  @keyframes adGlow {
-    0%, 100% { box-shadow: 0 0 8px rgba(255, 47, 208, 0.45), 0 0 18px rgba(0, 229, 255, 0.15); }
-    50% { box-shadow: 0 0 14px rgba(255, 204, 0, 0.6), 0 0 28px rgba(255, 47, 208, 0.35); }
-  }
-  @keyframes adSweep { 0%, 55% { transform: translateX(-120%); } 85%, 100% { transform: translateX(120%); } }
-  @keyframes adText { to { background-position: 300% 0; } }
-  @media (prefers-reduced-motion: reduce) {
-    #adBanner .board, #adBanner .board::after, #adBanner .main { animation: none; }
-  }
   /* Pause button: bottom right, only while playing; big enough for car screens */
   #pauseBtn {
     display: none; position: fixed; z-index: 16;
@@ -187,19 +185,21 @@
 
 <div id="topBar"><button id="soundBtn" type="button" aria-label="Change sound setting">🔊 Sound on</button></div>
 
-<a id="brand" href="https://www.instagram.com/seltos.gtx/" target="_blank" rel="noopener">
+<a id="brand" href="https://www.instagram.com/seltos.gtx/" target="_blank" rel="noopener" aria-label="Developed by @seltos.gtx: follow on Instagram">
   <span class="dev">DEVELOPED BY</span>
-  <span class="ig-logo"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.4" cy="6.6" r="1.1" fill="#fff" stroke="none"/></svg></span>
+  <span class="ring"><span class="ig-logo"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.4" cy="6.6" r="1.1" fill="#fff" stroke="none"/></svg></span></span>
   <span class="handle">@seltos.gtx</span>
-  <span class="follow">Follow on Instagram</span>
+  <span class="follow">＋ Follow</span>
 </a>
 
-<a id="adBanner" href="https://www.instagram.com/seltos.gtx/" target="_blank" rel="noopener" aria-label="Advertise here: contact @seltos.gtx on Instagram">
-  <span class="board">
+<a id="adBanner" href="https://www.instagram.com/seltos.gtx/" target="_blank" rel="noopener" aria-label="Advertise here: message @seltos.gtx on Instagram">
+  <span class="lamps"><i></i><i></i><i></i></span>
+  <span class="board"><span class="panel">
     <span class="tag">AD SPACE</span>
-    <span class="main">Your<br>brand<br>here</span>
-    <span class="cta">Contact<br><b>@seltos.gtx</b></span>
-  </span>
+    <span class="main">YOUR<br>BRAND<br>HERE</span>
+    <span class="cta">DM @seltos.gtx</span>
+  </span></span>
+  <span class="walk"></span>
   <span class="legs"><i></i><i></i></span>
 </a>
 
@@ -772,7 +772,7 @@
     const pw = fs * 6.2, x0 = W - pad - pw + 8;
     ctx.fillStyle = 'rgba(18,6,42,0.62)'; roundRect(x0 - 8, pad - 6, pw, fs * 4.25, 12); ctx.fill();
     ctx.strokeStyle = 'rgba(255,41,117,0.8)'; ctx.lineWidth = 1.5; ctx.stroke();
-    ctx.font = `900 ${Math.round(fs * 0.9)}px Orbitron, system-ui, sans-serif`;
+    ctx.font = `800 ${fs}px system-ui, sans-serif`;
     ctx.fillStyle = '#fff'; ctx.textAlign = 'left';
     ctx.fillText(String(G.score), x0, pad);
     ctx.font = `600 ${Math.round(fs * 0.62)}px system-ui, sans-serif`;
