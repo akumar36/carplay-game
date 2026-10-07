@@ -14,6 +14,7 @@ The home page lists every game; tap one to play it.
 | Neon Jet | https://carplay-game.seltosgtx.workers.dev/jet/ |
 | Neon Bricks | https://carplay-game.seltosgtx.workers.dev/bricks/ |
 | Neon Blaster | https://carplay-game.seltosgtx.workers.dev/blaster/ |
+| Neon Snake | https://carplay-game.seltosgtx.workers.dev/snake/ |
 | CarPlay Racer Lite (the original, no music) | https://carplay-game.seltosgtx.workers.dev/racer-lite/ |
 
 ## CarPlay Racer: how to play
@@ -54,6 +55,7 @@ The site goes live at `https://akumar36.github.io/carplay-game/` within a minute
 - `jet/index.html`: Neon Jet, a side-scroller: tilt to climb and dive through gaps between neon towers (↑ ↓ / W S or touch top/bottom as fallback, M mutes)
 - `bricks/index.html`: Neon Bricks, a brick breaker: tilt to slide the paddle (← → / A D or touch left/right as fallback, M mutes)
 - `blaster/index.html`: Neon Blaster, a space shooter: tilt to move the ship, which fires by itself (← → / A D or touch left/right as fallback, M mutes)
+- `snake/index.html`: Neon Snake: turn the phone like a wheel to steer; eat orbs to grow, avoid walls and your own trail (← → / A D or touch left/right as fallback, M mutes)
 - `racer-lite/index.html`: CarPlay Racer Lite, the original single-theme racer with simple beeps
 - `manifest.webmanifest`, `icon*`: home-screen / PWA metadata, shared by all games
 

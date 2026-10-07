@@ -1,0 +1,899 @@
+<!doctype html>
+<!--
+  Neon Snake (CarPlay Games)
+  Copyright (c) 2026 @seltos.gtx (https://www.instagram.com/seltos.gtx/). All rights reserved.
+  Copying, modifying or redistributing this code without permission is not allowed.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="CarPlay Games">
+<meta name="theme-color" content="#12062a">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="icon" href="../icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../icon-180.png">
+<title>Neon Snake</title>
+<style>
+  :root { --fg: #fff; --accent: #ffd319; --pink: #ff2975; --cyan: #00e5ff; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; height: 100%; overflow: hidden; background: #12062a; color: var(--fg);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    touch-action: none; user-select: none; -webkit-user-select: none; overscroll-behavior: none;
+  }
+  canvas { position: fixed; inset: 0; width: 100vw; height: 100vh; display: block; }
+  .overlay {
+    position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 12px; padding: 24px; text-align: center; z-index: 10; overflow: hidden;
+    background:
+      radial-gradient(ellipse 80% 55% at 50% 115%, rgba(255, 41, 117, 0.5), transparent 70%),
+      linear-gradient(180deg, rgba(18, 6, 42, 0.9) 0%, rgba(43, 10, 78, 0.86) 70%, rgba(70, 12, 90, 0.84) 100%);
+  }
+  .hidden { display: none !important; }
+  h1 {
+    margin: 0; font-size: clamp(28px, 7.5vh, 60px); letter-spacing: 2px; font-weight: 900; font-style: italic;
+    background: linear-gradient(180deg, #ffffff 0%, #fff3a0 30%, #ffd319 48%, #ff2975 78%, #c23cff 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    filter: drop-shadow(0 0 14px rgba(255, 41, 117, 0.55)) drop-shadow(0 2px 0 rgba(18, 6, 42, 0.9));
+  }
+  p { margin: 0; font-size: clamp(13px, 3.4vh, 18px); opacity: 0.9; max-width: 34em; line-height: 1.4; }
+  .big {
+    font-size: clamp(36px, 11vh, 80px); font-weight: 900; font-style: italic; color: transparent;
+    background: linear-gradient(180deg, #fff3a0, #ffd319 45%, #ff2975); -webkit-background-clip: text; background-clip: text;
+  }
+  button {
+    font: inherit; font-size: clamp(20px, 6vh, 30px); font-weight: 800; padding: 0.7em 1.9em; border: 0;
+    border-radius: 999px; color: #fff; cursor: pointer; margin-top: 6px; letter-spacing: 0.5px;
+    background: linear-gradient(90deg, #ff2975, #ff901f);
+    box-shadow: 0 0 22px rgba(255, 41, 117, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  }
+  .small { font-size: 13px; opacity: 0.65; }
+  .msg { color: #ff8a80; font-weight: 600; }
+  .copyright { font-size: 11px; opacity: 0.6; margin-top: 4px; }
+  .byline a { color: var(--cyan); font-weight: 700; text-decoration: none; }
+  /* Big touch targets: these games are meant for car screens too */
+  .actions { display: flex; flex-direction: column; gap: 10px; align-items: center; }
+  .actions button { margin: 0; }
+  .actions .homeLink {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 56px; min-width: 56px; white-space: nowrap;
+    padding: 0 22px; border-radius: 999px; font-size: clamp(17px, 4.8vh, 22px); font-weight: 800; color: #fff;
+    text-decoration: none; background: rgba(0, 0, 0, 0.35); border: 2px solid rgba(255, 255, 255, 0.4);
+  }
+  .actions .homeLink:active { transform: scale(0.96); }
+  .actions .homeLink svg { width: 24px; height: 24px; flex: none; }
+  /* Keep menu content below the top buttons and between the side badges (--side is set from JS) */
+  .overlay { padding: 78px calc(var(--side, 0px) + 16px) 14px; }
+  @media (max-height: 420px) { .overlay { gap: 6px; } }
+  @media (max-height: 360px) {
+    .overlay { padding-top: 70px; }
+    .actions { gap: 6px; }
+    .actions .homeLink { min-height: 46px; }
+    .overlay .big { font-size: 34px; }
+    .overlay .igBtn { padding-top: 0.25em; padding-bottom: 0.25em; }
+  }
+  @media (max-height: 460px) {
+    .overlay p.small:not(.byline) { display: none; }
+    .overlay { padding-bottom: 26px; }
+    .overlay > .copyright { position: absolute; left: 0; right: 0; bottom: 6px; margin: 0; max-width: none; }
+    /* Main button on top; the buttons below it share one row */
+    .actions { display: grid; grid-template-columns: auto auto; justify-content: center; justify-items: center; }
+    .actions > button, .actions > :last-child:nth-child(2) { grid-column: 1 / -1; }
+  }
+  #rotate { display: none; z-index: 20; background: #12062a; }
+  #rotate .phone {
+    width: 44px; height: 76px; border: 4px solid var(--cyan); border-radius: 9px;
+    animation: turn 1.8s ease-in-out infinite;
+  }
+  @keyframes turn { 0%, 30% { transform: rotate(0); } 60%, 100% { transform: rotate(-90deg); } }
+  @media (orientation: portrait) and (pointer: coarse) { #rotate { display: flex; } }
+
+  #topBar { position: fixed; top: max(8px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); z-index: 16; }
+  #soundBtn {
+    font: 700 17px system-ui, sans-serif; color: #fff; background: rgba(18, 6, 42, 0.6);
+    border: 1px solid rgba(255, 41, 117, 0.6); box-shadow: none; margin: 0; cursor: pointer;
+  }
+  #soundBtn { min-height: 56px; padding: 0 22px; border-radius: 999px; white-space: nowrap; }
+  body.playing #topBar { display: none; }
+
+  /* Instagram branding, in the space left of the playfield */
+  .ig-logo {
+    display: inline-flex; align-items: center; justify-content: center; flex: none;
+    width: 40px; height: 40px; border-radius: 12px;
+    background: radial-gradient(circle at 30% 107%, #fdf497 0%, #fdf497 5%, #fd5949 45%, #d6249f 60%, #285aeb 90%);
+  }
+  .ig-logo svg { width: 64%; height: 64%; }
+  #brand {
+    position: fixed; top: 50%; left: 12px; transform: translateY(-50%); z-index: 15;
+    display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 8px;
+    border-radius: 18px; background: rgba(18, 6, 42, 0.6); color: #fff; text-decoration: none;
+    border: 1px solid rgba(255, 255, 255, 0.14); text-align: center;
+  }
+  #brand .handle { font-weight: 800; font-size: 14px; white-space: nowrap; }
+  #brand .dev { font-size: 9px; font-weight: 800; letter-spacing: 1.5px; opacity: 0.75; white-space: nowrap; }
+  #brand .follow { font-size: 11px; font-weight: 600; opacity: 0.85; }
+  .igBtn {
+    display: inline-flex; align-items: center; gap: 10px; padding: 0.45em 1.2em 0.45em 0.5em;
+    border-radius: 999px; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.18); color: #fff; text-decoration: none;
+    font-weight: 700; font-size: clamp(14px, 3.6vh, 18px);
+  }
+  .igBtn .ig-logo { width: 32px; height: 32px; border-radius: 10px; }
+
+  /* "Ad space" billboard, right of the playfield */
+  #adBanner {
+    position: fixed; top: 50%; right: 12px; transform: translateY(-50%); z-index: 15;
+    display: flex; flex-direction: column; align-items: center; text-decoration: none; color: #fff;
+  }
+  #adBanner .board {
+    position: relative; width: 100%; padding: 10px 8px 9px; border-radius: 14px; text-align: center;
+    border: 2px solid transparent;
+    background:
+      linear-gradient(160deg, #1a1030, #0d0b1a) padding-box,
+      linear-gradient(90deg, #ff2fd0, #ffcc00, #00e5ff, #ff2fd0, #ffcc00) border-box;
+    background-size: 100% 100%, 300% 100%;
+    animation: adBorder 4s linear infinite, adGlow 2.4s ease-in-out infinite;
+    display: flex; flex-direction: column; align-items: center; gap: 4px; overflow: hidden;
+  }
+  #adBanner .board::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(110deg, transparent 35%, rgba(255,255,255,0.18) 50%, transparent 65%);
+    transform: translateX(-120%); animation: adSweep 3.5s ease-in-out infinite;
+  }
+  #adBanner .tag {
+    font-size: 9px; font-weight: 800; letter-spacing: 1.5px; white-space: nowrap; padding: 2px 7px; border-radius: 999px;
+    background: #ff2fd0; color: #fff; box-shadow: 0 0 10px #ff2fd0;
+  }
+  #adBanner .main {
+    font-size: 17px; font-weight: 900; line-height: 1.05; text-transform: uppercase; letter-spacing: 0.5px;
+    background: linear-gradient(90deg, #ffcc00, #fff, #00e5ff, #ffcc00); background-size: 300% 100%;
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    animation: adText 3s linear infinite;
+  }
+  #adBanner .cta { font-size: 10px; font-weight: 600; opacity: 0.85; line-height: 1.3; }
+  #adBanner .cta b { color: #00e5ff; font-weight: 800; }
+  #adBanner .legs { display: flex; justify-content: space-between; width: 56%; height: 14px; }
+  #adBanner .legs i { width: 5px; height: 100%; background: #6b5a45; border-radius: 0 0 2px 2px; }
+  @keyframes adBorder { to { background-position: 0 0, 300% 0; } }
+  @keyframes adGlow {
+    0%, 100% { box-shadow: 0 0 8px rgba(255, 47, 208, 0.45), 0 0 18px rgba(0, 229, 255, 0.15); }
+    50% { box-shadow: 0 0 14px rgba(255, 204, 0, 0.6), 0 0 28px rgba(255, 47, 208, 0.35); }
+  }
+  @keyframes adSweep { 0%, 55% { transform: translateX(-120%); } 85%, 100% { transform: translateX(120%); } }
+  @keyframes adText { to { background-position: 300% 0; } }
+  @media (prefers-reduced-motion: reduce) {
+    #adBanner .board, #adBanner .board::after, #adBanner .main { animation: none; }
+  }
+  /* Pause button: bottom right, only while playing; big enough for car screens */
+  #pauseBtn {
+    display: none; position: fixed; z-index: 16;
+    right: max(12px, env(safe-area-inset-right)); bottom: max(12px, env(safe-area-inset-bottom));
+    width: 60px; height: 60px; padding: 0; margin: 0; border-radius: 16px; animation: none; cursor: pointer;
+    align-items: center; justify-content: center; color: #fff;
+    background: rgba(18, 6, 42, 0.6); border: 2px solid rgba(255, 41, 117, 0.7); box-shadow: 0 0 14px rgba(255, 41, 117, 0.35);
+  }
+  #pauseBtn svg { width: 26px; height: 26px; }
+  #pauseBtn:active { transform: scale(0.94); }
+  body.playing #pauseBtn { display: flex; }
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+
+<button id="pauseBtn" type="button" aria-label="Pause"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4.5" width="4.2" height="15" rx="1.2"/><rect x="13.8" y="4.5" width="4.2" height="15" rx="1.2"/></svg></button>
+
+<div id="topBar"><button id="soundBtn" type="button" aria-label="Change sound setting">🔊 Sound on</button></div>
+
+<a id="brand" href="https://www.instagram.com/seltos.gtx/" target="_blank" rel="noopener">
+  <span class="dev">DEVELOPED BY</span>
+  <span class="ig-logo"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.4" cy="6.6" r="1.1" fill="#fff" stroke="none"/></svg></span>
+  <span class="handle">@seltos.gtx</span>
+  <span class="follow">Follow on Instagram</span>
+</a>
+
+<a id="adBanner" href="https://www.instagram.com/seltos.gtx/" target="_blank" rel="noopener" aria-label="Advertise here: contact @seltos.gtx on Instagram">
+  <span class="board">
+    <span class="tag">AD SPACE</span>
+    <span class="main">Your<br>brand<br>here</span>
+    <span class="cta">Contact<br><b>@seltos.gtx</b></span>
+  </span>
+  <span class="legs"><i></i><i></i></span>
+</a>
+
+<div id="menu" class="overlay">
+  <h1>NEON SNAKE</h1>
+  <p class="byline small">by <a href="https://www.instagram.com/seltos.gtx/" target="_blank" rel="noopener">@seltos.gtx</a></p>
+  <p>Hold your phone like a steering wheel and <b>turn it to steer</b>. Eat the orbs to grow,
+     and don't hit the walls or your own trail. You have <b>3 lives</b>.</p>
+  <div class="actions"><button id="startBtn">Tap to start</button><a class="homeLink" href="../" aria-label="All games"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg><span>All games</span></a></div>
+  <p class="small">No tilt sensor? Use ← → / A D keys to turn, or touch the left or right half of the screen.</p>
+  <p id="menuMsg" class="msg hidden"></p>
+  <p class="copyright">© 2026 @seltos.gtx · All rights reserved</p>
+</div>
+
+<div id="over" class="overlay hidden">
+  <p>GAME OVER</p>
+  <div class="big" id="finalScore">0</div>
+  <p id="bestLine"></p>
+  <div class="actions"><button id="againBtn">Play again</button><a class="homeLink" href="../" aria-label="All games"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg><span>All games</span></a><a class="igBtn" href="https://www.instagram.com/seltos.gtx/" target="_blank" rel="noopener">
+    <span class="ig-logo"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.4" cy="6.6" r="1.1" fill="#fff" stroke="none"/></svg></span>
+    Follow @seltos.gtx
+  </a></div>
+  <p class="copyright">© 2026 @seltos.gtx · All rights reserved</p>
+</div>
+
+<div id="paused" class="overlay hidden">
+  <h1>Paused</h1>
+  <div class="actions"><button id="resumeBtn">Resume</button><a class="homeLink" href="../" aria-label="All games"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg><span>All games</span></a></div>
+</div>
+
+<div id="rotate" class="overlay">
+  <div class="phone"></div>
+  <p>Rotate your phone to <b>landscape</b>.</p>
+  <p class="small">On iPhone, turn off Portrait Orientation Lock in Control Center.</p>
+</div>
+
+<script>
+(() => {
+  'use strict';
+
+  // ---------- Setup ----------
+  // Field units: the playfield is 1 unit wide and FH units tall; everything in the game lives in these units.
+  const cvs = document.getElementById('game');
+  const ctx = cvs.getContext('2d');
+  const $ = (id) => document.getElementById(id);
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const D2R = Math.PI / 180;
+  const SENSITIVITY = 0.36;      // ~21 degrees of tilt = full speed
+  const DEAD_ZONE = 0.07;
+  const TURN_RATE = 3.3;         // radians per second at full lock
+  const START_SPEED = 0.3, MAX_SPEED = 0.56;   // arena widths per second
+  const STEP = 0.006, CAP = 4096;              // trail point spacing, ring-buffer size
+  const START_LEN = 45, GROW = 9, MAX_LEN = 3800;   // trail length in points
+  const HEAD_R = 0.014, HIT_R = 0.009, ORB_R = 0.018;
+  const MAX_LIVES = 3, COUNTDOWN = 2.4;
+  const isTouch = matchMedia('(pointer: coarse)').matches;
+
+  let W = 0, H = 0, FW = 0, FX = 0, FH = 1;
+  let adBottom = 0;             // bottom edge of the roadside billboard, so the HUD wheel can avoid it
+
+  function resize() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth; H = window.innerHeight;
+    cvs.width = Math.round(W * dpr); cvs.height = Math.round(H * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    FW = Math.min(W * 0.62, H * 1.3);
+    FX = (W - FW) / 2;
+    FH = H / FW;
+    placeSide($('brand'), 'left', 150);
+    placeSide($('adBanner'), 'right', 140);
+    const ad = $('adBanner');
+    adBottom = ad.classList.contains('hidden') ? 0 : ad.getBoundingClientRect().bottom;
+    document.documentElement.style.setProperty('--side', (FX - 6 >= 84 ? FX - 6 : 0) + 'px');
+  }
+
+  // Badge and billboard sit centred in the space beside the playfield, and hide if there's no room.
+  function placeSide(el, side, maxW) {
+    const margin = FX - 6;
+    if (margin < 84) { el.classList.add('hidden'); return; }
+    el.classList.remove('hidden');
+    const bw = Math.min(margin - 16, maxW);
+    el.style.width = bw + 'px';
+    el.style[side] = (margin - bw) / 2 + 'px';
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  // ---------- Storage ----------
+  function load(key, fallback) { try { const v = localStorage.getItem(key); return v == null ? fallback : v; } catch (e) { return fallback; } }
+  function save(key, v) { try { localStorage.setItem(key, String(v)); } catch (e) {} }
+
+  // ---------- Audio (tiny synth blips) ----------
+  let ac = null, muted = load('snakeSound', 'on') === 'off';
+  function initAudio() {
+    if (muted) return;
+    try {
+      ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+      if (ac.state === 'suspended') ac.resume();
+    } catch (e) { ac = null; }
+  }
+  function beep(freq, dur, type = 'sine', vol = 0.12, slide = 0) {
+    if (!ac || muted) return;
+    try {
+      const t = ac.currentTime, o = ac.createOscillator(), g = ac.createGain();
+      o.type = type; o.frequency.setValueAtTime(freq, t);
+      if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(20, freq + slide), t + dur);
+      g.gain.setValueAtTime(vol, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(g).connect(ac.destination); o.start(t); o.stop(t + dur);
+    } catch (e) {}
+  }
+  function setMuted(m) {
+    muted = m; save('snakeSound', m ? 'off' : 'on');
+    $('soundBtn').textContent = m ? '🔇 Muted' : '🔊 Sound on';
+    if (m && ac) try { ac.suspend(); } catch (e) {}
+    if (!m) initAudio();
+  }
+
+  // ---------- Input (same tilt model as CarPlay Racer) ----------
+  const input = {
+    tilt: null,        // sideways component of "up" in screen coordinates (-1..1)
+    neutral: null,     // calibrated tilt at start
+    source: 'none',    // 'orientation' | 'motion' | 'none'
+    steer: 0,          // smoothed steering, -1 (left) .. 1 (right)
+    left: false, right: false, touch: 0,
+  };
+
+  function screenAngle() {
+    const so = screen.orientation;
+    let a = so && typeof so.angle === 'number' ? so.angle : (window.orientation || 0);
+    // Some browsers report 0 even when the page is landscape; assume the common landscape rotation.
+    if (a % 180 === 0 && window.innerWidth > window.innerHeight) a = 90;
+    return a * D2R;
+  }
+
+  // Project the world "up" vector (in device coords) onto the screen's horizontal axis.
+  function upToScreenX(ux, uy) {
+    const a = screenAngle();
+    return ux * Math.cos(a) - uy * Math.sin(a);
+  }
+
+  function onOrientation(e) {
+    if (e.beta == null || e.gamma == null) return;
+    const b = e.beta * D2R, g = e.gamma * D2R;
+    const ux = -Math.cos(b) * Math.sin(g);
+    const uy = Math.sin(b);
+    input.tilt = upToScreenX(ux, uy);
+    input.source = 'orientation';
+  }
+
+  function onMotion(e) {
+    if (input.source === 'orientation') return; // prefer the fused orientation sensor
+    const a = e.accelerationIncludingGravity;
+    if (!a || a.x == null) return;
+    const n = Math.hypot(a.x, a.y, a.z) || 1;
+    input.tilt = upToScreenX(a.x / n, a.y / n);
+    input.source = 'motion';
+  }
+
+  let sensorsAttached = false;
+  function attachSensors() {
+    if (sensorsAttached) return;
+    sensorsAttached = true;
+    window.addEventListener('deviceorientation', onOrientation);
+    window.addEventListener('devicemotion', onMotion);
+  }
+
+  function requestSensorPermission() {
+    // iOS 13+: must be called synchronously inside a user gesture.
+    const DOE = window.DeviceOrientationEvent, DME = window.DeviceMotionEvent;
+    let p = null;
+    if (DOE && typeof DOE.requestPermission === 'function') p = DOE.requestPermission();
+    else if (DME && typeof DME.requestPermission === 'function') p = DME.requestPermission();
+    return p ? p.catch(() => 'denied') : Promise.resolve('granted');
+  }
+
+  function updateSteer(dt) {
+    let target = 0;
+    if (input.tilt != null) {
+      if (input.neutral == null || G.state === 'countdown') input.neutral = input.tilt;
+      let d = -(input.tilt - input.neutral) / SENSITIVITY;
+      d = Math.abs(d) < DEAD_ZONE ? 0 : (d - Math.sign(d) * DEAD_ZONE) / (1 - DEAD_ZONE);
+      target = clamp(d, -1, 1);
+    }
+    const manual = (input.right ? 1 : 0) - (input.left ? 1 : 0) + input.touch;
+    if (manual) target = clamp(manual, -1, 1);
+    input.steer += (target - input.steer) * Math.min(1, dt * 14);
+  }
+
+  const keyMap = { ArrowLeft: 'left', a: 'left', A: 'left', ArrowRight: 'right', d: 'right', D: 'right' };
+  window.addEventListener('keydown', (e) => {
+    if (keyMap[e.key]) { input[keyMap[e.key]] = true; e.preventDefault(); }
+    if (e.key === ' ' || e.key === 'Enter') {
+      if (['menu', 'over', 'paused'].includes(G.state)) { startOrResume(); e.preventDefault(); }
+    }
+    if (e.key === 'm' || e.key === 'M') setMuted(!muted);
+  });
+  window.addEventListener('keyup', (e) => { if (keyMap[e.key]) input[keyMap[e.key]] = false; });
+
+  function touchSteer(e) {
+    if (G.state !== 'play') return;
+    let dir = 0;
+    for (const t of e.touches) dir += t.clientX < W / 2 ? -1 : 1;
+    input.touch = clamp(dir, -1, 1);
+    e.preventDefault();
+  }
+  cvs.addEventListener('touchstart', touchSteer, { passive: false });
+  cvs.addEventListener('touchmove', touchSteer, { passive: false });
+  cvs.addEventListener('touchend', touchSteer, { passive: false });
+  cvs.addEventListener('touchcancel', () => { input.touch = 0; });
+
+  // ---------- Fullscreen / landscape / wake lock ----------
+  function lockLandscape() {
+    try { const p = screen.orientation && screen.orientation.lock && screen.orientation.lock('landscape'); if (p && p.catch) p.catch(() => {}); } catch (e) {}
+  }
+  function goFullscreen() {
+    if (!isTouch) return;
+    const el = document.documentElement;
+    const req = el.requestFullscreen || el.webkitRequestFullscreen;
+    if (!req || document.fullscreenElement || document.webkitFullscreenElement) { lockLandscape(); return; }
+    try {
+      const p = req.call(el, { navigationUI: 'hide' });
+      if (p && p.then) p.then(lockLandscape).catch(() => {});
+    } catch (e) {}
+  }
+  let wakeLock = null;
+  async function keepAwake() {
+    try { if ('wakeLock' in navigator && !wakeLock) { wakeLock = await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release', () => { wakeLock = null; }); } } catch (e) {}
+  }
+
+  // ---------- Game state ----------
+  const G = {
+    state: 'menu', t: 0, clock: 0, score: 0, coins: 0, orbs: 0, best: +load('snakeBest', 0) || 0,
+    lives: MAX_LIVES, countdown: 0,
+    x: 0.5, y: 0.5, a: 0, speed: START_SPEED, len: START_LEN,
+    orb: { x: 0.5, y: 0.2 }, items: [], popups: [], coinIn: 6, shake: 0, flash: 0,
+  };
+
+  // The trail is a ring buffer of points (no allocations while playing).
+  const TX = new Float32Array(CAP), TY = new Float32Array(CAP);
+  let tHead = 0, tCount = 0;
+  const tPoint = (k) => (tHead - 1 - k + CAP) % CAP;        // k = 0 is the newest point
+  function pushPoint(x, y) { TX[tHead] = x; TY[tHead] = y; tHead = (tHead + 1) % CAP; tCount = Math.min(tCount + 1, CAP); }
+
+  const PARTS = []; for (let i = 0; i < 90; i++) PARTS.push({ life: 0, x: 0, y: 0, vx: 0, vy: 0, c: '#fff' });
+
+  function respawn() {
+    G.x = 0.5; G.y = FH * 0.62; G.a = 0;
+    tHead = 0; tCount = 0; pushPoint(G.x, G.y);
+    input.steer = 0;
+  }
+
+  function reset() {
+    G.t = 0; G.score = 0; G.coins = 0; G.orbs = 0; G.lives = MAX_LIVES;
+    G.speed = START_SPEED; G.len = START_LEN; G.items.length = 0; G.popups.length = 0; G.coinIn = 6;
+    G.shake = 0; G.flash = 0;
+    for (const p of PARTS) p.life = 0;
+    input.touch = 0; input.neutral = input.tilt;
+    respawn(); placeOrb();
+  }
+
+  function popup(text, color, x, y) { G.popups.push({ x, y, text, color, life: 1 }); }
+
+  function burst(x, y, color, n) {
+    for (const p of PARTS) {
+      if (p.life > 0) continue;
+      const a = Math.random() * Math.PI * 2, s = 0.08 + Math.random() * 0.3;
+      p.life = 0.4 + Math.random() * 0.4; p.x = x; p.y = y; p.vx = Math.cos(a) * s; p.vy = Math.sin(a) * s; p.c = color;
+      if (--n === 0) break;
+    }
+  }
+
+  // Somewhere open: away from the walls, the head and the trail.
+  function freeSpot(out) {
+    for (let tries = 0; tries < 40; tries++) {
+      const x = 0.13 + Math.random() * 0.74, y = 0.13 + Math.random() * (FH - 0.26);   // well clear of the walls
+      if (Math.hypot(x - G.x, y - G.y) < 0.2) continue;
+      let ok = true;
+      for (let k = 0; k < tCount && ok; k += 3) { const i = tPoint(k); if (Math.abs(TX[i] - x) < 0.06 && Math.abs(TY[i] - y) < 0.06) ok = false; }
+      if (ok) { out.x = x; out.y = y; return out; }
+    }
+    out.x = 0.15 + Math.random() * 0.7; out.y = 0.15 + Math.random() * (FH - 0.3);
+    return out;
+  }
+  function placeOrb() { freeSpot(G.orb); }
+
+  function crash() {
+    G.lives--; G.shake = 0.35; G.flash = 0.8;
+    if (navigator.vibrate) try { navigator.vibrate(G.lives > 0 ? 120 : [80, 40, 160]); } catch (e) {}
+    burst(G.x, G.y, '#6ff7ff', 20);
+    if (G.lives > 0) {
+      beep(220, 0.3, 'sawtooth', 0.16, -120);
+      popup('-1 ♥', '#ff5a5a', 0.5, FH * 0.45);
+      // Start again from the middle with a fresh trail (same length to grow back into), after a short countdown.
+      respawn();
+      G.state = 'countdown'; G.countdown = 1.5;
+      return;
+    }
+    gameOver();
+  }
+
+  function gameOver() {
+    G.state = 'crashing'; G.shake = 0.45; G.flash = 1;
+    beep(180, 0.5, 'sawtooth', 0.2, -150);
+    const final = G.score;
+    const newBest = final > G.best;
+    if (newBest) { G.best = final; save('snakeBest', final); }
+    setTimeout(() => {
+      G.state = 'over';
+      $('finalScore').textContent = final;
+      $('bestLine').textContent = newBest ? 'New best score!' : 'Best: ' + G.best;
+      show('over');
+    }, 900);
+  }
+
+  function eatOrb() {
+    G.orbs++; G.score += 10;
+    G.len = Math.min(MAX_LEN, G.len + GROW);
+    G.speed = Math.min(MAX_SPEED, START_SPEED + G.orbs * 0.006);
+    burst(G.orb.x, G.orb.y, '#ff2975', 10);
+    beep(520 + Math.min(600, G.orbs * 12), 0.08, 'triangle', 0.09);
+    placeOrb();
+  }
+
+  function update(dt) {
+    updateSteer(dt);
+    G.clock += dt;
+    if (G.shake > 0) G.shake = Math.max(0, G.shake - dt);
+    if (G.flash > 0) G.flash = Math.max(0, G.flash - dt * 2.5);
+    for (const p of G.popups) { p.life -= dt; p.y -= dt * 0.1; }
+    let j = 0; for (const p of G.popups) if (p.life > 0) G.popups[j++] = p; G.popups.length = j;
+    for (const p of PARTS) if (p.life > 0) { p.life -= dt; p.x += p.vx * dt; p.y += p.vy * dt; }
+
+    if (G.state === 'countdown') {
+      const before = Math.ceil(G.countdown);
+      G.countdown -= dt;
+      if (G.countdown <= 0) { G.state = 'play'; beep(880, 0.25, 'triangle', 0.12); }
+      else if (Math.ceil(G.countdown) !== before) beep(440, 0.12, 'triangle', 0.1);
+      return;
+    }
+    if (G.state !== 'play') return;
+    G.t += dt;
+
+    // Steer like a car: the wheel sets how fast the heading turns.
+    G.a += input.steer * TURN_RATE * dt;
+    const d = G.speed * dt;
+    G.x += Math.sin(G.a) * d; G.y -= Math.cos(G.a) * d;
+    const li = tPoint(0);
+    if (Math.hypot(G.x - TX[li], G.y - TY[li]) >= STEP) pushPoint(G.x, G.y);
+    tCount = Math.min(tCount, Math.ceil(G.len));
+
+    // Walls
+    if (G.x < HEAD_R || G.x > 1 - HEAD_R || G.y < HEAD_R || G.y > FH - HEAD_R) { crash(); return; }
+    // Own trail (skipping the stretch right behind the head)
+    const skip = Math.ceil(0.07 / STEP);
+    for (let k = skip; k < tCount; k++) {
+      const i = tPoint(k), dx = TX[i] - G.x, dy = TY[i] - G.y;
+      if (dx * dx + dy * dy < HIT_R * HIT_R) { crash(); return; }
+    }
+
+    // Orb
+    if (Math.hypot(G.orb.x - G.x, G.orb.y - G.y) < ORB_R + HEAD_R) eatOrb();
+
+    // Coins (and a rare heart) appear for a few seconds
+    if ((G.coinIn -= dt) <= 0) {
+      const it = freeSpot({ x: 0, y: 0 });
+      it.kind = G.lives < MAX_LIVES && Math.random() < 0.18 ? 'heart' : 'coin'; it.life = 7; it.spin = 0; it.taken = false;
+      G.items.push(it);
+      G.coinIn = 5 + Math.random() * 4;
+    }
+    for (const it of G.items) {
+      it.life -= dt; it.spin += dt * 5;
+      if (!it.taken && Math.hypot(it.x - G.x, it.y - G.y) < 0.03 + HEAD_R) {
+        it.taken = true;
+        if (it.kind === 'heart') {
+          G.lives = Math.min(MAX_LIVES, G.lives + 1);
+          popup('+1 ♥', '#ff7eb6', it.x, it.y - 0.05);
+          beep(660, 0.1, 'triangle', 0.1); setTimeout(() => beep(990, 0.18, 'triangle', 0.1), 90);
+        } else {
+          G.coins++; G.score += 50;
+          popup('+50', '#ffd700', it.x, it.y - 0.05);
+          beep(880, 0.08, 'square', 0.08); setTimeout(() => beep(1320, 0.12, 'square', 0.08), 70);
+        }
+      }
+    }
+    j = 0; for (const it of G.items) if (!it.taken && it.life > 0) G.items[j++] = it; G.items.length = j;
+  }
+
+  // ---------- Sprites (pre-rendered once per screen size, then just stamped) ----------
+  function hash(n) { const s = Math.sin(n * 127.1) * 43758.5453; return s - Math.floor(s); }
+  function rr(g, x, y, w, h, r) {
+    g.beginPath();
+    g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r);
+    g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath();
+  }
+  function makeSprite(w, h, paint) {
+    const d = Math.min(window.devicePixelRatio || 1, 2);
+    const c = document.createElement('canvas');
+    c.width = Math.max(1, Math.ceil(w * d)); c.height = Math.max(1, Math.ceil(h * d));
+    const g = c.getContext('2d'); g.scale(d, d); paint(g);
+    return { c, w, h };
+  }
+  function glow(g, x, y, r0, r1, rgb, a) {
+    const gr = g.createRadialGradient(x, y, r0, x, y, r1);
+    gr.addColorStop(0, `rgba(${rgb},${a})`); gr.addColorStop(1, `rgba(${rgb},0)`);
+    g.fillStyle = gr; g.beginPath(); g.arc(x, y, r1, 0, 7); g.fill();
+  }
+
+  const SPR = { key: '' };
+  function ensureSprites() {
+    const key = `${W}x${H}@${window.devicePixelRatio}`;
+    if (SPR.key === key) return;
+    SPR.key = key;
+    SPR.head = makeHead(); SPR.orb = makeOrb(); SPR.coin = makeCoin(); SPR.bg = makeBackground();
+  }
+
+  function makeHead() {
+    const r = HEAD_R * FW * 1.5, s = r * 4;
+    return makeSprite(s, s, (g) => {
+      const c = s / 2;
+      glow(g, c, c, r * 0.4, r * 1.9, '0,229,255', 0.5);
+      const body = g.createLinearGradient(c - r, 0, c + r, 0);
+      body.addColorStop(0, '#0a6f86'); body.addColorStop(0.5, '#b8fbff'); body.addColorStop(1, '#0a6f86');
+      g.fillStyle = body;                       // points up; rotated to the heading when drawn
+      g.beginPath(); g.moveTo(c, c - r * 1.3); g.quadraticCurveTo(c + r, c - r * 0.2, c + r * 0.75, c + r * 0.9);
+      g.lineTo(c - r * 0.75, c + r * 0.9); g.quadraticCurveTo(c - r, c - r * 0.2, c, c - r * 1.3); g.fill();
+      g.fillStyle = '#ff2975';
+      g.beginPath(); g.arc(c - r * 0.35, c - r * 0.25, r * 0.2, 0, 7); g.fill();
+      g.beginPath(); g.arc(c + r * 0.35, c - r * 0.25, r * 0.2, 0, 7); g.fill();
+    });
+  }
+
+  function makeOrb() {
+    const r = ORB_R * FW, s = r * 5;
+    return makeSprite(s, s, (g) => {
+      const c = s / 2;
+      glow(g, c, c, r * 0.5, r * 2.4, '255,41,117', 0.55);
+      const body = g.createRadialGradient(c - r * 0.3, c - r * 0.3, r * 0.1, c, c, r);
+      body.addColorStop(0, '#ffffff'); body.addColorStop(0.45, '#ff8fd0'); body.addColorStop(1, '#c2185b');
+      g.fillStyle = body; g.beginPath(); g.arc(c, c, r, 0, 7); g.fill();
+    });
+  }
+
+  function makeCoin() {
+    const r = 0.022 * FW, size = r * 4.4;
+    return makeSprite(size, size, (g) => {
+      const c = size / 2;
+      glow(g, c, c, r * 0.6, r * 2.2, '255,211,25', 0.55);
+      const face = g.createLinearGradient(c - r, c - r, c + r, c + r);
+      face.addColorStop(0, '#fff3a0'); face.addColorStop(0.45, '#ffd319'); face.addColorStop(1, '#e07b00');
+      g.fillStyle = face; g.beginPath(); g.arc(c, c, r, 0, 7); g.fill();
+      g.strokeStyle = 'rgba(160,80,0,0.6)'; g.lineWidth = r * 0.12; g.beginPath(); g.arc(c, c, r * 0.72, 0, 7); g.stroke();
+      g.fillStyle = '#fff8cf'; g.font = `900 ${r * 1.05}px system-ui, sans-serif`;
+      g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('★', c, c + r * 0.04);
+    });
+  }
+
+  function makeBackground() {
+    // Sides, the arena grid and its neon walls, painted once per screen size.
+    const fx = FX, fw = FW;
+    return makeSprite(W, H, (g) => {
+      const sky = g.createLinearGradient(0, 0, 0, H);
+      sky.addColorStop(0, '#12062a'); sky.addColorStop(0.7, '#2b0a4e'); sky.addColorStop(1, '#46105a');
+      g.fillStyle = sky; g.fillRect(0, 0, W, H);
+      const gs = H * 0.08;
+      g.strokeStyle = 'rgba(255,41,117,0.18)'; g.lineWidth = 1;
+      g.beginPath();
+      for (let y = gs; y < H; y += gs) { g.moveTo(0, y); g.lineTo(W, y); }
+      for (let x = fx - gs; x > 0; x -= gs) { g.moveTo(x, 0); g.lineTo(x, H); }
+      for (let x = fx + fw + gs; x < W; x += gs) { g.moveTo(x, 0); g.lineTo(x, H); }
+      g.stroke();
+      const floor = g.createRadialGradient(fx + fw / 2, H / 2, 0, fx + fw / 2, H / 2, fw * 0.75);
+      floor.addColorStop(0, '#1d0a3a'); floor.addColorStop(1, '#07020f');
+      g.fillStyle = floor; g.fillRect(fx, 0, fw, H);
+      const cell = fw / 16;
+      g.strokeStyle = 'rgba(0,229,255,0.1)'; g.beginPath();
+      for (let x = fx + cell; x < fx + fw - 1; x += cell) { g.moveTo(x, 0); g.lineTo(x, H); }
+      for (let y = cell; y < H; y += cell) { g.moveTo(fx, y); g.lineTo(fx + fw, y); }
+      g.stroke();
+      // Walls on all four sides: wide soft pass + thin bright pass
+      g.fillStyle = 'rgba(255,41,117,0.18)';
+      g.fillRect(fx - 6, 0, 12, H); g.fillRect(fx + fw - 6, 0, 12, H); g.fillRect(fx, 0, fw, 6); g.fillRect(fx, H - 6, fw, 6);
+      g.fillStyle = '#ff5c96';
+      g.fillRect(fx - 1.5, 0, 3, H); g.fillRect(fx + fw - 1.5, 0, 3, H); g.fillRect(fx, 0, fw, 2.5); g.fillRect(fx, H - 2.5, fw, 2.5);
+    });
+  }
+
+  // ---------- Drawing ----------
+  const X = (u) => FX + u * FW, Y = (v) => v * FW;
+
+  function heartPath(r) {
+    ctx.beginPath();
+    ctx.moveTo(0, r * 0.9);
+    ctx.bezierCurveTo(-r * 1.4, -r * 0.1, -r * 0.6, -r * 1.2, 0, -r * 0.45);
+    ctx.bezierCurveTo(r * 0.6, -r * 1.2, r * 1.4, -r * 0.1, 0, r * 0.9);
+    ctx.closePath();
+  }
+  function roundRect(x, y, w, h, r) { rr(ctx, x, y, w, h, r); }
+
+  function trailPath() {
+    ctx.beginPath();
+    for (let k = 0; k < tCount; k++) { const i = tPoint(k); if (k) ctx.lineTo(X(TX[i]), Y(TY[i])); else ctx.moveTo(X(TX[i]), Y(TY[i])); }
+  }
+
+  function drawField() {
+    ensureSprites();
+    ctx.drawImage(SPR.bg.c, 0, 0, W, H);
+
+    // Trail: wide soft glow, then a bright core
+    if (tCount > 1) {
+      ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+      trailPath();
+      ctx.strokeStyle = 'rgba(0,229,255,0.22)'; ctx.lineWidth = HIT_R * FW * 2.6; ctx.stroke();
+      ctx.strokeStyle = '#6ff7ff'; ctx.lineWidth = HIT_R * FW * 0.9; ctx.stroke();
+    }
+
+    for (const p of PARTS) {
+      if (p.life <= 0) continue;
+      ctx.globalAlpha = Math.min(1, p.life * 2); ctx.fillStyle = p.c;
+      const s = Math.max(2, FW * 0.008);
+      ctx.fillRect(X(p.x) - s / 2, Y(p.y) - s / 2, s, s);
+    }
+    ctx.globalAlpha = 1;
+
+    const r = 0.022 * FW;
+    for (const it of G.items) {
+      if (it.life < 2 && Math.floor(it.life * 6) % 2) continue;     // blink before vanishing
+      const x = X(it.x), y = Y(it.y);
+      if (it.kind === 'heart') {
+        const s = 1 + Math.sin(G.clock * 6) * 0.08;
+        ctx.save(); ctx.translate(x, y); ctx.scale(s, s);
+        ctx.fillStyle = '#fff'; heartPath(r * 1.25); ctx.fill();
+        ctx.fillStyle = '#ff2975'; heartPath(r); ctx.fill();
+        ctx.restore();
+      } else {
+        const C = SPR.coin, k = Math.abs(Math.cos(it.spin)) * 0.75 + 0.25;
+        ctx.save(); ctx.translate(x, y); ctx.scale(k, 1);
+        ctx.drawImage(C.c, -C.w / 2, -C.h / 2, C.w, C.h);
+        ctx.restore();
+      }
+    }
+
+    if (G.state === 'menu') return;
+    const O = SPR.orb, os = 1 + Math.sin(G.clock * 5) * 0.1;
+    ctx.drawImage(O.c, X(G.orb.x) - (O.w * os) / 2, Y(G.orb.y) - (O.h * os) / 2, O.w * os, O.h * os);
+
+    const S = SPR.head;
+    ctx.save(); ctx.translate(X(G.x), Y(G.y)); ctx.rotate(G.a);
+    ctx.drawImage(S.c, -S.w / 2, -S.h / 2, S.w, S.h);
+    ctx.restore();
+  }
+
+  function drawWheel(cx, cy, r) {
+    ctx.save(); ctx.translate(cx, cy); ctx.rotate(input.steer * Math.PI / 2);
+    ctx.strokeStyle = 'rgba(0,229,255,0.25)'; ctx.lineWidth = r * 0.5;
+    ctx.beginPath(); ctx.arc(0, 0, r, 0, 7); ctx.stroke();
+    ctx.strokeStyle = '#6ff7ff'; ctx.lineWidth = r * 0.18;
+    ctx.beginPath(); ctx.arc(0, 0, r, 0, 7); ctx.stroke();
+    ctx.lineWidth = r * 0.14;
+    ctx.beginPath(); ctx.moveTo(-r, 0); ctx.lineTo(r, 0); ctx.moveTo(0, 0); ctx.lineTo(0, r); ctx.stroke();
+    ctx.fillStyle = '#ff2975'; ctx.fillRect(-r * 0.12, -r * 1.18, r * 0.24, r * 0.34);
+    ctx.restore();
+  }
+
+  function drawHUD() {
+    const pad = Math.max(12, H * 0.03);
+    const fs = Math.max(14, Math.round(H * 0.05));
+    ctx.textBaseline = 'top';
+    // Score panel sits top right; the top-left corner is left empty on purpose.
+    const pw = fs * 6.2, x0 = W - pad - pw + 8;
+    ctx.fillStyle = 'rgba(18,6,42,0.62)'; roundRect(x0 - 8, pad - 6, pw, fs * 4.25, 12); ctx.fill();
+    ctx.strokeStyle = 'rgba(255,41,117,0.8)'; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.font = `800 ${fs}px system-ui, sans-serif`;
+    ctx.fillStyle = '#fff'; ctx.textAlign = 'left';
+    ctx.fillText(String(G.score), x0, pad);
+    ctx.font = `600 ${Math.round(fs * 0.62)}px system-ui, sans-serif`;
+    ctx.fillStyle = '#ffd319';
+    ctx.fillText(`${G.orbs} orb${G.orbs === 1 ? '' : 's'}  •  ${G.coins} coin${G.coins === 1 ? '' : 's'}`, x0, pad + fs * 1.15);
+    const hr = fs * 0.34;
+    for (let i = 0; i < MAX_LIVES; i++) {
+      ctx.save(); ctx.translate(x0 + hr + i * hr * 2.7, pad + fs * 2.4 + hr);
+      ctx.fillStyle = i < G.lives ? '#ff2975' : 'rgba(255,255,255,0.22)'; heartPath(hr); ctx.fill();
+      ctx.restore();
+    }
+    const mode = input.source === 'none' ? (isTouch ? 'touch' : 'keys') : 'tilt';
+    ctx.font = `700 ${Math.round(fs * 0.58)}px system-ui, sans-serif`;
+    ctx.fillStyle = '#6ff7ff'; ctx.fillText('BEST ' + G.best, x0, pad + fs * 3.3);
+    ctx.textAlign = 'right'; ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    ctx.fillText(mode, x0 - 16 + pw, pad + fs * 3.3);
+    ctx.textAlign = 'left';
+
+    const wr = Math.max(18, H * 0.06);
+    const wy = H - pad - 72 - wr * 1.4;   // above the pause button, if there's room below the billboard
+    if (wy - wr * 1.4 > adBottom) drawWheel(W - pad - wr * 1.4, wy, wr);
+  }
+
+  function draw() {
+    ctx.save();
+    if (G.shake > 0) { const m = G.shake * H * 0.03; ctx.translate((Math.random() - 0.5) * m, (Math.random() - 0.5) * m); }
+    drawField();
+    ctx.restore();
+    if (G.flash > 0) { ctx.fillStyle = `rgba(255,41,117,${G.flash * 0.4})`; ctx.fillRect(0, 0, W, H); }
+
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    for (const p of G.popups) {
+      ctx.globalAlpha = Math.min(1, p.life * 2);
+      ctx.font = `800 ${Math.round(H * 0.06)}px system-ui, sans-serif`;
+      ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(18,6,42,0.8)';
+      ctx.strokeText(p.text, X(p.x), Y(p.y));
+      ctx.fillStyle = p.color; ctx.fillText(p.text, X(p.x), Y(p.y));
+    }
+    ctx.globalAlpha = 1;
+
+    if (G.state === 'countdown') {
+      const n = Math.ceil(G.countdown), f = G.countdown - Math.floor(G.countdown);
+      ctx.save(); ctx.translate(W / 2, H * 0.32); ctx.scale(1 + f * 0.4, 1 + f * 0.4);
+      ctx.font = `900 ${Math.round(H * 0.22)}px system-ui, sans-serif`;
+      ctx.lineWidth = 8; ctx.strokeStyle = 'rgba(18,6,42,0.8)'; ctx.strokeText(String(n), 0, 0);
+      ctx.fillStyle = '#ffd319'; ctx.fillText(String(n), 0, 0);
+      ctx.restore();
+      ctx.font = `700 ${Math.round(H * 0.05)}px system-ui, sans-serif`;
+      ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(18,6,42,0.8)';
+      ctx.strokeText('Hold your phone steady', W / 2, H * 0.48);
+      ctx.fillStyle = '#6ff7ff'; ctx.fillText('Hold your phone steady', W / 2, H * 0.48);
+    }
+
+    if (G.state !== 'menu') drawHUD();
+  }
+
+  // ---------- Loop ----------
+  let last = performance.now();
+  function frame(now) {
+    const dt = Math.min(0.05, (now - last) / 1000);
+    last = now;
+    const portraitPhone = isTouch && H > W;
+    if (!portraitPhone) update(dt);
+    draw();
+    requestAnimationFrame(frame);
+  }
+
+  // ---------- UI flow ----------
+  function show(id) {
+    for (const o of ['menu', 'over', 'paused']) $(o).classList.toggle('hidden', o !== id);
+    document.body.classList.toggle('playing', !id);   // settings buttons hide while playing
+  }
+
+  function startOrResume() {
+    const permission = requestSensorPermission();   // must be first, inside the gesture
+    goFullscreen();
+    initAudio();
+    keepAwake();
+    attachSensors();
+    permission.then((res) => {
+      if (res !== 'granted') {
+        const m = $('menuMsg');
+        m.textContent = 'Motion access was denied, so touch controls are on. To use tilt, reload the page and tap Allow.';
+        m.classList.remove('hidden');
+      }
+    });
+    const wasPaused = G.state === 'paused';
+    if (!wasPaused) reset();
+    G.state = 'countdown';
+    G.countdown = wasPaused ? 1.5 : COUNTDOWN;
+    show(null);
+    beep(440, 0.12, 'triangle', 0.1);
+  }
+
+  $('startBtn').addEventListener('click', startOrResume);
+  $('againBtn').addEventListener('click', startOrResume);
+  $('resumeBtn').addEventListener('click', startOrResume);
+
+  // Pause button (and P / Esc): the pause screen has Resume and All games.
+  function pauseGame() {
+    if (G.state !== 'play' && G.state !== 'countdown') return;
+    G.state = 'paused';
+    show('paused');
+  }
+  $('pauseBtn').addEventListener('click', (e) => { e.stopPropagation(); pauseGame(); });
+  window.addEventListener('keydown', (e) => { if (e.key === 'p' || e.key === 'P' || e.key === 'Escape') pauseGame(); });
+  $('soundBtn').textContent = muted ? '🔇 Muted' : '🔊 Sound on';
+  $('soundBtn').addEventListener('click', (e) => { e.stopPropagation(); setMuted(!muted); });
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      if (G.state === 'play' || G.state === 'countdown') { G.state = 'paused'; show('paused'); }
+    } else {
+      keepAwake();
+    }
+  });
+
+  requestAnimationFrame(frame);
+
+  // Hook for automated tests.
+  window.__neonSnake = { G, input };
+})();
+</script>
+</body>
+</html>
