@@ -148,10 +148,23 @@
   @media (prefers-reduced-motion: reduce) {
     #adBanner .board, #adBanner .board::after, #adBanner .main { animation: none; }
   }
+  /* Pause button: bottom right, only while playing; big enough for car screens */
+  #pauseBtn {
+    display: none; position: fixed; z-index: 16;
+    right: max(12px, env(safe-area-inset-right)); bottom: max(12px, env(safe-area-inset-bottom));
+    width: 60px; height: 60px; padding: 0; margin: 0; border-radius: 16px; animation: none; cursor: pointer;
+    align-items: center; justify-content: center; color: #fff;
+    background: rgba(0, 0, 0, 0.45); border: 2px solid rgba(255, 255, 255, 0.35); box-shadow: none;
+  }
+  #pauseBtn svg { width: 26px; height: 26px; }
+  #pauseBtn:active { transform: scale(0.94); }
+  body.playing #pauseBtn { display: flex; }
 </style>
 </head>
 <body>
 <canvas id="game"></canvas>
+
+<button id="pauseBtn" type="button" aria-label="Pause"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4.5" width="4.2" height="15" rx="1.2"/><rect x="13.8" y="4.5" width="4.2" height="15" rx="1.2"/></svg></button>
 
 
 <a id="brand" href="https://www.instagram.com/seltos.gtx/" target="_blank" rel="noopener">
@@ -224,6 +237,7 @@
   const isTouch = matchMedia('(pointer: coarse)').matches;
 
   let W = 0, H = 0, roadW = 0, roadX = 0, carW = 0, carH = 0;
+  let adBottom = 0;             // bottom edge of the roadside billboard, so the HUD wheel can avoid it
 
   function resize() {
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -237,6 +251,8 @@
     carW = Math.min(carH * 0.56, laneW * 0.7);
     placeBrand();
     placeAd();
+    const ad = $('adBanner');
+    adBottom = ad.classList.contains('hidden') ? 0 : ad.getBoundingClientRect().bottom;
     const side = roadX - Math.max(6, roadW * 0.025);
     document.documentElement.style.setProperty('--side', (side >= 84 ? side : 0) + 'px');
   }
@@ -691,7 +707,8 @@
     ctx.fillText('control: ' + mode, hudRight, pad + fs * 0.85);
 
     const wr = Math.max(18, H * 0.06);
-    drawWheel(W - pad - wr * 1.4, H - pad - wr * 1.4, wr);
+    const wy = H - pad - 72 - wr * 1.4;   // above the pause button, if there's room below the billboard
+    if (wy - wr * 1.4 > adBottom) drawWheel(W - pad - wr * 1.4, wy, wr);
   }
 
   function draw() {
@@ -744,7 +761,10 @@
   requestAnimationFrame(frame);
 
   // ---------- UI flow ----------
-  function show(id) { for (const o of ['menu', 'over', 'paused']) $(o).classList.toggle('hidden', o !== id); }
+  function show(id) {
+    for (const o of ['menu', 'over', 'paused']) $(o).classList.toggle('hidden', o !== id);
+    document.body.classList.toggle('playing', !id);   // shows the pause button
+  }
 
   function startOrResume() {
     const permission = requestSensorPermission();   // must be first, inside the gesture
@@ -771,6 +791,15 @@
   $('startBtn').addEventListener('click', startOrResume);
   $('againBtn').addEventListener('click', startOrResume);
   $('resumeBtn').addEventListener('click', startOrResume);
+
+  // Pause button (and P / Esc): the pause screen has Resume and All games.
+  function pauseGame() {
+    if (G.state !== 'play' && G.state !== 'countdown') return;
+    G.state = 'paused';
+    show('paused');
+  }
+  $('pauseBtn').addEventListener('click', (e) => { e.stopPropagation(); pauseGame(); });
+  window.addEventListener('keydown', (e) => { if (e.key === 'p' || e.key === 'P' || e.key === 'Escape') pauseGame(); });
 
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) {
