@@ -1,5 +1,7 @@
 # Tilt Racer
 
+by [@seltos.gtx](https://www.instagram.com/seltos.gtx/) on Instagram
+
 A lightweight browser racing game you steer by **tilting your phone**. It uses the phone's motion sensors through `DeviceOrientationEvent`. It's one HTML file with no dependencies and no build step.
 
 **Play:** https://akumar36.github.io/carplay-game/ (after GitHub Pages is enabled, see below)
@@ -8,9 +10,10 @@ A lightweight browser racing game you steer by **tilting your phone**. It uses t
 
 1. Open the link on your phone and rotate to **landscape**.
 2. Hold the phone like a steering wheel and tap **Tap to start**. On iPhone, tap **Allow** for motion access.
-3. Tilt or rotate the phone to steer. Dodge traffic and grab coins (+50). The game speeds up over time.
+3. During the 3-2-1 countdown, hold the phone steady in a comfortable position. That becomes "straight ahead".
+4. Tilt or rotate the phone to steer. Dodge traffic, grab coins (+50) and hearts (+1 life). You have 3 lives, and the game speeds up gradually.
 
-The position you hold the phone in when you tap start becomes "straight ahead".
+Lane assist gently centres the car in a lane when you're not steering, which makes the game easier to play.
 On a desktop, or a device without sensors, use ← → / A D keys, or touch the left or right half of the screen.
 
 ## Platform notes

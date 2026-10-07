@@ -43,26 +43,60 @@
   }
   @keyframes turn { 0%, 30% { transform: rotate(0); } 60%, 100% { transform: rotate(-90deg); } }
   @media (orientation: portrait) and (pointer: coarse) { #rotate { display: flex; } }
+
+  /* Instagram branding */
+  .ig-logo {
+    display: inline-flex; align-items: center; justify-content: center; flex: none;
+    width: 40px; height: 40px; border-radius: 12px;
+    background: radial-gradient(circle at 30% 107%, #fdf497 0%, #fdf497 5%, #fd5949 45%, #d6249f 60%, #285aeb 90%);
+  }
+  .ig-logo svg { width: 64%; height: 64%; }
+  #brand {
+    position: fixed; top: 50%; left: 12px; transform: translateY(-50%); z-index: 15;
+    display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 8px;
+    border-radius: 18px; background: rgba(0, 0, 0, 0.38); color: #fff; text-decoration: none;
+    text-align: center; backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+  }
+  #brand .handle { font-weight: 800; font-size: 14px; letter-spacing: 0.2px; word-break: break-all; }
+  #brand .follow { font-size: 11px; font-weight: 600; opacity: 0.85; }
+  #brand:active { transform: translateY(-50%) scale(0.96); }
+  .igBtn {
+    display: inline-flex; align-items: center; gap: 10px; padding: 0.45em 1.2em 0.45em 0.5em;
+    border-radius: 999px; background: rgba(255, 255, 255, 0.12); color: #fff; text-decoration: none;
+    font-weight: 700; font-size: clamp(14px, 3.6vh, 18px);
+  }
+  .igBtn .ig-logo { width: 32px; height: 32px; border-radius: 10px; }
+  .byline a { color: var(--accent); font-weight: 700; text-decoration: none; }
 </style>
 </head>
 <body>
 <canvas id="game"></canvas>
 
+<a id="brand" href="https://www.instagram.com/seltos.gtx/" target="_blank" rel="noopener">
+  <span class="ig-logo"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.4" cy="6.6" r="1.1" fill="#fff" stroke="none"/></svg></span>
+  <span class="handle">@seltos.gtx</span>
+  <span class="follow">Follow on Instagram</span>
+</a>
+
 <div id="menu" class="overlay">
   <h1>TILT <span>RACER</span></h1>
+  <p class="byline small">by <a href="https://www.instagram.com/seltos.gtx/" target="_blank" rel="noopener">@seltos.gtx</a></p>
   <p>Hold your phone sideways like a steering wheel and <b>tilt to steer</b>.
-     Dodge traffic and grab coins. Hold the phone in a comfortable neutral position when you tap start.</p>
+     Dodge traffic, grab coins and hearts. You have <b>3 lives</b>.</p>
   <button id="startBtn">Tap to start</button>
   <p class="small">No tilt sensor? Use ← → / A D keys, or touch the left or right half of the screen.</p>
   <p id="menuMsg" class="msg hidden"></p>
 </div>
 
 <div id="over" class="overlay hidden">
-  <p>CRASHED!</p>
+  <p>GAME OVER</p>
   <div class="big" id="finalScore">0</div>
   <p id="bestLine"></p>
   <button id="againBtn">Play again</button>
-  <p class="small">Hold your neutral position. Steering recalibrates when you tap.</p>
+  <a class="igBtn" href="https://www.instagram.com/seltos.gtx/" target="_blank" rel="noopener">
+    <span class="ig-logo"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.4" cy="6.6" r="1.1" fill="#fff" stroke="none"/></svg></span>
+    Follow @seltos.gtx
+  </a>
 </div>
 
 <div id="paused" class="overlay hidden">
@@ -88,9 +122,12 @@
   const D2R = Math.PI / 180;
   const LANES = 4;
   const PLAYER_Y = 0.80;         // player car centre, in screen heights
-  const TRAFFIC_REL = 0.55;      // traffic closes in at this fraction of our speed
-  const SENSITIVITY = 0.42;      // ~25 degrees of tilt = full steering lock
-  const DEAD_ZONE = 0.06;
+  const TRAFFIC_REL = 0.5;       // traffic closes in at this fraction of our speed
+  const SENSITIVITY = 0.36;      // ~21 degrees of tilt = full steering lock
+  const DEAD_ZONE = 0.07;
+  const START_SPEED = 0.75, MAX_SPEED = 2.0, SPEED_RAMP = 0.018;   // screen heights per second
+  const MAX_LIVES = 3, INVINCIBLE_TIME = 2;
+  const COUNTDOWN = 2.4;
   const isTouch = matchMedia('(pointer: coarse)').matches;
 
   let W = 0, H = 0, roadW = 0, roadX = 0, carW = 0, carH = 0;
@@ -105,6 +142,18 @@
     const laneW = roadW / LANES;
     carH = Math.min(H * 0.17, laneW * 1.45);
     carW = Math.min(carH * 0.56, laneW * 0.7);
+    placeBrand();
+  }
+
+  // Centre the Instagram badge in the grass to the left of the road.
+  function placeBrand() {
+    const brand = document.getElementById('brand');
+    const margin = roadX - Math.max(6, roadW * 0.025);
+    if (margin < 84) { brand.classList.add('hidden'); return; }
+    brand.classList.remove('hidden');
+    const bw = Math.min(margin - 16, 150);
+    brand.style.width = bw + 'px';
+    brand.style.left = (margin - bw) / 2 + 'px';
   }
   window.addEventListener('resize', resize);
   resize();
@@ -144,7 +193,9 @@
 
   function screenAngle() {
     const so = screen.orientation;
-    const a = so && typeof so.angle === 'number' ? so.angle : (window.orientation || 0);
+    let a = so && typeof so.angle === 'number' ? so.angle : (window.orientation || 0);
+    // Some browsers report 0 even when the page is landscape; assume the common landscape rotation.
+    if (a % 180 === 0 && window.innerWidth > window.innerHeight) a = 90;
     return a * D2R;
   }
 
@@ -196,7 +247,7 @@
   function updateSteer(dt) {
     let target = 0;
     if (input.tilt != null) {
-      if (input.neutral == null) input.neutral = input.tilt;
+      if (input.neutral == null || G.state === 'countdown') input.neutral = input.tilt;
       let d = -(input.tilt - input.neutral) / SENSITIVITY;
       d = Math.abs(d) < DEAD_ZONE ? 0 : (d - Math.sign(d) * DEAD_ZONE) / (1 - DEAD_ZONE);
       target = clamp(d, -1, 1);
@@ -209,7 +260,7 @@
   const keyMap = { ArrowLeft: 'left', a: 'left', A: 'left', ArrowRight: 'right', d: 'right', D: 'right' };
   window.addEventListener('keydown', (e) => {
     if (keyMap[e.key]) { input[keyMap[e.key]] = true; e.preventDefault(); }
-    if ((e.key === ' ' || e.key === 'Enter') && G.state !== 'play') { startOrResume(); e.preventDefault(); }
+    if ((e.key === ' ' || e.key === 'Enter') && ['menu', 'over', 'paused'].includes(G.state)) { startOrResume(); e.preventDefault(); }
   });
   window.addEventListener('keyup', (e) => { if (keyMap[e.key]) input[keyMap[e.key]] = false; });
 
@@ -248,40 +299,54 @@
   const COLORS = ['#3d7bfd', '#2ec27e', '#f6d32d', '#9141ac', '#ffffff', '#ff7800', '#5bc8f5'];
   const G = {
     state: 'menu', t: 0, dist: 0, speed: 0, score: 0, coins: 0, best: loadBest(),
-    px: 0.5, traffic: [], items: [], spawnIn: 0, shake: 0, flash: 0, lastLanes: [],
+    px: 0.5, traffic: [], items: [], popups: [], spawnIn: 0, shake: 0, flash: 0,
+    lives: MAX_LIVES, inv: 0, countdown: 0,
   };
 
   const laneX = (i) => (i + 0.5) / LANES;
 
   function reset() {
-    G.t = 0; G.dist = 0; G.speed = 0.9; G.score = 0; G.coins = 0;
-    G.px = 0.5; G.traffic = []; G.items = []; G.spawnIn = 0.6; G.shake = 0; G.flash = 0;
+    G.t = 0; G.dist = 0; G.speed = START_SPEED; G.score = 0; G.coins = 0;
+    G.px = laneX(1); G.traffic = []; G.items = []; G.popups = []; G.spawnIn = 0.3; G.shake = 0; G.flash = 0;
+    G.lives = MAX_LIVES; G.inv = 0;
     input.steer = 0; input.touch = 0;
     calibrate();
   }
 
+  function popup(text, color) { G.popups.push({ x: G.px, y: PLAYER_Y - 0.14, text, color, life: 1 }); }
+
   function spawnRow() {
-    // At most LANES-2 cars per row, so there's always a way through.
-    const maxCars = G.t > 25 ? 2 : (G.t > 8 && Math.random() < 0.45 ? 2 : 1);
-    const lanes = [0, 1, 2, 3].sort(() => Math.random() - 0.5).slice(0, maxCars);
+    // Start with single cars; later allow pairs. There are always at least two free lanes.
+    const pairChance = G.t < 15 ? 0 : G.t < 40 ? 0.3 : 0.55;
+    const lanes = [0, 1, 2, 3].sort(() => Math.random() - 0.5).slice(0, Math.random() < pairChance ? 2 : 1);
     const ch = carH / H;
     for (const l of lanes) {
       G.traffic.push({ x: laneX(l), y: -ch, color: COLORS[(Math.random() * COLORS.length) | 0] });
     }
-    // Sometimes drop a coin in a free lane.
-    if (Math.random() < 0.55) {
-      const free = [0, 1, 2, 3].filter((l) => !lanes.includes(l));
-      const l = free[(Math.random() * free.length) | 0];
-      G.items.push({ x: laneX(l), y: -ch * 2.2, spin: Math.random() * 6 });
-    }
+    // Drop a pickup in a free lane: a heart if you've lost a life (rare), otherwise often a coin.
+    const free = [0, 1, 2, 3].filter((l) => !lanes.includes(l));
+    const l = free[(Math.random() * free.length) | 0];
+    if (G.lives < MAX_LIVES && Math.random() < 0.08) G.items.push({ kind: 'heart', x: laneX(l), y: -ch * 2.2, spin: 0 });
+    else if (Math.random() < 0.6) G.items.push({ kind: 'coin', x: laneX(l), y: -ch * 2.2, spin: Math.random() * 6 });
     // Rows get closer together as the game goes on.
-    G.spawnIn = Math.max(0.5, 1.05 - G.t * 0.012) + Math.random() * 0.25;
+    G.spawnIn = Math.max(0.6, 1.25 - G.t * 0.01) + Math.random() * 0.3;
   }
 
-  function crash() {
+  function hit() {
+    G.lives--; G.shake = 0.35; G.flash = 0.8; G.inv = INVINCIBLE_TIME;
+    if (navigator.vibrate) try { navigator.vibrate(G.lives > 0 ? 120 : [80, 40, 160]); } catch (e) {}
+    if (G.lives > 0) {
+      beep(220, 0.3, 'sawtooth', 0.16, -120);
+      popup('-1 ♥', '#ff5a5a');
+      G.t *= 0.85;   // ease off the difficulty a little after a hit
+      return;
+    }
+    gameOver();
+  }
+
+  function gameOver() {
     G.state = 'crashing'; G.shake = 0.45; G.flash = 1;
     beep(180, 0.5, 'sawtooth', 0.2, -150);
-    if (navigator.vibrate) try { navigator.vibrate([80, 40, 120]); } catch (e) {}
     const final = G.score;
     const newBest = final > G.best;
     if (newBest) { G.best = final; saveBest(final); }
@@ -293,38 +358,73 @@
     }, 900);
   }
 
+  function movePlayer(dt) {
+    const cw = carW / roadW;
+    G.px += input.steer * 1.3 * dt;
+    // Lane assist: with the wheel near centre, glide gently into the nearest lane.
+    if (Math.abs(input.steer) < 0.15) {
+      const lane = clamp(Math.floor(G.px * LANES), 0, LANES - 1);
+      G.px += (laneX(lane) - G.px) * Math.min(1, dt * 3);
+    }
+    G.px = clamp(G.px, cw / 2 + 0.02, 1 - cw / 2 - 0.02);
+  }
+
   function update(dt) {
     updateSteer(dt);
     if (G.shake > 0) G.shake = Math.max(0, G.shake - dt);
     if (G.flash > 0) G.flash = Math.max(0, G.flash - dt * 2.5);
+    for (const p of G.popups) { p.life -= dt; p.y -= dt * 0.12; }
+    G.popups = G.popups.filter((p) => p.life > 0);
+
+    if (G.state === 'countdown') {
+      const before = Math.ceil(G.countdown);
+      G.countdown -= dt;
+      G.dist += START_SPEED * 0.4 * dt;
+      movePlayer(dt);
+      if (G.countdown <= 0) { G.state = 'play'; beep(880, 0.25, 'triangle', 0.12); }
+      else if (Math.ceil(G.countdown) !== before) beep(440, 0.12, 'triangle', 0.1);
+      return;
+    }
     if (G.state !== 'play') return;
 
     G.t += dt;
-    G.speed = Math.min(0.9 + G.t * 0.03, 2.5);    // screen heights per second
+    G.speed = Math.min(START_SPEED + G.t * SPEED_RAMP, MAX_SPEED);
     const dy = G.speed * dt;
     G.dist += dy;
     G.score = Math.floor(G.dist * 10) + G.coins * 50;
+    if (G.inv > 0) G.inv = Math.max(0, G.inv - dt);
 
-    // Player
+    movePlayer(dt);
     const cw = carW / roadW, ch = carH / H;
-    G.px = clamp(G.px + input.steer * 1.3 * dt, cw / 2 + 0.02, 1 - cw / 2 - 0.02);
 
     // Spawning
     G.spawnIn -= dy * TRAFFIC_REL;
     if (G.spawnIn <= 0) spawnRow();
 
-    // Traffic
+    // Traffic (hitboxes are a bit smaller than the cars, to be forgiving)
     for (const c of G.traffic) {
       c.y += dy * TRAFFIC_REL;
-      if (Math.abs(c.x - G.px) < cw * 0.82 && Math.abs(c.y - PLAYER_Y) < ch * 0.86) { crash(); return; }
+      if (!G.inv && Math.abs(c.x - G.px) < cw * 0.75 && Math.abs(c.y - PLAYER_Y) < ch * 0.8) {
+        hit();
+        if (G.state !== 'play') return;
+      }
     }
     G.traffic = G.traffic.filter((c) => c.y < 1 + ch);
 
-    // Coins
+    // Pickups
     for (const it of G.items) {
       it.y += dy; it.spin += dt * 5;
-      if (!it.taken && Math.abs(it.x - G.px) < cw * 0.9 && Math.abs(it.y - PLAYER_Y) < ch * 0.6) {
-        it.taken = true; G.coins++; beep(880, 0.08, 'square', 0.08); setTimeout(() => beep(1320, 0.12, 'square', 0.08), 70);
+      if (!it.taken && Math.abs(it.x - G.px) < cw * 0.95 && Math.abs(it.y - PLAYER_Y) < ch * 0.65) {
+        it.taken = true;
+        if (it.kind === 'heart') {
+          G.lives = Math.min(MAX_LIVES, G.lives + 1);
+          popup('+1 ♥', '#ff7eb6');
+          beep(660, 0.1, 'triangle', 0.1); setTimeout(() => beep(990, 0.18, 'triangle', 0.1), 90);
+        } else {
+          G.coins++;
+          popup('+50', '#ffd700');
+          beep(880, 0.08, 'square', 0.08); setTimeout(() => beep(1320, 0.12, 'square', 0.08), 70);
+        }
       }
     }
     G.items = G.items.filter((it) => !it.taken && it.y < 1.2);
@@ -411,9 +511,25 @@
     }
   }
 
-  function drawCoins() {
+  function heartPath(r) {
+    ctx.beginPath();
+    ctx.moveTo(0, r * 0.9);
+    ctx.bezierCurveTo(-r * 1.4, -r * 0.1, -r * 0.6, -r * 1.2, 0, -r * 0.45);
+    ctx.bezierCurveTo(r * 0.6, -r * 1.2, r * 1.4, -r * 0.1, 0, r * 0.9);
+    ctx.closePath();
+  }
+
+  function drawPickups() {
     for (const it of G.items) {
       const cx = roadX + it.x * roadW, cy = it.y * H, r = carW * 0.32;
+      if (it.kind === 'heart') {
+        const s = 1 + Math.sin(it.y * 40) * 0.08;
+        ctx.save(); ctx.translate(cx, cy); ctx.scale(s, s);
+        ctx.fillStyle = '#fff'; heartPath(r * 1.25); ctx.fill();
+        ctx.fillStyle = '#ff3b6b'; heartPath(r); ctx.fill();
+        ctx.restore();
+        continue;
+      }
       const sx = Math.abs(Math.cos(it.spin)) * 0.75 + 0.25;
       ctx.save(); ctx.translate(cx, cy); ctx.scale(sx, 1);
       ctx.fillStyle = '#b8860b'; ctx.beginPath(); ctx.arc(0, 0, r, 0, 7); ctx.fill();
@@ -440,12 +556,19 @@
     ctx.textBaseline = 'top';
     ctx.font = `800 ${fs}px system-ui, sans-serif`;
     ctx.fillStyle = 'rgba(0,0,0,0.45)';
-    roundRect(pad - 8, pad - 6, fs * 6.2, fs * 2.5, 10); ctx.fill();
+    roundRect(pad - 8, pad - 6, fs * 6.2, fs * 3.4, 10); ctx.fill();
     ctx.fillStyle = '#fff'; ctx.textAlign = 'left';
     ctx.fillText(String(G.score), pad, pad);
     ctx.font = `600 ${Math.round(fs * 0.62)}px system-ui, sans-serif`;
     ctx.fillStyle = '#ffcc00';
-    ctx.fillText(`${Math.round(G.speed * 60)} km/h  •  ${G.coins} coins`, pad, pad + fs * 1.15);
+    ctx.fillText(`${Math.round(G.speed * 60)} km/h  •  ${G.coins} coin${G.coins === 1 ? '' : 's'}`, pad, pad + fs * 1.15);
+
+    const hr = fs * 0.34;
+    for (let i = 0; i < MAX_LIVES; i++) {
+      ctx.save(); ctx.translate(pad + hr + i * hr * 2.7, pad + fs * 2.4 + hr);
+      ctx.fillStyle = i < G.lives ? '#ff3b6b' : 'rgba(255,255,255,0.25)'; heartPath(hr); ctx.fill();
+      ctx.restore();
+    }
 
     ctx.textAlign = 'right'; ctx.fillStyle = 'rgba(255,255,255,0.85)';
     ctx.fillText('BEST ' + G.best, W - pad, pad);
@@ -461,11 +584,36 @@
     ctx.save();
     if (G.shake > 0) { const m = G.shake * H * 0.04; ctx.translate((Math.random() - 0.5) * m, (Math.random() - 0.5) * m); }
     drawWorld();
-    drawCoins();
+    drawPickups();
     for (const c of G.traffic) drawCar(roadX + c.x * roadW, c.y * H, c.color, false);
-    drawCar(roadX + G.px * roadW, PLAYER_Y * H, '#e01b24', true);
+    if (!(G.inv > 0 && Math.floor(G.inv * 8) % 2)) drawCar(roadX + G.px * roadW, PLAYER_Y * H, '#e01b24', true);
     ctx.restore();
     if (G.flash > 0) { ctx.fillStyle = `rgba(255,255,255,${G.flash * 0.6})`; ctx.fillRect(0, 0, W, H); }
+
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    for (const p of G.popups) {
+      ctx.globalAlpha = Math.min(1, p.life * 2);
+      ctx.font = `800 ${Math.round(H * 0.06)}px system-ui, sans-serif`;
+      ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(0,0,0,0.6)';
+      ctx.strokeText(p.text, roadX + p.x * roadW, p.y * H);
+      ctx.fillStyle = p.color; ctx.fillText(p.text, roadX + p.x * roadW, p.y * H);
+    }
+    ctx.globalAlpha = 1;
+
+    if (G.state === 'countdown') {
+      const n = Math.ceil(G.countdown);
+      const f = G.countdown - Math.floor(G.countdown);
+      ctx.save(); ctx.translate(W / 2, H * 0.4); ctx.scale(1 + f * 0.4, 1 + f * 0.4);
+      ctx.font = `900 ${Math.round(H * 0.22)}px system-ui, sans-serif`;
+      ctx.lineWidth = 8; ctx.strokeStyle = 'rgba(0,0,0,0.55)'; ctx.strokeText(String(n), 0, 0);
+      ctx.fillStyle = '#ffcc00'; ctx.fillText(String(n), 0, 0);
+      ctx.restore();
+      ctx.font = `700 ${Math.round(H * 0.05)}px system-ui, sans-serif`;
+      ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(0,0,0,0.55)';
+      ctx.strokeText('Hold your phone steady', W / 2, H * 0.58);
+      ctx.fillStyle = '#fff'; ctx.fillText('Hold your phone steady', W / 2, H * 0.58);
+    }
+
     if (G.state !== 'menu') drawHUD();
   }
 
@@ -497,13 +645,13 @@
         m.classList.remove('hidden');
       }
     });
-    // Give the first sensor reading a moment to arrive before calibrating.
+    // Short countdown: lets players settle their grip while steering calibrates.
     const wasPaused = G.state === 'paused';
     if (!wasPaused) reset();
-    G.state = 'play';
+    G.state = 'countdown';
+    G.countdown = wasPaused ? 1.5 : COUNTDOWN;
     show(null);
-    setTimeout(calibrate, 150);
-    beep(440, 0.1, 'triangle', 0.1); setTimeout(() => beep(660, 0.15, 'triangle', 0.1), 110);
+    beep(440, 0.12, 'triangle', 0.1);
   }
 
   $('startBtn').addEventListener('click', startOrResume);
@@ -512,7 +660,7 @@
 
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) {
-      if (G.state === 'play') { G.state = 'paused'; show('paused'); }
+      if (G.state === 'play' || G.state === 'countdown') { G.state = 'paused'; show('paused'); }
     } else {
       keepAwake();
     }
