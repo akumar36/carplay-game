@@ -1,0 +1,8 @@
+// Cloudflare Workers config: serve this folder as a static site (no server code).
+{
+  "name": "carplay-game",
+  "compatibility_date": "2025-09-01",
+  "assets": {
+    "directory": "."
+  }
+}
