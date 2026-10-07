@@ -58,7 +58,7 @@
     filter: drop-shadow(0 0 12px rgba(255, 211, 25, 0.45));
   }
   button {
-    font: inherit; font-size: clamp(16px, 4.5vh, 24px); font-weight: 800; padding: 0.7em 1.9em; border: 0;
+    font: inherit; font-size: clamp(20px, 6vh, 30px); font-weight: 800; padding: 0.7em 1.9em; border: 0;
     border-radius: 999px; color: #fff; cursor: pointer; margin-top: 6px; letter-spacing: 0.5px;
     background: linear-gradient(90deg, #ff2975, #ff901f);
     box-shadow: 0 0 22px rgba(255, 41, 117, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.35);
@@ -100,23 +100,41 @@
     font-weight: 700; font-size: clamp(14px, 3.6vh, 18px);
   }
   .igBtn .ig-logo { width: 32px; height: 32px; border-radius: 10px; }
-  .homeLink { font-size: 13px; font-weight: 700; color: #fff; opacity: 0.75; text-decoration: none; }
+  /* Big touch targets: these games are meant for car screens too */
+  .actions { display: flex; gap: 14px; align-items: center; justify-content: center; flex-wrap: wrap; }
+  .actions button { margin: 0; }
+  .actions .homeLink {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 56px; min-width: 56px;
+    padding: 0 22px; border-radius: 999px; font-size: clamp(17px, 4.8vh, 22px); font-weight: 800; color: #fff;
+    text-decoration: none; background: rgba(0, 0, 0, 0.35); border: 2px solid rgba(255, 255, 255, 0.4);
+  }
+  .actions .homeLink:active { transform: scale(0.96); }
+  .actions .homeLink svg { width: 24px; height: 24px; flex: none; }
+  @media (max-width: 640px) {
+    .actions .homeLink { padding: 0; width: 56px; }
+    .actions .homeLink span { display: none; }
+  }
+  /* Keep menu content below the top buttons and between the side badges (--side is set from JS) */
+  .overlay { padding: 78px calc(var(--side, 0px) + 16px) 14px; }
+  @media (max-height: 420px) { .overlay { gap: 6px; } }
+  @media (max-height: 360px) { .overlay p.small:not(.byline) { display: none; } }
   #topBar {
     position: fixed; top: max(8px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); z-index: 16;
     display: flex; gap: 8px;
   }
   #soundBtn, #themeBtn {
-    white-space: nowrap; font: 700 13px system-ui, sans-serif; color: #fff; background: rgba(18, 6, 42, 0.6); border: 1px solid rgba(255, 41, 117, 0.6);
+    white-space: nowrap; font: 700 17px system-ui, sans-serif; color: #fff; background: rgba(18, 6, 42, 0.6); border: 1px solid rgba(255, 41, 117, 0.6);
     box-shadow: 0 0 12px rgba(255, 41, 117, 0.35); animation: none; letter-spacing: 0;
-    padding: 6px 14px; margin: 0; border-radius: 999px; cursor: pointer;
+    min-height: 56px; padding: 0 20px; margin: 0; border-radius: 999px; cursor: pointer;
   }
   #fsBtn {
     position: fixed; top: max(8px, env(safe-area-inset-top)); right: max(10px, env(safe-area-inset-right)); z-index: 16;
-    width: 38px; height: 38px; padding: 0; margin: 0; display: flex; align-items: center; justify-content: center;
+    width: 56px; height: 56px; padding: 0; margin: 0; display: flex; align-items: center; justify-content: center;
     border-radius: 12px; color: #fff; cursor: pointer; animation: none;
     background: rgba(18, 6, 42, 0.6); border: 1px solid rgba(255, 41, 117, 0.6); box-shadow: 0 0 12px rgba(255, 41, 117, 0.35);
   }
-  #fsBtn svg { width: 20px; height: 20px; }
+  #fsBtn svg { width: 28px; height: 28px; }
+  body.playing #topBar { display: none; }
   .copyright { font-size: 11px; opacity: 0.6; margin-top: 4px; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6); }
   .byline a { color: var(--cyan); font-weight: 700; text-decoration: none; }
 
@@ -224,11 +242,10 @@
   <p class="byline small">by <a href="https://www.instagram.com/seltos.gtx/" target="_blank" rel="noopener">@seltos.gtx</a></p>
   <p>Hold your phone sideways like a steering wheel and <b>tilt to steer</b>.
      Dodge traffic, grab coins and hearts. You have <b>3 lives</b>.</p>
-  <button id="startBtn">Tap to start</button>
+  <div class="actions"><button id="startBtn">Tap to start</button><a class="homeLink" href="../" aria-label="All games"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg><span>All games</span></a></div>
   <p class="small">No tilt sensor? Use ← → / A D keys, or touch the left or right half of the screen.</p>
   <p id="iosHint" class="small hidden">No sound? Turn off your iPhone's silent switch.</p>
   <p id="menuMsg" class="msg hidden"></p>
-  <a class="homeLink" href="../">← All games</a>
   <p class="copyright">© 2026 @seltos.gtx · All rights reserved</p>
 </div>
 
@@ -236,18 +253,17 @@
   <p>GAME OVER</p>
   <div class="big" id="finalScore">0</div>
   <p id="bestLine"></p>
-  <button id="againBtn">Play again</button>
+  <div class="actions"><button id="againBtn">Play again</button><a class="homeLink" href="../" aria-label="All games"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg><span>All games</span></a></div>
   <a class="igBtn" href="https://www.instagram.com/seltos.gtx/" target="_blank" rel="noopener">
     <span class="ig-logo"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.4" cy="6.6" r="1.1" fill="#fff" stroke="none"/></svg></span>
     Follow @seltos.gtx
   </a>
-  <a class="homeLink" href="../">← All games</a>
   <p class="copyright">© 2026 @seltos.gtx · All rights reserved</p>
 </div>
 
 <div id="paused" class="overlay hidden">
   <h1>Paused</h1>
-  <button id="resumeBtn">Resume</button>
+  <div class="actions"><button id="resumeBtn">Resume</button><a class="homeLink" href="../" aria-label="All games"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg><span>All games</span></a></div>
 </div>
 
 <div id="rotate" class="overlay">
@@ -290,6 +306,8 @@
     carW = Math.min(carH * 0.56, laneW * 0.7);
     placeBrand();
     placeAd();
+    const side = roadX - Math.max(6, roadW * 0.025);
+    document.documentElement.style.setProperty('--side', (side >= 84 ? side : 0) + 'px');
   }
 
   // Centre the Instagram badge in the grass to the left of the road.
@@ -1239,7 +1257,7 @@
     }
 
     ctx.textAlign = 'right'; ctx.fillStyle = T.best;
-    const hudRight = W - pad - (fsSupported ? 48 : 0);
+    const hudRight = W - pad - (fsSupported ? 66 : 0);
     ctx.fillText('BEST ' + G.best, hudRight, pad);
     const mode = input.source === 'none' ? (isTouch ? 'touch' : 'keys') : 'tilt';
     ctx.fillStyle = 'rgba(255,255,255,0.55)';
@@ -1304,7 +1322,10 @@
   requestAnimationFrame(frame);
 
   // ---------- UI flow ----------
-  function show(id) { for (const o of ['menu', 'over', 'paused']) $(o).classList.toggle('hidden', o !== id); }
+  function show(id) {
+    for (const o of ['menu', 'over', 'paused']) $(o).classList.toggle('hidden', o !== id);
+    document.body.classList.toggle('playing', !id);   // settings buttons hide while racing
+  }
 
   function startOrResume() {
     const permission = requestSensorPermission();   // must be first, inside the gesture
