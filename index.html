@@ -1,0 +1,250 @@
+<!doctype html>
+<!--
+  CarPlay Games
+  Copyright (c) 2026 @seltos.gtx (https://www.instagram.com/seltos.gtx/). All rights reserved.
+  Copying, modifying or redistributing this code without permission is not allowed.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="CarPlay Games">
+<meta name="theme-color" content="#12062a">
+<meta name="description" content="Free tilt-to-play browser games by @seltos.gtx.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-180.png">
+<title>CarPlay Games</title>
+<style>
+  :root { --fg: #fff; --accent: #ffd319; --pink: #ff2975; --cyan: #00e5ff; --purple: #8c1eff; --card: rgba(18, 6, 42, 0.72); }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html { background: #12062a; }
+  body {
+    margin: 0; min-height: 100vh; color: var(--fg);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background:
+      radial-gradient(ellipse 90% 45% at 50% 100%, rgba(255, 41, 117, 0.35), transparent 70%),
+      linear-gradient(180deg, #12062a 0%, #2b0a4e 70%, #46105a 100%) fixed;
+    padding: max(20px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  }
+  /* Faint neon grid along the bottom of the page */
+  body::before {
+    content: ""; position: fixed; left: 0; right: 0; bottom: 0; height: 38vh; z-index: -1; pointer-events: none;
+    background:
+      repeating-linear-gradient(90deg, rgba(255, 41, 117, 0.18) 0 1px, transparent 1px 56px),
+      repeating-linear-gradient(0deg, rgba(255, 41, 117, 0.18) 0 1px, transparent 1px 56px);
+    -webkit-mask-image: linear-gradient(0deg, #000, transparent); mask-image: linear-gradient(0deg, #000, transparent);
+  }
+  main { max-width: 980px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
+  a { color: inherit; }
+
+  header { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  h1 {
+    margin: 0; font-size: clamp(32px, 8vw, 58px); letter-spacing: 2px; font-weight: 900; font-style: italic; line-height: 1.05;
+    background: linear-gradient(180deg, #ffffff 0%, #fff3a0 30%, #ffd319 48%, #ff2975 78%, #c23cff 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    filter: drop-shadow(0 0 14px rgba(255, 41, 117, 0.55));
+  }
+  .byline { margin: 0; font-size: 14px; opacity: 0.85; }
+  .byline a { color: var(--cyan); font-weight: 700; text-decoration: none; }
+  .tagline { margin: 0; font-size: 15px; opacity: 0.75; max-width: 34em; line-height: 1.4; }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
+  .card {
+    display: flex; flex-direction: column; border-radius: 18px; overflow: hidden; text-decoration: none;
+    background: var(--card); border: 1px solid rgba(255, 255, 255, 0.14);
+    box-shadow: 0 0 22px rgba(140, 30, 255, 0.28); transition: transform 0.15s, box-shadow 0.15s;
+  }
+  a.card:hover, a.card:focus-visible { transform: translateY(-3px); box-shadow: 0 0 30px rgba(255, 41, 117, 0.5); outline: none; }
+  a.card:active { transform: scale(0.98); }
+  .thumb { display: block; width: 100%; aspect-ratio: 16 / 9; background: #120b24; }
+  .thumb svg { display: block; width: 100%; height: 100%; }
+  .info { padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
+  .info h2 { margin: 0; font-size: 20px; font-weight: 900; font-style: italic; letter-spacing: 0.5px; }
+  .info p { margin: 0; font-size: 14px; opacity: 0.8; line-height: 1.4; }
+  .tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .tags span {
+    font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 999px;
+    background: rgba(0, 229, 255, 0.12); color: #6ff7ff; border: 1px solid rgba(0, 229, 255, 0.35);
+  }
+  .play {
+    margin-top: auto; align-self: flex-start; font-weight: 800; font-size: 15px; padding: 9px 22px; border-radius: 999px; color: #fff;
+    background: linear-gradient(90deg, #ff2975, #ff901f); box-shadow: 0 0 18px rgba(255, 41, 117, 0.5);
+  }
+  .soon { border-style: dashed; box-shadow: none; opacity: 0.7; }
+  .soon .thumb { display: flex; align-items: center; justify-content: center; font-size: 42px; background: rgba(255, 255, 255, 0.04); }
+
+  /* Branding */
+  .ig-logo {
+    display: inline-flex; align-items: center; justify-content: center; flex: none;
+    width: 32px; height: 32px; border-radius: 10px;
+    background: radial-gradient(circle at 30% 107%, #fdf497 0%, #fdf497 5%, #fd5949 45%, #d6249f 60%, #285aeb 90%);
+  }
+  .ig-logo svg { width: 64%; height: 64%; }
+  .brandRow { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; align-items: stretch; }
+  .igBtn {
+    display: inline-flex; align-items: center; gap: 10px; padding: 8px 18px 8px 8px; border-radius: 999px;
+    background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.18); text-decoration: none;
+    font-weight: 700; font-size: 15px; align-self: center;
+  }
+  .igBtn small { display: block; font-size: 9px; font-weight: 800; letter-spacing: 1.5px; opacity: 0.7; }
+
+  /* "Ad space" billboard, matching the one in the games */
+  #adBanner { display: block; text-decoration: none; color: #fff; }
+  #adBanner .board {
+    position: relative; display: flex; align-items: center; gap: 12px; padding: 10px 18px; border-radius: 14px;
+    border: 2px solid transparent; overflow: hidden;
+    background:
+      linear-gradient(160deg, #1a1030, #0d0b1a) padding-box,
+      linear-gradient(90deg, #ff2fd0, #ffcc00, #00e5ff, #ff2fd0, #ffcc00) border-box;
+    background-size: 100% 100%, 300% 100%;
+    animation: adBorder 4s linear infinite, adGlow 2.4s ease-in-out infinite;
+  }
+  #adBanner .board::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(110deg, transparent 35%, rgba(255,255,255,0.18) 50%, transparent 65%);
+    transform: translateX(-120%); animation: adSweep 3.5s ease-in-out infinite;
+  }
+  #adBanner .tag {
+    font-size: 9px; font-weight: 800; letter-spacing: 1.5px; white-space: nowrap; padding: 2px 7px; border-radius: 999px;
+    background: #ff2fd0; color: #fff; box-shadow: 0 0 10px #ff2fd0;
+  }
+  #adBanner .main {
+    font-size: 17px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap;
+    background: linear-gradient(90deg, #ffcc00, #fff, #00e5ff, #ffcc00); background-size: 300% 100%;
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    animation: adText 3s linear infinite;
+  }
+  #adBanner .cta { font-size: 11px; font-weight: 600; opacity: 0.85; white-space: nowrap; }
+  #adBanner .cta b { color: #00e5ff; font-weight: 800; }
+  @keyframes adBorder { to { background-position: 0 0, 300% 0; } }
+  @keyframes adGlow {
+    0%, 100% { box-shadow: 0 0 8px rgba(255, 47, 208, 0.45), 0 0 18px rgba(0, 229, 255, 0.15); }
+    50% { box-shadow: 0 0 14px rgba(255, 204, 0, 0.6), 0 0 28px rgba(255, 47, 208, 0.35); }
+  }
+  @keyframes adSweep { 0%, 55% { transform: translateX(-120%); } 85%, 100% { transform: translateX(120%); } }
+  @keyframes adText { to { background-position: 300% 0; } }
+  @media (prefers-reduced-motion: reduce) {
+    #adBanner .board, #adBanner .board::after, #adBanner .main { animation: none; }
+    .card { transition: none; }
+  }
+  footer { text-align: center; display: flex; flex-direction: column; gap: 6px; align-items: center; }
+  .copyright { margin: 0; font-size: 11px; opacity: 0.6; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>CARPLAY GAMES</h1>
+    <p class="byline">by <a href="https://www.instagram.com/seltos.gtx/" target="_blank" rel="noopener">@seltos.gtx</a></p>
+    <p class="tagline">Free games you play by tilting your phone. No downloads, no sign-up. Just tap and play.</p>
+  </header>
+
+  <section class="grid" id="games" aria-label="Games"></section>
+
+  <div class="brandRow">
+    <a class="igBtn" href="https://www.instagram.com/seltos.gtx/" target="_blank" rel="noopener">
+      <span class="ig-logo"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.4" cy="6.6" r="1.1" fill="#fff" stroke="none"/></svg></span>
+      <span><small>DEVELOPED BY</small>@seltos.gtx</span>
+    </a>
+    <a id="adBanner" href="https://www.instagram.com/seltos.gtx/" target="_blank" rel="noopener" aria-label="Advertise here: contact @seltos.gtx on Instagram">
+      <span class="board">
+        <span class="tag">AD SPACE</span>
+        <span class="main">Your brand here</span>
+        <span class="cta">Contact <b>@seltos.gtx</b></span>
+      </span>
+    </a>
+  </div>
+
+  <footer>
+    <p class="copyright">© 2026 @seltos.gtx · All rights reserved</p>
+  </footer>
+</main>
+
+<script>
+(() => {
+  'use strict';
+
+  // The game list. To add a game, put it in its own folder and add an entry here.
+  const GAMES = [
+    {
+      title: 'CarPlay Racer',
+      href: 'racer/',
+      desc: 'Tilt your phone like a steering wheel to dodge traffic, grab coins and hearts. Neon or classic look, with synthwave music.',
+      tags: ['Tilt to steer', 'Landscape', '3 lives'],
+      thumb: `<svg viewBox="0 0 320 180" aria-hidden="true">
+        <defs>
+          <linearGradient id="rSide" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3a0d5e"/><stop offset="1" stop-color="#0e0420"/></linearGradient>
+          <linearGradient id="rRoad" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#120b24"/><stop offset=".5" stop-color="#231840"/><stop offset="1" stop-color="#120b24"/></linearGradient>
+          <linearGradient id="rCar" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#8c1640"/><stop offset=".5" stop-color="#ff6a9a"/><stop offset="1" stop-color="#8c1640"/></linearGradient>
+          <radialGradient id="rGlow"><stop offset=".55" stop-color="#00e5ff" stop-opacity=".45"/><stop offset="1" stop-color="#00e5ff" stop-opacity="0"/></radialGradient>
+        </defs>
+        <rect width="320" height="180" fill="url(#rSide)"/>
+        <g stroke="#ff2975" stroke-opacity=".3" stroke-width="1">
+          <path d="M0 30H90M0 70H90M0 110H90M0 150H90M230 30H320M230 70H320M230 110H320M230 150H320M40 0V180M270 0V180"/>
+        </g>
+        <rect x="90" width="140" height="180" fill="url(#rRoad)"/>
+        <rect x="88.5" width="3" height="180" fill="#6ff7ff"/><rect x="228.5" width="3" height="180" fill="#6ff7ff"/>
+        <g fill="#ff8fd0"><rect x="124" y="10" width="3" height="26"/><rect x="124" y="66" width="3" height="26"/><rect x="124" y="122" width="3" height="26"/>
+          <rect x="159" y="10" width="3" height="26"/><rect x="159" y="66" width="3" height="26"/><rect x="159" y="122" width="3" height="26"/>
+          <rect x="193" y="10" width="3" height="26"/><rect x="193" y="66" width="3" height="26"/><rect x="193" y="122" width="3" height="26"/></g>
+        <rect x="171" y="22" width="20" height="36" rx="6" fill="#00e5ff"/><rect x="174" y="44" width="14" height="6" rx="2" fill="#2a1d5c"/>
+        <rect x="100" y="52" width="20" height="36" rx="6" fill="#ffd319"/><rect x="103" y="74" width="14" height="6" rx="2" fill="#2a1d5c"/>
+        <circle cx="210" cy="92" r="7" fill="#ffd319"/><circle cx="210" cy="92" r="4.5" fill="#fff3a0"/>
+        <ellipse cx="144" cy="138" rx="22" ry="30" fill="url(#rGlow)"/>
+        <rect x="133" y="118" width="22" height="40" rx="7" fill="url(#rCar)"/>
+        <rect x="136" y="126" width="16" height="8" rx="3" fill="#2a1d5c"/>
+        <rect x="142" y="119" width="1.6" height="38" fill="#fff" opacity=".8"/><rect x="145" y="119" width="1.6" height="38" fill="#fff" opacity=".8"/>
+        <circle cx="45" cy="45" r="15" fill="#0c6a6e" opacity=".9"/><circle cx="275" cy="125" r="17" fill="#0c6a6e" opacity=".9"/>
+      </svg>`,
+    },
+    {
+      title: 'CarPlay Racer Lite',
+      href: 'racer-lite/',
+      desc: 'The original racer: a simple daytime look with no music, so it is extra light on older phones and battery.',
+      tags: ['Tilt to steer', 'Landscape', 'Lightest'],
+      thumb: `<svg viewBox="0 0 320 180" aria-hidden="true">
+        <rect width="320" height="180" fill="#3f8f3a"/>
+        <g fill="#378232"><rect y="0" width="320" height="45"/><rect y="90" width="320" height="45"/></g>
+        <rect x="90" width="140" height="180" fill="#4a4d52"/>
+        <g fill="#e8e8e8"><rect x="84" y="0" width="6" height="11"/><rect x="84" y="22" width="6" height="11"/><rect x="84" y="44" width="6" height="11"/><rect x="84" y="66" width="6" height="11"/><rect x="84" y="88" width="6" height="11"/><rect x="84" y="110" width="6" height="11"/><rect x="84" y="132" width="6" height="11"/><rect x="84" y="154" width="6" height="11"/><rect x="84" y="176" width="6" height="11"/>
+          <rect x="230" y="0" width="6" height="11"/><rect x="230" y="22" width="6" height="11"/><rect x="230" y="44" width="6" height="11"/><rect x="230" y="66" width="6" height="11"/><rect x="230" y="88" width="6" height="11"/><rect x="230" y="110" width="6" height="11"/><rect x="230" y="132" width="6" height="11"/><rect x="230" y="154" width="6" height="11"/><rect x="230" y="176" width="6" height="11"/></g>
+        <g fill="#d7263d"><rect x="84" y="11" width="6" height="11"/><rect x="84" y="33" width="6" height="11"/><rect x="84" y="55" width="6" height="11"/><rect x="84" y="77" width="6" height="11"/><rect x="84" y="99" width="6" height="11"/><rect x="84" y="121" width="6" height="11"/><rect x="84" y="143" width="6" height="11"/><rect x="84" y="165" width="6" height="11"/>
+          <rect x="230" y="11" width="6" height="11"/><rect x="230" y="33" width="6" height="11"/><rect x="230" y="55" width="6" height="11"/><rect x="230" y="77" width="6" height="11"/><rect x="230" y="99" width="6" height="11"/><rect x="230" y="121" width="6" height="11"/><rect x="230" y="143" width="6" height="11"/><rect x="230" y="165" width="6" height="11"/></g>
+        <g fill="#fff" opacity=".75"><rect x="124" y="10" width="3" height="26"/><rect x="124" y="66" width="3" height="26"/><rect x="124" y="122" width="3" height="26"/>
+          <rect x="159" y="10" width="3" height="26"/><rect x="159" y="66" width="3" height="26"/><rect x="159" y="122" width="3" height="26"/>
+          <rect x="193" y="10" width="3" height="26"/><rect x="193" y="66" width="3" height="26"/><rect x="193" y="122" width="3" height="26"/></g>
+        <rect x="171" y="22" width="20" height="36" rx="6" fill="#3d7bfd"/><rect x="174" y="44" width="14" height="6" rx="2" fill="#14202d"/>
+        <rect x="100" y="52" width="20" height="36" rx="6" fill="#f6d32d"/><rect x="103" y="74" width="14" height="6" rx="2" fill="#14202d"/>
+        <circle cx="210" cy="92" r="7" fill="#b8860b"/><circle cx="210" cy="92" r="5.5" fill="#ffd700"/>
+        <rect x="133" y="118" width="22" height="40" rx="7" fill="#e01b24"/>
+        <rect x="136" y="126" width="16" height="8" rx="3" fill="#14202d"/>
+        <circle cx="47" cy="47" r="16" fill="#1f6b2a"/><circle cx="43" cy="43" r="9" fill="#2b8a38"/>
+        <circle cx="275" cy="125" r="18" fill="#1f6b2a"/><circle cx="271" cy="121" r="10" fill="#2b8a38"/>
+      </svg>`,
+    },
+  ];
+
+  const esc = (s) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const grid = document.getElementById('games');
+  grid.innerHTML = GAMES.map((g) => `
+    <a class="card" href="${esc(g.href)}">
+      <span class="thumb">${g.thumb}</span>
+      <span class="info">
+        <h2>${esc(g.title)}</h2>
+        <p>${esc(g.desc)}</p>
+        <span class="tags">${g.tags.map((t) => `<span>${esc(t)}</span>`).join('')}</span>
+        <span class="play">▶ Play</span>
+      </span>
+    </a>`).join('') + `
+    <div class="card soon" aria-label="More games coming soon">
+      <span class="thumb">🎮</span>
+      <span class="info"><h2>More games soon</h2><p>New games are on the way. Follow @seltos.gtx so you don't miss them.</p></span>
+    </div>`;
+})();
+</script>
+</body>
+</html>

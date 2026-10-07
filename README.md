@@ -1,12 +1,19 @@
-# CarPlay Racer
+# CarPlay Games
 
 by [@seltos.gtx](https://www.instagram.com/seltos.gtx/) on Instagram
 
-A lightweight browser racing game you steer by **tilting your phone**. It uses the phone's motion sensors through `DeviceOrientationEvent`. It's one HTML file with no dependencies and no build step.
+A collection of lightweight browser games you play by **tilting your phone**. They use the phone's motion sensors through `DeviceOrientationEvent`. Each game is a single HTML file with no dependencies and no build step.
 
 **Play:** https://carplay-game.seltosgtx.workers.dev/ (backup: https://akumar36.github.io/carplay-game/)
 
-## How to play
+The home page lists every game; tap one to play it.
+
+| Game | Link |
+|---|---|
+| CarPlay Racer | https://carplay-game.seltosgtx.workers.dev/racer/ |
+| CarPlay Racer Lite (the original, no music) | https://carplay-game.seltosgtx.workers.dev/racer-lite/ |
+
+## CarPlay Racer: how to play
 
 1. Open the link on your phone and rotate to **landscape**.
 2. Hold the phone like a steering wheel and tap **Tap to start**. On iPhone, tap **Allow** for motion access.
@@ -39,13 +46,21 @@ The site goes live at `https://akumar36.github.io/carplay-game/` within a minute
 
 ## Files
 
-- `index.html`: the whole game (canvas rendering, sensor input, UI)
-- `manifest.webmanifest`, `icon*`: home-screen / PWA metadata
+- `index.html`: the home page. The game list is the `GAMES` array near the bottom.
+- `racer/index.html`: CarPlay Racer (canvas rendering, sensor input, music and sound, Neon/Classic themes, UI)
+- `racer-lite/index.html`: CarPlay Racer Lite, the original single-theme racer with simple beeps
+- `beta/index.html`: redirects the old `/beta/` link to `/racer/`
+- `manifest.webmanifest`, `icon*`: home-screen / PWA metadata, shared by all games
 
-## Beta
+### Adding a game
 
-New features are tried out at `/beta/` (https://carplay-game.seltosgtx.workers.dev/beta/) before going to the main link.
-The current beta has a **fullscreen button** at the top right (or the F key; hidden on iPhone, whose Safari doesn't allow fullscreen for web pages), a **theme button** (🎨, or the T key) that switches between **Neon** and **Classic** (the original daytime look, polished), remembered per device. Neon is a **synthwave look** (purple night roadside with a scrolling neon grid, palm trees, glowing lanes, glossy cars with an underglow, sunset menus; cars, coins and palms are pre-rendered once so it stays light) and **music and sound**: a synthwave loop that is composed in code once while the menu is showing, then just replayed (no music file to download); an engine sound that follows your speed with gear shifts; and crash, coin and countdown sounds. The button at the top cycles *Sound on → Effects only → Muted*, and Muted switches audio processing off completely.
+1. Create a folder, e.g. `newgame/index.html`. Reference shared files with `../` (`../manifest.webmanifest`, `../icon.svg`) and keep the @seltos.gtx branding and copyright notice.
+2. Add a "← All games" link back to `../`.
+3. Add an entry to `GAMES` in the root `index.html`.
+
+## Racer controls
+
+Steer with tilt, ← → / A D, or touch. **T** switches theme (Neon / Classic), **M** cycles sound (*Sound on → Effects only → Muted*), **F** toggles fullscreen (the button is hidden on iPhone, whose Safari doesn't allow fullscreen for web pages). Theme and sound choices are remembered per device.
 
 ## License
 
