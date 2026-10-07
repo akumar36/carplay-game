@@ -1,0 +1,1045 @@
+<!doctype html>
+<!--
+  Neon Bricks (CarPlay Games)
+  Copyright (c) 2026 @seltos.gtx (https://www.instagram.com/seltos.gtx/). All rights reserved.
+  Copying, modifying or redistributing this code without permission is not allowed.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="CarPlay Games">
+<meta name="theme-color" content="#12062a">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="icon" href="../icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../icon-180.png">
+<title>Neon Bricks</title>
+<style>
+  :root { --fg: #fff; --accent: #ffd319; --pink: #ff2975; --cyan: #00e5ff; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; height: 100%; overflow: hidden; background: #12062a; color: var(--fg);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    touch-action: none; user-select: none; -webkit-user-select: none; overscroll-behavior: none;
+  }
+  canvas { position: fixed; inset: 0; width: 100vw; height: 100vh; display: block; }
+  .overlay {
+    position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 12px; padding: 24px; text-align: center; z-index: 10; overflow: hidden;
+    background:
+      radial-gradient(ellipse 80% 55% at 50% 115%, rgba(255, 41, 117, 0.5), transparent 70%),
+      linear-gradient(180deg, rgba(18, 6, 42, 0.9) 0%, rgba(43, 10, 78, 0.86) 70%, rgba(70, 12, 90, 0.84) 100%);
+  }
+  .hidden { display: none !important; }
+  h1 {
+    margin: 0; font-size: clamp(28px, 7.5vh, 60px); letter-spacing: 2px; font-weight: 900; font-style: italic;
+    background: linear-gradient(180deg, #ffffff 0%, #fff3a0 30%, #ffd319 48%, #ff2975 78%, #c23cff 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    filter: drop-shadow(0 0 14px rgba(255, 41, 117, 0.55)) drop-shadow(0 2px 0 rgba(18, 6, 42, 0.9));
+  }
+  p { margin: 0; font-size: clamp(13px, 3.4vh, 18px); opacity: 0.9; max-width: 34em; line-height: 1.4; }
+  .big {
+    font-size: clamp(36px, 11vh, 80px); font-weight: 900; font-style: italic; color: transparent;
+    background: linear-gradient(180deg, #fff3a0, #ffd319 45%, #ff2975); -webkit-background-clip: text; background-clip: text;
+  }
+  button {
+    font: inherit; font-size: clamp(20px, 6vh, 30px); font-weight: 800; padding: 0.7em 1.9em; border: 0;
+    border-radius: 999px; color: #fff; cursor: pointer; margin-top: 6px; letter-spacing: 0.5px;
+    background: linear-gradient(90deg, #ff2975, #ff901f);
+    box-shadow: 0 0 22px rgba(255, 41, 117, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  }
+  .small { font-size: 13px; opacity: 0.65; }
+  .msg { color: #ff8a80; font-weight: 600; }
+  .copyright { font-size: 11px; opacity: 0.6; margin-top: 4px; }
+  .byline a { color: var(--cyan); font-weight: 700; text-decoration: none; }
+  /* Big touch targets: these games are meant for car screens too */
+  .actions { display: flex; gap: 14px; align-items: center; justify-content: center; flex-wrap: wrap; }
+  .actions button { margin: 0; }
+  .actions .homeLink {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 56px; min-width: 56px;
+    padding: 0 22px; border-radius: 999px; font-size: clamp(17px, 4.8vh, 22px); font-weight: 800; color: #fff;
+    text-decoration: none; background: rgba(0, 0, 0, 0.35); border: 2px solid rgba(255, 255, 255, 0.4);
+  }
+  .actions .homeLink:active { transform: scale(0.96); }
+  .actions .homeLink svg { width: 24px; height: 24px; flex: none; }
+  @media (max-width: 640px) {
+    .actions .homeLink { padding: 0; width: 56px; }
+    .actions .homeLink span { display: none; }
+  }
+  /* Keep menu content below the top buttons and between the side badges (--side is set from JS) */
+  .overlay { padding: 78px calc(var(--side, 0px) + 16px) 14px; }
+  @media (max-height: 420px) { .overlay { gap: 6px; } }
+  @media (max-height: 360px) { .overlay p.small:not(.byline) { display: none; } }
+  #rotate { display: none; z-index: 20; background: #12062a; }
+  #rotate .phone {
+    width: 44px; height: 76px; border: 4px solid var(--cyan); border-radius: 9px;
+    animation: turn 1.8s ease-in-out infinite;
+  }
+  @keyframes turn { 0%, 30% { transform: rotate(0); } 60%, 100% { transform: rotate(-90deg); } }
+  @media (orientation: portrait) and (pointer: coarse) { #rotate { display: flex; } }
+
+  #topBar { position: fixed; top: max(8px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); z-index: 16; }
+  #soundBtn, #fsBtn {
+    font: 700 17px system-ui, sans-serif; color: #fff; background: rgba(18, 6, 42, 0.6);
+    border: 1px solid rgba(255, 41, 117, 0.6); box-shadow: none; margin: 0; cursor: pointer;
+  }
+  #soundBtn { min-height: 56px; padding: 0 22px; border-radius: 999px; white-space: nowrap; }
+  #fsBtn {
+    position: fixed; top: max(8px, env(safe-area-inset-top)); right: max(10px, env(safe-area-inset-right)); z-index: 16;
+    width: 56px; height: 56px; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 12px;
+  }
+  #fsBtn svg { width: 28px; height: 28px; }
+  body.playing #topBar { display: none; }
+
+  /* Instagram branding, in the space left of the playfield */
+  .ig-logo {
+    display: inline-flex; align-items: center; justify-content: center; flex: none;
+    width: 40px; height: 40px; border-radius: 12px;
+    background: radial-gradient(circle at 30% 107%, #fdf497 0%, #fdf497 5%, #fd5949 45%, #d6249f 60%, #285aeb 90%);
+  }
+  .ig-logo svg { width: 64%; height: 64%; }
+  #brand {
+    position: fixed; top: 50%; left: 12px; transform: translateY(-50%); z-index: 15;
+    display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 8px;
+    border-radius: 18px; background: rgba(18, 6, 42, 0.6); color: #fff; text-decoration: none;
+    border: 1px solid rgba(255, 255, 255, 0.14); text-align: center;
+  }
+  #brand .handle { font-weight: 800; font-size: 14px; white-space: nowrap; }
+  #brand .dev { font-size: 9px; font-weight: 800; letter-spacing: 1.5px; opacity: 0.75; white-space: nowrap; }
+  #brand .follow { font-size: 11px; font-weight: 600; opacity: 0.85; }
+  .igBtn {
+    display: inline-flex; align-items: center; gap: 10px; padding: 0.45em 1.2em 0.45em 0.5em;
+    border-radius: 999px; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.18); color: #fff; text-decoration: none;
+    font-weight: 700; font-size: clamp(14px, 3.6vh, 18px);
+  }
+  .igBtn .ig-logo { width: 32px; height: 32px; border-radius: 10px; }
+
+  /* "Ad space" billboard, right of the playfield */
+  #adBanner {
+    position: fixed; top: 50%; right: 12px; transform: translateY(-50%); z-index: 15;
+    display: flex; flex-direction: column; align-items: center; text-decoration: none; color: #fff;
+  }
+  #adBanner .board {
+    position: relative; width: 100%; padding: 10px 8px 9px; border-radius: 14px; text-align: center;
+    border: 2px solid transparent;
+    background:
+      linear-gradient(160deg, #1a1030, #0d0b1a) padding-box,
+      linear-gradient(90deg, #ff2fd0, #ffcc00, #00e5ff, #ff2fd0, #ffcc00) border-box;
+    background-size: 100% 100%, 300% 100%;
+    animation: adBorder 4s linear infinite, adGlow 2.4s ease-in-out infinite;
+    display: flex; flex-direction: column; align-items: center; gap: 4px; overflow: hidden;
+  }
+  #adBanner .board::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(110deg, transparent 35%, rgba(255,255,255,0.18) 50%, transparent 65%);
+    transform: translateX(-120%); animation: adSweep 3.5s ease-in-out infinite;
+  }
+  #adBanner .tag {
+    font-size: 9px; font-weight: 800; letter-spacing: 1.5px; white-space: nowrap; padding: 2px 7px; border-radius: 999px;
+    background: #ff2fd0; color: #fff; box-shadow: 0 0 10px #ff2fd0;
+  }
+  #adBanner .main {
+    font-size: 17px; font-weight: 900; line-height: 1.05; text-transform: uppercase; letter-spacing: 0.5px;
+    background: linear-gradient(90deg, #ffcc00, #fff, #00e5ff, #ffcc00); background-size: 300% 100%;
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    animation: adText 3s linear infinite;
+  }
+  #adBanner .cta { font-size: 10px; font-weight: 600; opacity: 0.85; line-height: 1.3; }
+  #adBanner .cta b { color: #00e5ff; font-weight: 800; }
+  #adBanner .legs { display: flex; justify-content: space-between; width: 56%; height: 14px; }
+  #adBanner .legs i { width: 5px; height: 100%; background: #6b5a45; border-radius: 0 0 2px 2px; }
+  @keyframes adBorder { to { background-position: 0 0, 300% 0; } }
+  @keyframes adGlow {
+    0%, 100% { box-shadow: 0 0 8px rgba(255, 47, 208, 0.45), 0 0 18px rgba(0, 229, 255, 0.15); }
+    50% { box-shadow: 0 0 14px rgba(255, 204, 0, 0.6), 0 0 28px rgba(255, 47, 208, 0.35); }
+  }
+  @keyframes adSweep { 0%, 55% { transform: translateX(-120%); } 85%, 100% { transform: translateX(120%); } }
+  @keyframes adText { to { background-position: 300% 0; } }
+  @media (prefers-reduced-motion: reduce) {
+    #adBanner .board, #adBanner .board::after, #adBanner .main { animation: none; }
+  }
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+
+<button id="fsBtn" class="hidden" type="button" aria-label="Enter fullscreen"></button>
+<div id="topBar"><button id="soundBtn" type="button" aria-label="Change sound setting">🔊 Sound on</button></div>
+
+<a id="brand" href="https://www.instagram.com/seltos.gtx/" target="_blank" rel="noopener">
+  <span class="dev">DEVELOPED BY</span>
+  <span class="ig-logo"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.4" cy="6.6" r="1.1" fill="#fff" stroke="none"/></svg></span>
+  <span class="handle">@seltos.gtx</span>
+  <span class="follow">Follow on Instagram</span>
+</a>
+
+<a id="adBanner" href="https://www.instagram.com/seltos.gtx/" target="_blank" rel="noopener" aria-label="Advertise here: contact @seltos.gtx on Instagram">
+  <span class="board">
+    <span class="tag">AD SPACE</span>
+    <span class="main">Your<br>brand<br>here</span>
+    <span class="cta">Contact<br><b>@seltos.gtx</b></span>
+  </span>
+  <span class="legs"><i></i><i></i></span>
+</a>
+
+<div id="menu" class="overlay">
+  <h1>NEON BRICKS</h1>
+  <p class="byline small">by <a href="https://www.instagram.com/seltos.gtx/" target="_blank" rel="noopener">@seltos.gtx</a></p>
+  <p>Hold your phone sideways like a steering wheel and <b>tilt to slide the paddle</b>.
+     Keep the ball in play, smash every brick and catch coins and hearts. You have <b>3 lives</b>.</p>
+  <div class="actions"><button id="startBtn">Tap to start</button><a class="homeLink" href="../" aria-label="All games"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg><span>All games</span></a></div>
+  <p class="small">No tilt sensor? Use ← → / A D keys, or touch the left or right half of the screen.</p>
+  <p id="menuMsg" class="msg hidden"></p>
+  <p class="copyright">© 2026 @seltos.gtx · All rights reserved</p>
+</div>
+
+<div id="over" class="overlay hidden">
+  <p>GAME OVER</p>
+  <div class="big" id="finalScore">0</div>
+  <p id="bestLine"></p>
+  <div class="actions"><button id="againBtn">Play again</button><a class="homeLink" href="../" aria-label="All games"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg><span>All games</span></a></div>
+  <a class="igBtn" href="https://www.instagram.com/seltos.gtx/" target="_blank" rel="noopener">
+    <span class="ig-logo"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.4" cy="6.6" r="1.1" fill="#fff" stroke="none"/></svg></span>
+    Follow @seltos.gtx
+  </a>
+  <p class="copyright">© 2026 @seltos.gtx · All rights reserved</p>
+</div>
+
+<div id="paused" class="overlay hidden">
+  <h1>Paused</h1>
+  <div class="actions"><button id="resumeBtn">Resume</button><a class="homeLink" href="../" aria-label="All games"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg><span>All games</span></a></div>
+</div>
+
+<div id="rotate" class="overlay">
+  <div class="phone"></div>
+  <p>Rotate your phone to <b>landscape</b>.</p>
+  <p class="small">On iPhone, turn off Portrait Orientation Lock in Control Center.</p>
+</div>
+
+<script>
+(() => {
+  'use strict';
+
+  // ---------- Setup ----------
+  // Field units: the playfield is 1 unit wide and FH units tall; everything in the game lives in these units.
+  const cvs = document.getElementById('game');
+  const ctx = cvs.getContext('2d');
+  const $ = (id) => document.getElementById(id);
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const D2R = Math.PI / 180;
+  const SENSITIVITY = 0.36;      // ~21 degrees of tilt = full speed
+  const DEAD_ZONE = 0.07;
+  const PADDLE_SPEED = 1.5;      // field widths per second at full tilt
+  const PADDLE_W = 0.18, WIDE_W = 0.27, PADDLE_H = 0.024;
+  const BALL_R = 0.014;
+  const COLS = 10, BRICK_GAP = 0.008, BRICK_H = 0.034;
+  const MAX_LIVES = 3, COUNTDOWN = 2.4, SERVE_TIME = 1.2, WIDE_TIME = 12;
+  const isTouch = matchMedia('(pointer: coarse)').matches;
+
+  let W = 0, H = 0, FW = 0, FX = 0, FH = 1;
+
+  function resize() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth; H = window.innerHeight;
+    cvs.width = Math.round(W * dpr); cvs.height = Math.round(H * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    FW = Math.min(W * 0.62, H * 1.3);
+    FX = (W - FW) / 2;
+    FH = H / FW;
+    placeSide($('brand'), 'left', 150);
+    placeSide($('adBanner'), 'right', 140);
+    document.documentElement.style.setProperty('--side', (FX - 6 >= 84 ? FX - 6 : 0) + 'px');
+  }
+
+  // Badge and billboard sit centred in the space beside the playfield, and hide if there's no room.
+  function placeSide(el, side, maxW) {
+    const margin = FX - 6;
+    if (margin < 84) { el.classList.add('hidden'); return; }
+    el.classList.remove('hidden');
+    const bw = Math.min(margin - 16, maxW);
+    el.style.width = bw + 'px';
+    el.style[side] = (margin - bw) / 2 + 'px';
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  // ---------- Storage ----------
+  function load(key, fallback) { try { const v = localStorage.getItem(key); return v == null ? fallback : v; } catch (e) { return fallback; } }
+  function save(key, v) { try { localStorage.setItem(key, String(v)); } catch (e) {} }
+
+  // ---------- Audio (tiny synth blips) ----------
+  let ac = null, muted = load('bricksSound', 'on') === 'off';
+  function initAudio() {
+    if (muted) return;
+    try {
+      ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+      if (ac.state === 'suspended') ac.resume();
+    } catch (e) { ac = null; }
+  }
+  function beep(freq, dur, type = 'sine', vol = 0.12, slide = 0) {
+    if (!ac || muted) return;
+    try {
+      const t = ac.currentTime, o = ac.createOscillator(), g = ac.createGain();
+      o.type = type; o.frequency.setValueAtTime(freq, t);
+      if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(20, freq + slide), t + dur);
+      g.gain.setValueAtTime(vol, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(g).connect(ac.destination); o.start(t); o.stop(t + dur);
+    } catch (e) {}
+  }
+  function setMuted(m) {
+    muted = m; save('bricksSound', m ? 'off' : 'on');
+    $('soundBtn').textContent = m ? '🔇 Muted' : '🔊 Sound on';
+    if (m && ac) try { ac.suspend(); } catch (e) {}
+    if (!m) initAudio();
+  }
+
+  // ---------- Input (same tilt model as CarPlay Racer) ----------
+  const input = {
+    tilt: null,        // sideways component of "up" in screen coordinates (-1..1)
+    neutral: null,     // calibrated tilt at start
+    source: 'none',    // 'orientation' | 'motion' | 'none'
+    steer: 0,          // smoothed steering, -1 (left) .. 1 (right)
+    left: false, right: false, touch: 0,
+  };
+
+  function screenAngle() {
+    const so = screen.orientation;
+    let a = so && typeof so.angle === 'number' ? so.angle : (window.orientation || 0);
+    // Some browsers report 0 even when the page is landscape; assume the common landscape rotation.
+    if (a % 180 === 0 && window.innerWidth > window.innerHeight) a = 90;
+    return a * D2R;
+  }
+
+  // Project the world "up" vector (in device coords) onto the screen's horizontal axis.
+  function upToScreenX(ux, uy) {
+    const a = screenAngle();
+    return ux * Math.cos(a) - uy * Math.sin(a);
+  }
+
+  function onOrientation(e) {
+    if (e.beta == null || e.gamma == null) return;
+    const b = e.beta * D2R, g = e.gamma * D2R;
+    const ux = -Math.cos(b) * Math.sin(g);
+    const uy = Math.sin(b);
+    input.tilt = upToScreenX(ux, uy);
+    input.source = 'orientation';
+  }
+
+  function onMotion(e) {
+    if (input.source === 'orientation') return; // prefer the fused orientation sensor
+    const a = e.accelerationIncludingGravity;
+    if (!a || a.x == null) return;
+    const n = Math.hypot(a.x, a.y, a.z) || 1;
+    input.tilt = upToScreenX(a.x / n, a.y / n);
+    input.source = 'motion';
+  }
+
+  let sensorsAttached = false;
+  function attachSensors() {
+    if (sensorsAttached) return;
+    sensorsAttached = true;
+    window.addEventListener('deviceorientation', onOrientation);
+    window.addEventListener('devicemotion', onMotion);
+  }
+
+  function requestSensorPermission() {
+    // iOS 13+: must be called synchronously inside a user gesture.
+    const DOE = window.DeviceOrientationEvent, DME = window.DeviceMotionEvent;
+    let p = null;
+    if (DOE && typeof DOE.requestPermission === 'function') p = DOE.requestPermission();
+    else if (DME && typeof DME.requestPermission === 'function') p = DME.requestPermission();
+    return p ? p.catch(() => 'denied') : Promise.resolve('granted');
+  }
+
+  function updateSteer(dt) {
+    let target = 0;
+    if (input.tilt != null) {
+      if (input.neutral == null || G.state === 'countdown') input.neutral = input.tilt;
+      let d = -(input.tilt - input.neutral) / SENSITIVITY;
+      d = Math.abs(d) < DEAD_ZONE ? 0 : (d - Math.sign(d) * DEAD_ZONE) / (1 - DEAD_ZONE);
+      target = clamp(d, -1, 1);
+    }
+    const manual = (input.right ? 1 : 0) - (input.left ? 1 : 0) + input.touch;
+    if (manual) target = clamp(manual, -1, 1);
+    input.steer += (target - input.steer) * Math.min(1, dt * 14);
+  }
+
+  const keyMap = { ArrowLeft: 'left', a: 'left', A: 'left', ArrowRight: 'right', d: 'right', D: 'right' };
+  window.addEventListener('keydown', (e) => {
+    if (keyMap[e.key]) { input[keyMap[e.key]] = true; e.preventDefault(); }
+    if (e.key === ' ' || e.key === 'Enter') {
+      if (['menu', 'over', 'paused'].includes(G.state)) startOrResume();
+      else if (G.state === 'play' && G.held) launch();
+      e.preventDefault();
+    }
+    if (e.key === 'm' || e.key === 'M') setMuted(!muted);
+  });
+  window.addEventListener('keyup', (e) => { if (keyMap[e.key]) input[keyMap[e.key]] = false; });
+
+  function touchSteer(e) {
+    if (G.state !== 'play') return;
+    if (e.type === 'touchstart' && G.held) launch();
+    let dir = 0;
+    for (const t of e.touches) dir += t.clientX < W / 2 ? -1 : 1;
+    input.touch = clamp(dir, -1, 1);
+    e.preventDefault();
+  }
+  cvs.addEventListener('touchstart', touchSteer, { passive: false });
+  cvs.addEventListener('touchmove', touchSteer, { passive: false });
+  cvs.addEventListener('touchend', touchSteer, { passive: false });
+  cvs.addEventListener('touchcancel', () => { input.touch = 0; });
+
+  // ---------- Fullscreen / landscape / wake lock ----------
+  function lockLandscape() {
+    try { const p = screen.orientation && screen.orientation.lock && screen.orientation.lock('landscape'); if (p && p.catch) p.catch(() => {}); } catch (e) {}
+  }
+  function goFullscreen() {
+    if (!isTouch) return;
+    const el = document.documentElement;
+    const req = el.requestFullscreen || el.webkitRequestFullscreen;
+    if (!req || document.fullscreenElement || document.webkitFullscreenElement) { lockLandscape(); return; }
+    try {
+      const p = req.call(el, { navigationUI: 'hide' });
+      if (p && p.then) p.then(lockLandscape).catch(() => {});
+    } catch (e) {}
+  }
+  // iPhone Safari has no fullscreen API for pages, so the button stays hidden there (and when installed).
+  const fsElement = () => document.fullscreenElement || document.webkitFullscreenElement;
+  const fsSupported = !!(document.fullscreenEnabled || document.webkitFullscreenEnabled) &&
+    !matchMedia('(display-mode: fullscreen), (display-mode: standalone)').matches;
+  const FS_ICONS = {
+    enter: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg>',
+    exit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4v5H4M15 4v5h5M20 15h-5v5M4 15h5v5"/></svg>',
+  };
+  function toggleFullscreen() {
+    try {
+      if (fsElement()) { (document.exitFullscreen || document.webkitExitFullscreen).call(document); return; }
+      const el = document.documentElement;
+      const p = (el.requestFullscreen || el.webkitRequestFullscreen).call(el, { navigationUI: 'hide' });
+      if (p && p.then) p.then(lockLandscape).catch(() => {});
+    } catch (e) {}
+  }
+  function updateFsBtn() {
+    const btn = $('fsBtn'), on = !!fsElement();
+    btn.innerHTML = on ? FS_ICONS.exit : FS_ICONS.enter;
+    btn.setAttribute('aria-label', on ? 'Exit fullscreen' : 'Enter fullscreen');
+  }
+  let wakeLock = null;
+  async function keepAwake() {
+    try { if ('wakeLock' in navigator && !wakeLock) { wakeLock = await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release', () => { wakeLock = null; }); } } catch (e) {}
+  }
+
+  // ---------- Game state ----------
+  const ROW_COLORS = ['#ff2975', '#ff901f', '#ffd319', '#2de2a6', '#00e5ff', '#8c6bff', '#ff6ad5'];
+  const G = {
+    state: 'menu', t: 0, clock: 0, score: 0, coins: 0, level: 1, best: +load('bricksBest', 0) || 0,
+    lives: MAX_LIVES, countdown: 0, held: true, serveT: 0,
+    px: 0.5, pw: PADDLE_W, wide: 0,
+    ball: { x: 0.5, y: 0, dx: 0, dy: -1, speed: 0 },
+    bricks: [], items: [], popups: [], banner: null, shake: 0, flash: 0,
+  };
+
+  // Fixed pools, reused every frame (no allocations in the render loop).
+  const TRAIL = 7, trail = []; for (let i = 0; i < TRAIL; i++) trail.push({ x: 0, y: 0 });
+  let trailHead = 0;
+  const PARTS = []; for (let i = 0; i < 90; i++) PARTS.push({ life: 0, x: 0, y: 0, vx: 0, vy: 0, c: '#fff' });
+
+  const paddleY = () => FH - 0.075;
+
+  // Level layouts: 0 = empty, 1 = normal brick, 2 = tough brick (two hits).
+  const LAYOUTS = [
+    (r, c) => (r < 5 ? 1 : 0),
+    (r, c) => (r === 0 ? 2 : r < 6 && (r + c) % 2 === 0 ? 1 : 0),
+    (r, c) => (r < 6 && Math.abs(c - 4.5) <= 5 - r ? (r === 5 ? 2 : 1) : 0),
+    (r, c) => (r < 6 ? (r % 2 ? 2 : 1) : 0) * (c === 0 || c === 9 ? 0 : 1),
+    (r, c) => (r < 7 && Math.abs(c - 4.5) + Math.abs(r - 3) <= 4.6 ? (r === 3 ? 2 : 1) : 0),
+    (r, c) => (r < 6 && c % 3 !== 1 ? (c % 3 === 0 && r < 2 ? 2 : 1) : 0),
+  ];
+
+  function buildLevel() {
+    const lay = LAYOUTS[(G.level - 1) % LAYOUTS.length];
+    const extraTough = Math.max(0, (G.level - LAYOUTS.length) * 0.08);   // later loops get tougher
+    const bw = (1 - 0.06 - (COLS - 1) * BRICK_GAP) / COLS;
+    const top = Math.max(0.1, 74 / FW);   // clear of the top buttons
+    G.bricks = [];
+    for (let r = 0; r < 7; r++) {
+      for (let c = 0; c < COLS; c++) {
+        let hp = lay(r, c);
+        if (!hp) continue;
+        if (hp === 1 && Math.random() < extraTough) hp = 2;
+        G.bricks.push({ x: 0.03 + c * (bw + BRICK_GAP), y: top + r * (BRICK_H + BRICK_GAP), w: bw, h: BRICK_H, hp, max: hp, row: r, alive: true });
+      }
+    }
+  }
+
+  function baseSpeed() { return Math.min(0.62 + (G.level - 1) * 0.06, 1.0); }
+
+  function serve() {
+    G.held = true; G.serveT = SERVE_TIME;
+    const b = G.ball; b.x = G.px; b.y = paddleY() - PADDLE_H / 2 - BALL_R; b.speed = baseSpeed();
+    for (const p of trail) { p.x = b.x; p.y = b.y; }
+  }
+
+  function launch() {
+    if (!G.held) return;
+    G.held = false;
+    const a = (Math.random() * 0.6 - 0.3);           // a little random, never straight up
+    G.ball.dx = Math.sin(a + (a < 0 ? -0.15 : 0.15)); G.ball.dy = -Math.cos(a);
+    beep(660, 0.08, 'triangle', 0.08);
+  }
+
+  function reset() {
+    G.t = 0; G.score = 0; G.coins = 0; G.level = 1; G.lives = MAX_LIVES;
+    G.px = 0.5; G.pw = PADDLE_W; G.wide = 0; G.items.length = 0; G.popups.length = 0;
+    G.banner = { text: 'LEVEL 1', life: 1.6 }; G.shake = 0; G.flash = 0;
+    for (const p of PARTS) p.life = 0;
+    input.steer = 0; input.touch = 0; input.neutral = input.tilt;
+    buildLevel(); serve();
+  }
+
+  function popup(text, color, x, y) { G.popups.push({ x, y, text, color, life: 1 }); }
+
+  function burst(x, y, color) {
+    let n = 8;
+    for (const p of PARTS) {
+      if (p.life > 0) continue;
+      const a = Math.random() * Math.PI * 2, s = 0.15 + Math.random() * 0.35;
+      p.life = 0.5 + Math.random() * 0.3; p.x = x; p.y = y; p.vx = Math.cos(a) * s; p.vy = Math.sin(a) * s - 0.1; p.c = color;
+      if (--n === 0) break;
+    }
+  }
+
+  function loseBall() {
+    G.lives--; G.shake = 0.35; G.flash = 0.8;
+    if (navigator.vibrate) try { navigator.vibrate(G.lives > 0 ? 120 : [80, 40, 160]); } catch (e) {}
+    if (G.lives > 0) {
+      beep(220, 0.3, 'sawtooth', 0.16, -120);
+      popup('-1 ♥', '#ff5a5a', G.px, paddleY() - 0.08);
+      G.t *= 0.6;          // ease the ball back down a little
+      serve();
+      return;
+    }
+    gameOver();
+  }
+
+  function gameOver() {
+    G.state = 'crashing'; G.shake = 0.45; G.flash = 1;
+    beep(180, 0.5, 'sawtooth', 0.2, -150);
+    const final = G.score;
+    const newBest = final > G.best;
+    if (newBest) { G.best = final; save('bricksBest', final); }
+    setTimeout(() => {
+      G.state = 'over';
+      $('finalScore').textContent = final;
+      $('bestLine').textContent = newBest ? 'New best score!' : 'Best: ' + G.best;
+      show('over');
+    }, 900);
+  }
+
+  function hitBrick(br) {
+    br.hp--;
+    const cx = br.x + br.w / 2, cy = br.y + br.h / 2;
+    if (br.hp > 0) { beep(300, 0.06, 'square', 0.07); burst(cx, cy, '#d8e0ff'); return; }
+    br.alive = false;
+    G.score += br.max * 10;
+    burst(cx, cy, br.max > 1 ? '#d8e0ff' : ROW_COLORS[br.row % ROW_COLORS.length]);
+    beep(520 + (6 - br.row) * 60, 0.07, 'square', 0.07);
+    // Drops: a heart if a life is missing (rare), a wide-paddle power-up, or a coin.
+    const r = Math.random();
+    if (G.lives < MAX_LIVES && r < 0.05) G.items.push({ kind: 'heart', x: cx, y: cy, spin: 0, taken: false });
+    else if (r < 0.1) G.items.push({ kind: 'wide', x: cx, y: cy, spin: 0, taken: false });
+    else if (r < 0.24) G.items.push({ kind: 'coin', x: cx, y: cy, spin: Math.random() * 6, taken: false });
+    for (const b of G.bricks) if (b.alive) return;
+    levelClear();
+  }
+
+  function levelClear() {
+    const bonus = 100 * G.level;
+    G.score += bonus;
+    G.level++;
+    G.banner = { text: 'LEVEL ' + G.level, life: 1.8 };
+    popup('+' + bonus, '#ffd319', 0.5, FH * 0.5);
+    beep(660, 0.12, 'triangle', 0.1); setTimeout(() => beep(880, 0.12, 'triangle', 0.1), 110); setTimeout(() => beep(1320, 0.2, 'triangle', 0.1), 220);
+    G.items.length = 0; G.t = 0;
+    buildLevel(); serve();
+  }
+
+  // Keep the ball from settling into a nearly flat path that takes forever to come back.
+  function fixAngle(b) {
+    if (Math.abs(b.dy) < 0.35) { b.dy = Math.sign(b.dy || -1) * 0.35; const n = Math.hypot(b.dx, b.dy); b.dx /= n; b.dy /= n; }
+  }
+
+  function stepBall(dt) {
+    const b = G.ball, py = paddleY();
+    const steps = Math.max(1, Math.ceil((b.speed * dt) / (BALL_R * 0.6)));
+    const h = (b.speed * dt) / steps;
+    for (let s = 0; s < steps; s++) {
+      b.x += b.dx * h; b.y += b.dy * h;
+      // Walls
+      if (b.x < BALL_R) { b.x = BALL_R; b.dx = Math.abs(b.dx); beep(200, 0.03, 'sine', 0.05); }
+      else if (b.x > 1 - BALL_R) { b.x = 1 - BALL_R; b.dx = -Math.abs(b.dx); beep(200, 0.03, 'sine', 0.05); }
+      if (b.y < BALL_R) { b.y = BALL_R; b.dy = Math.abs(b.dy); beep(200, 0.03, 'sine', 0.05); }
+      // Paddle: where it lands on the paddle sets the bounce angle
+      if (b.dy > 0 && b.y + BALL_R >= py - PADDLE_H / 2 && b.y - BALL_R <= py + PADDLE_H / 2 &&
+          Math.abs(b.x - G.px) <= G.pw / 2 + BALL_R) {
+        const off = clamp((b.x - G.px) / (G.pw / 2), -1, 1);
+        const a = off * 62 * D2R;
+        b.dx = Math.sin(a); b.dy = -Math.cos(a);
+        b.y = py - PADDLE_H / 2 - BALL_R;
+        beep(330, 0.06, 'triangle', 0.08);
+      }
+      // Bricks (one hit per step)
+      for (const br of G.bricks) {
+        if (!br.alive) continue;
+        const cx = clamp(b.x, br.x, br.x + br.w), cy = clamp(b.y, br.y, br.y + br.h);
+        const ex = b.x - cx, ey = b.y - cy;
+        if (ex * ex + ey * ey > BALL_R * BALL_R) continue;
+        // Bounce off the side we came through (the shallower overlap)
+        const ox = Math.min(b.x + BALL_R - br.x, br.x + br.w - (b.x - BALL_R));
+        const oy = Math.min(b.y + BALL_R - br.y, br.y + br.h - (b.y - BALL_R));
+        if (ox < oy) { b.dx = b.x < br.x + br.w / 2 ? -Math.abs(b.dx) : Math.abs(b.dx); }
+        else { b.dy = b.y < br.y + br.h / 2 ? -Math.abs(b.dy) : Math.abs(b.dy); }
+        hitBrick(br);
+        if (G.held) return;            // level cleared and the ball was re-served
+        break;
+      }
+      fixAngle(b);
+      if (b.y - BALL_R > FH) { loseBall(); return; }
+    }
+  }
+
+  function update(dt) {
+    updateSteer(dt);
+    G.clock += dt;
+    if (G.shake > 0) G.shake = Math.max(0, G.shake - dt);
+    if (G.flash > 0) G.flash = Math.max(0, G.flash - dt * 2.5);
+    if (G.banner && (G.banner.life -= dt) <= 0) G.banner = null;
+    for (const p of G.popups) { p.life -= dt; p.y -= dt * 0.1; }
+    let j = 0; for (const p of G.popups) if (p.life > 0) G.popups[j++] = p; G.popups.length = j;
+    for (const p of PARTS) if (p.life > 0) { p.life -= dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vy += dt * 0.8; }
+
+    if (G.state !== 'countdown' && G.state !== 'play') return;
+
+    // Paddle
+    G.wide = Math.max(0, G.wide - dt);
+    G.pw += ((G.wide > 0 ? WIDE_W : PADDLE_W) - G.pw) * Math.min(1, dt * 6);
+    G.px = clamp(G.px + input.steer * PADDLE_SPEED * dt, G.pw / 2, 1 - G.pw / 2);
+    const b = G.ball;
+
+    if (G.state === 'countdown') {
+      const before = Math.ceil(G.countdown);
+      G.countdown -= dt;
+      b.x = G.px;
+      if (G.countdown <= 0) { G.state = 'play'; beep(880, 0.25, 'triangle', 0.12); }
+      else if (Math.ceil(G.countdown) !== before) beep(440, 0.12, 'triangle', 0.1);
+      return;
+    }
+
+    if (G.held) {
+      b.x = G.px; b.y = paddleY() - PADDLE_H / 2 - BALL_R;
+      if ((G.serveT -= dt) <= 0) launch();
+    } else {
+      G.t += dt;
+      b.speed = Math.min(baseSpeed() + G.t * 0.004, baseSpeed() + 0.18);
+      stepBall(dt);
+      if (G.state !== 'play') return;
+    }
+    trail[trailHead].x = b.x; trail[trailHead].y = b.y; trailHead = (trailHead + 1) % TRAIL;
+
+    // Falling pickups
+    const py = paddleY();
+    for (const it of G.items) {
+      it.y += dt * 0.32; it.spin += dt * 5;
+      if (!it.taken && Math.abs(it.y - py) < PADDLE_H / 2 + 0.02 && Math.abs(it.x - G.px) < G.pw / 2 + 0.015) {
+        it.taken = true;
+        if (it.kind === 'heart') {
+          G.lives = Math.min(MAX_LIVES, G.lives + 1);
+          popup('+1 ♥', '#ff7eb6', it.x, py - 0.06);
+          beep(660, 0.1, 'triangle', 0.1); setTimeout(() => beep(990, 0.18, 'triangle', 0.1), 90);
+        } else if (it.kind === 'wide') {
+          G.wide = WIDE_TIME;
+          popup('WIDE!', '#6ff7ff', it.x, py - 0.06);
+          beep(520, 0.1, 'triangle', 0.1); setTimeout(() => beep(780, 0.15, 'triangle', 0.1), 90);
+        } else {
+          G.coins++; G.score += 50;
+          popup('+50', '#ffd700', it.x, py - 0.06);
+          beep(880, 0.08, 'square', 0.08); setTimeout(() => beep(1320, 0.12, 'square', 0.08), 70);
+        }
+      }
+    }
+    j = 0; for (const it of G.items) if (!it.taken && it.y < FH + 0.05) G.items[j++] = it; G.items.length = j;
+  }
+
+  // ---------- Sprites (pre-rendered once per screen size, then just stamped) ----------
+  function rr(g, x, y, w, h, r) {
+    g.beginPath();
+    g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r);
+    g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath();
+  }
+  function shade(hex, t) {
+    const n = parseInt(hex.slice(1), 16), m = t > 0 ? 255 : 0, a = Math.abs(t);
+    const c = [n >> 16, (n >> 8) & 255, n & 255].map((v) => Math.round(v + (m - v) * a));
+    return `rgb(${c[0]},${c[1]},${c[2]})`;
+  }
+  function makeSprite(w, h, paint) {
+    const d = Math.min(window.devicePixelRatio || 1, 2);
+    const c = document.createElement('canvas');
+    c.width = Math.max(1, Math.ceil(w * d)); c.height = Math.max(1, Math.ceil(h * d));
+    const g = c.getContext('2d'); g.scale(d, d); paint(g);
+    return { c, w, h };
+  }
+
+  const SPR = { key: '' };
+  function ensureSprites() {
+    const key = `${W}x${H}@${window.devicePixelRatio}`;
+    if (SPR.key === key) return;
+    SPR.key = key;
+    const bw = ((1 - 0.06 - (COLS - 1) * BRICK_GAP) / COLS) * FW, bh = BRICK_H * FW;
+    SPR.bricks = ROW_COLORS.map((c) => makeBrick(bw, bh, c, false));
+    SPR.tough = makeBrick(bw, bh, '#aab4d4', false);
+    SPR.cracked = makeBrick(bw, bh, '#aab4d4', true);
+    SPR.ball = makeBall(); SPR.paddle = makePaddle(); SPR.coin = makeCoin(); SPR.wide = makeWide();
+    SPR.bg = makeBackground();
+  }
+
+  function makeBrick(w, h, color, cracked) {
+    const pad = Math.max(3, h * 0.25);
+    const s = makeSprite(w + pad * 2, h + pad * 2, (g) => {
+      const x = pad, y = pad;
+      g.fillStyle = color; g.globalAlpha = 0.22; rr(g, x - pad * 0.6, y - pad * 0.6, w + pad * 1.2, h + pad * 1.2, h * 0.4); g.fill();
+      g.globalAlpha = 1;
+      const body = g.createLinearGradient(0, y, 0, y + h);
+      body.addColorStop(0, shade(color, 0.45)); body.addColorStop(0.45, color); body.addColorStop(1, shade(color, -0.4));
+      g.fillStyle = body; rr(g, x, y, w, h, h * 0.25); g.fill();
+      g.fillStyle = 'rgba(255,255,255,0.35)'; rr(g, x + w * 0.06, y + h * 0.12, w * 0.88, h * 0.22, h * 0.1); g.fill();
+      g.strokeStyle = 'rgba(255,255,255,0.5)'; g.lineWidth = 1; rr(g, x + 0.5, y + 0.5, w - 1, h - 1, h * 0.25); g.stroke();
+      if (cracked) {
+        g.strokeStyle = 'rgba(30,20,60,0.85)'; g.lineWidth = Math.max(1, h * 0.07);
+        g.beginPath(); g.moveTo(x + w * 0.3, y); g.lineTo(x + w * 0.42, y + h * 0.45); g.lineTo(x + w * 0.34, y + h * 0.7); g.lineTo(x + w * 0.46, y + h);
+        g.moveTo(x + w * 0.42, y + h * 0.45); g.lineTo(x + w * 0.62, y + h * 0.4); g.lineTo(x + w * 0.72, y + h * 0.75); g.stroke();
+      }
+    });
+    s.pad = pad;
+    return s;
+  }
+
+  function makeBall() {
+    const r = BALL_R * FW, size = r * 5;
+    return makeSprite(size, size, (g) => {
+      const c = size / 2;
+      const halo = g.createRadialGradient(c, c, r * 0.6, c, c, r * 2.5);
+      halo.addColorStop(0, 'rgba(0,229,255,0.55)'); halo.addColorStop(1, 'rgba(0,229,255,0)');
+      g.fillStyle = halo; g.beginPath(); g.arc(c, c, r * 2.5, 0, 7); g.fill();
+      const body = g.createRadialGradient(c - r * 0.35, c - r * 0.35, r * 0.1, c, c, r);
+      body.addColorStop(0, '#ffffff'); body.addColorStop(0.5, '#b8fbff'); body.addColorStop(1, '#00a6c4');
+      g.fillStyle = body; g.beginPath(); g.arc(c, c, r, 0, 7); g.fill();
+    });
+  }
+
+  function makePaddle() {
+    // Drawn at normal width; the wide power-up just stretches it.
+    const w = PADDLE_W * FW, h = PADDLE_H * FW, pad = h * 0.9;
+    const s = makeSprite(w + pad * 2, h + pad * 2, (g) => {
+      const x = pad, y = pad;
+      const glow = g.createLinearGradient(0, y + h, 0, y + h + pad);
+      glow.addColorStop(0, 'rgba(255,41,117,0.5)'); glow.addColorStop(1, 'rgba(255,41,117,0)');
+      g.fillStyle = glow; g.fillRect(x, y + h * 0.5, w, h * 0.5 + pad);
+      const body = g.createLinearGradient(0, y, 0, y + h);
+      body.addColorStop(0, '#ffb3cf'); body.addColorStop(0.5, '#ff2975'); body.addColorStop(1, '#8c1640');
+      g.fillStyle = body; rr(g, x, y, w, h, h / 2); g.fill();
+      g.fillStyle = '#6ff7ff'; rr(g, x + 2, y + h * 0.3, h * 0.9, h * 0.4, h * 0.2); g.fill(); rr(g, x + w - 2 - h * 0.9, y + h * 0.3, h * 0.9, h * 0.4, h * 0.2); g.fill();
+      g.fillStyle = 'rgba(255,255,255,0.5)'; rr(g, x + w * 0.2, y + h * 0.15, w * 0.6, h * 0.2, h * 0.1); g.fill();
+    });
+    s.pad = pad;
+    return s;
+  }
+
+  function makeCoin() {
+    const r = 0.016 * FW, size = r * 4.4;
+    return makeSprite(size, size, (g) => {
+      const c = size / 2;
+      const halo = g.createRadialGradient(c, c, r * 0.6, c, c, r * 2.2);
+      halo.addColorStop(0, 'rgba(255,211,25,0.55)'); halo.addColorStop(1, 'rgba(255,211,25,0)');
+      g.fillStyle = halo; g.beginPath(); g.arc(c, c, r * 2.2, 0, 7); g.fill();
+      const face = g.createLinearGradient(c - r, c - r, c + r, c + r);
+      face.addColorStop(0, '#fff3a0'); face.addColorStop(0.45, '#ffd319'); face.addColorStop(1, '#e07b00');
+      g.fillStyle = face; g.beginPath(); g.arc(c, c, r, 0, 7); g.fill();
+      g.strokeStyle = 'rgba(160,80,0,0.6)'; g.lineWidth = r * 0.12; g.beginPath(); g.arc(c, c, r * 0.72, 0, 7); g.stroke();
+      g.fillStyle = '#fff8cf'; g.font = `900 ${r * 1.05}px system-ui, sans-serif`;
+      g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('★', c, c + r * 0.04);
+    });
+  }
+
+  function makeWide() {
+    const w = 0.06 * FW, h = 0.026 * FW, pad = 4;
+    return makeSprite(w + pad * 2, h + pad * 2, (g) => {
+      g.fillStyle = 'rgba(0,229,255,0.3)'; rr(g, 0, 0, w + pad * 2, h + pad * 2, (h + pad * 2) / 2); g.fill();
+      const body = g.createLinearGradient(0, pad, 0, pad + h);
+      body.addColorStop(0, '#b8fbff'); body.addColorStop(1, '#0088a6');
+      g.fillStyle = body; rr(g, pad, pad, w, h, h / 2); g.fill();
+      g.fillStyle = '#12062a'; g.font = `900 ${h * 0.62}px system-ui, sans-serif`;
+      g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('◀ ▶', pad + w / 2, pad + h / 2 + 1);
+    });
+  }
+
+  function makeBackground() {
+    // The whole static backdrop (sides, grid, playfield frame) is painted once per screen size.
+    const fx = FX, fw = FW;
+    return makeSprite(W, H, (g) => {
+      const sky = g.createLinearGradient(0, 0, 0, H);
+      sky.addColorStop(0, '#12062a'); sky.addColorStop(0.7, '#2b0a4e'); sky.addColorStop(1, '#46105a');
+      g.fillStyle = sky; g.fillRect(0, 0, W, H);
+      const gs = H * 0.08;
+      g.strokeStyle = 'rgba(255,41,117,0.18)'; g.lineWidth = 1;
+      g.beginPath();
+      for (let y = gs; y < H; y += gs) { g.moveTo(0, y); g.lineTo(W, y); }
+      for (let x = fx - gs; x > 0; x -= gs) { g.moveTo(x, 0); g.lineTo(x, H); }
+      for (let x = fx + fw + gs; x < W; x += gs) { g.moveTo(x, 0); g.lineTo(x, H); }
+      g.stroke();
+      // Playfield
+      const field = g.createLinearGradient(0, 0, 0, H);
+      field.addColorStop(0, '#0b0418'); field.addColorStop(1, '#1a0832');
+      g.fillStyle = field; g.fillRect(fx, 0, fw, H);
+      g.strokeStyle = 'rgba(0,229,255,0.07)';
+      g.beginPath();
+      for (let x = fx + fw / 10; x < fx + fw - 1; x += fw / 10) { g.moveTo(x, 0); g.lineTo(x, H); }
+      g.stroke();
+      // Neon frame: wide soft pass + thin bright pass
+      g.fillStyle = 'rgba(0,229,255,0.16)'; g.fillRect(fx - 6, 0, 12, H); g.fillRect(fx + fw - 6, 0, 12, H);
+      g.fillStyle = '#6ff7ff'; g.fillRect(fx - 1.5, 0, 3, H); g.fillRect(fx + fw - 1.5, 0, 3, H);
+      // Danger line glow at the bottom
+      const fl = g.createLinearGradient(0, H * 0.9, 0, H);
+      fl.addColorStop(0, 'rgba(255,41,117,0)'); fl.addColorStop(1, 'rgba(255,41,117,0.28)');
+      g.fillStyle = fl; g.fillRect(fx, H * 0.9, fw, H * 0.1);
+    });
+  }
+
+  // ---------- Drawing ----------
+  const X = (u) => FX + u * FW, Y = (v) => v * FW;
+
+  function heartPath(r) {
+    ctx.beginPath();
+    ctx.moveTo(0, r * 0.9);
+    ctx.bezierCurveTo(-r * 1.4, -r * 0.1, -r * 0.6, -r * 1.2, 0, -r * 0.45);
+    ctx.bezierCurveTo(r * 0.6, -r * 1.2, r * 1.4, -r * 0.1, 0, r * 0.9);
+    ctx.closePath();
+  }
+  function roundRect(x, y, w, h, r) { rr(ctx, x, y, w, h, r); }
+
+  function drawField() {
+    ensureSprites();
+    ctx.drawImage(SPR.bg.c, 0, 0, W, H);
+
+    for (const br of G.bricks) {
+      if (!br.alive) continue;
+      const S = br.max > 1 ? (br.hp > 1 ? SPR.tough : SPR.cracked) : SPR.bricks[br.row % SPR.bricks.length];
+      ctx.drawImage(S.c, X(br.x) - S.pad, Y(br.y) - S.pad, S.w, S.h);
+    }
+
+    for (const p of PARTS) {
+      if (p.life <= 0) continue;
+      ctx.globalAlpha = Math.min(1, p.life * 2); ctx.fillStyle = p.c;
+      const s = Math.max(2, FW * 0.008);
+      ctx.fillRect(X(p.x) - s / 2, Y(p.y) - s / 2, s, s);
+    }
+    ctx.globalAlpha = 1;
+
+    const r = 0.016 * FW;
+    for (const it of G.items) {
+      const x = X(it.x), y = Y(it.y);
+      if (it.kind === 'heart') {
+        const s = 1 + Math.sin(G.clock * 6) * 0.08;
+        ctx.save(); ctx.translate(x, y); ctx.scale(s, s);
+        ctx.fillStyle = '#fff'; heartPath(r * 1.25); ctx.fill();
+        ctx.fillStyle = '#ff2975'; heartPath(r); ctx.fill();
+        ctx.restore();
+      } else if (it.kind === 'wide') {
+        const S = SPR.wide; ctx.drawImage(S.c, x - S.w / 2, y - S.h / 2, S.w, S.h);
+      } else {
+        const C = SPR.coin, k = Math.abs(Math.cos(it.spin)) * 0.75 + 0.25;
+        ctx.save(); ctx.translate(x, y); ctx.scale(k, 1);
+        ctx.drawImage(C.c, -C.w / 2, -C.h / 2, C.w, C.h);
+        ctx.restore();
+      }
+    }
+
+    if (G.state === 'menu') return;
+
+    // Paddle (stretched for the wide power-up; blinks as it runs out)
+    const P = SPR.paddle, k = G.pw / PADDLE_W;
+    if (!(G.wide > 0 && G.wide < 2 && Math.floor(G.wide * 6) % 2)) {
+      const pw = P.w - P.pad * 2;
+      ctx.drawImage(P.c, X(G.px) - (pw * k) / 2 - P.pad, Y(paddleY()) - P.h / 2, pw * k + P.pad * 2, P.h);
+    } else {
+      const pw = P.w - P.pad * 2;
+      ctx.drawImage(P.c, X(G.px) - pw / 2 - P.pad, Y(paddleY()) - P.h / 2, P.w, P.h);
+    }
+
+    // Ball and its trail
+    const B = SPR.ball, b = G.ball;
+    if (!G.held) {
+      for (let i = 0; i < TRAIL; i++) {
+        const p = trail[(trailHead + i) % TRAIL], s = (i + 1) / TRAIL;
+        ctx.globalAlpha = s * 0.35;
+        ctx.drawImage(B.c, X(p.x) - (B.w * s) / 2, Y(p.y) - (B.h * s) / 2, B.w * s, B.h * s);
+      }
+      ctx.globalAlpha = 1;
+    }
+    ctx.drawImage(B.c, X(b.x) - B.w / 2, Y(b.y) - B.h / 2, B.w, B.h);
+  }
+
+  function drawWheel(cx, cy, r) {
+    ctx.save(); ctx.translate(cx, cy); ctx.rotate(input.steer * Math.PI / 2);
+    ctx.strokeStyle = 'rgba(0,229,255,0.25)'; ctx.lineWidth = r * 0.5;
+    ctx.beginPath(); ctx.arc(0, 0, r, 0, 7); ctx.stroke();
+    ctx.strokeStyle = '#6ff7ff'; ctx.lineWidth = r * 0.18;
+    ctx.beginPath(); ctx.arc(0, 0, r, 0, 7); ctx.stroke();
+    ctx.lineWidth = r * 0.14;
+    ctx.beginPath(); ctx.moveTo(-r, 0); ctx.lineTo(r, 0); ctx.moveTo(0, 0); ctx.lineTo(0, r); ctx.stroke();
+    ctx.fillStyle = '#ff2975'; ctx.fillRect(-r * 0.12, -r * 1.18, r * 0.24, r * 0.34);
+    ctx.restore();
+  }
+
+  function drawHUD() {
+    const pad = Math.max(12, H * 0.03);
+    const fs = Math.max(14, Math.round(H * 0.05));
+    ctx.textBaseline = 'top';
+    ctx.fillStyle = 'rgba(18,6,42,0.62)'; roundRect(pad - 8, pad - 6, fs * 6.2, fs * 3.4, 12); ctx.fill();
+    ctx.strokeStyle = 'rgba(255,41,117,0.8)'; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.font = `800 ${fs}px system-ui, sans-serif`;
+    ctx.fillStyle = '#fff'; ctx.textAlign = 'left';
+    ctx.fillText(String(G.score), pad, pad);
+    ctx.font = `600 ${Math.round(fs * 0.62)}px system-ui, sans-serif`;
+    ctx.fillStyle = '#ffd319';
+    ctx.fillText(`Level ${G.level}  •  ${G.coins} coin${G.coins === 1 ? '' : 's'}`, pad, pad + fs * 1.15);
+    const hr = fs * 0.34;
+    for (let i = 0; i < MAX_LIVES; i++) {
+      ctx.save(); ctx.translate(pad + hr + i * hr * 2.7, pad + fs * 2.4 + hr);
+      ctx.fillStyle = i < G.lives ? '#ff2975' : 'rgba(255,255,255,0.22)'; heartPath(hr); ctx.fill();
+      ctx.restore();
+    }
+
+    const right = W - pad - (fsSupported ? 66 : 0);
+    ctx.textAlign = 'right'; ctx.fillStyle = '#6ff7ff';
+    ctx.fillText('BEST ' + G.best, right, pad);
+    const mode = input.source === 'none' ? (isTouch ? 'touch' : 'keys') : 'tilt';
+    ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    ctx.fillText('control: ' + mode, right, pad + fs * 0.85);
+
+    const wr = Math.max(18, H * 0.06);
+    drawWheel(W - pad - wr * 1.4, H - pad - wr * 1.4, wr);
+  }
+
+  function draw() {
+    ctx.save();
+    if (G.shake > 0) { const m = G.shake * H * 0.03; ctx.translate((Math.random() - 0.5) * m, (Math.random() - 0.5) * m); }
+    drawField();
+    ctx.restore();
+    if (G.flash > 0) { ctx.fillStyle = `rgba(255,41,117,${G.flash * 0.4})`; ctx.fillRect(0, 0, W, H); }
+
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    for (const p of G.popups) {
+      ctx.globalAlpha = Math.min(1, p.life * 2);
+      ctx.font = `800 ${Math.round(H * 0.06)}px system-ui, sans-serif`;
+      ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(18,6,42,0.8)';
+      ctx.strokeText(p.text, X(p.x), Y(p.y));
+      ctx.fillStyle = p.color; ctx.fillText(p.text, X(p.x), Y(p.y));
+    }
+    ctx.globalAlpha = 1;
+
+    if (G.state === 'countdown') {
+      const n = Math.ceil(G.countdown), f = G.countdown - Math.floor(G.countdown);
+      ctx.save(); ctx.translate(W / 2, H * 0.55); ctx.scale(1 + f * 0.4, 1 + f * 0.4);
+      ctx.font = `900 ${Math.round(H * 0.22)}px system-ui, sans-serif`;
+      ctx.lineWidth = 8; ctx.strokeStyle = 'rgba(18,6,42,0.8)'; ctx.strokeText(String(n), 0, 0);
+      ctx.fillStyle = '#ffd319'; ctx.fillText(String(n), 0, 0);
+      ctx.restore();
+      ctx.font = `700 ${Math.round(H * 0.05)}px system-ui, sans-serif`;
+      ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(18,6,42,0.8)';
+      ctx.strokeText('Hold your phone steady', W / 2, H * 0.72);
+      ctx.fillStyle = '#6ff7ff'; ctx.fillText('Hold your phone steady', W / 2, H * 0.72);
+    } else if (G.state === 'play' && G.banner) {
+      ctx.globalAlpha = Math.min(1, G.banner.life * 2);
+      ctx.font = `900 italic ${Math.round(H * 0.1)}px system-ui, sans-serif`;
+      ctx.lineWidth = 6; ctx.strokeStyle = 'rgba(18,6,42,0.85)'; ctx.strokeText(G.banner.text, W / 2, H * 0.62);
+      ctx.fillStyle = '#ffd319'; ctx.fillText(G.banner.text, W / 2, H * 0.62);
+      ctx.globalAlpha = 1;
+    }
+
+    if (G.state !== 'menu') drawHUD();
+  }
+
+  // ---------- Loop ----------
+  let last = performance.now();
+  function frame(now) {
+    const dt = Math.min(0.05, (now - last) / 1000);
+    last = now;
+    const portraitPhone = isTouch && H > W;
+    if (!portraitPhone) update(dt);
+    draw();
+    requestAnimationFrame(frame);
+  }
+
+  // ---------- UI flow ----------
+  function show(id) {
+    for (const o of ['menu', 'over', 'paused']) $(o).classList.toggle('hidden', o !== id);
+    document.body.classList.toggle('playing', !id);   // settings buttons hide while playing
+  }
+
+  function startOrResume() {
+    const permission = requestSensorPermission();   // must be first, inside the gesture
+    goFullscreen();
+    initAudio();
+    keepAwake();
+    attachSensors();
+    permission.then((res) => {
+      if (res !== 'granted') {
+        const m = $('menuMsg');
+        m.textContent = 'Motion access was denied, so touch controls are on. To use tilt, reload the page and tap Allow.';
+        m.classList.remove('hidden');
+      }
+    });
+    const wasPaused = G.state === 'paused';
+    if (!wasPaused) reset();
+    G.state = 'countdown';
+    G.countdown = wasPaused ? 1.5 : COUNTDOWN;
+    show(null);
+    beep(440, 0.12, 'triangle', 0.1);
+  }
+
+  $('startBtn').addEventListener('click', startOrResume);
+  $('againBtn').addEventListener('click', startOrResume);
+  $('resumeBtn').addEventListener('click', startOrResume);
+  $('soundBtn').textContent = muted ? '🔇 Muted' : '🔊 Sound on';
+  $('soundBtn').addEventListener('click', (e) => { e.stopPropagation(); setMuted(!muted); });
+  if (fsSupported) {
+    $('fsBtn').classList.remove('hidden');
+    updateFsBtn();
+    $('fsBtn').addEventListener('click', (e) => { e.stopPropagation(); toggleFullscreen(); });
+    document.addEventListener('fullscreenchange', updateFsBtn);
+    document.addEventListener('webkitfullscreenchange', updateFsBtn);
+    window.addEventListener('keydown', (e) => { if (e.key === 'f' || e.key === 'F') toggleFullscreen(); });
+  }
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      if (G.state === 'play' || G.state === 'countdown') { G.state = 'paused'; show('paused'); }
+    } else {
+      keepAwake();
+    }
+  });
+
+  // Show the first level's bricks behind the menu.
+  buildLevel();
+  requestAnimationFrame(frame);
+
+  // Hook for automated tests.
+  window.__neonBricks = { G, input };
+})();
+</script>
+</body>
+</html>
