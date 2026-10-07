@@ -37,11 +37,11 @@
   .overlay > * { position: relative; z-index: 1; }
   /* Outrun sunset sun behind the menu and game-over screens */
   .sunset::before {
-    content: ""; position: absolute; left: 50%; top: 50%; width: min(62vh, 60vw); aspect-ratio: 1;
-    transform: translate(-50%, -58%); border-radius: 50%; opacity: 0.24; z-index: 0; pointer-events: none;
+    content: ""; position: absolute; left: 50%; bottom: 0; width: min(54vh, 40vw); aspect-ratio: 1;
+    transform: translate(-50%, 64%); border-radius: 50%; opacity: 0.3; z-index: 0; pointer-events: none;
     background: linear-gradient(180deg, #ffd319 0%, #ff901f 35%, #ff2975 70%, #8c1eff 100%);
-    -webkit-mask-image: linear-gradient(180deg, #000 0 50%, transparent 50% 54%, #000 54% 62%, transparent 62% 67%, #000 67% 74%, transparent 74% 80%, #000 80% 86%, transparent 86% 93%, #000 93%);
-    mask-image: linear-gradient(180deg, #000 0 50%, transparent 50% 54%, #000 54% 62%, transparent 62% 67%, #000 67% 74%, transparent 74% 80%, #000 80% 86%, transparent 86% 93%, #000 93%);
+    -webkit-mask-image: linear-gradient(180deg, #000 0 18%, transparent 18% 20%, #000 20% 26%, transparent 26% 29%, #000 29% 32%, transparent 32% 36%, #000 36%);
+    mask-image: linear-gradient(180deg, #000 0 18%, transparent 18% 20%, #000 20% 26%, transparent 26% 29%, #000 29% 32%, transparent 32% 36%, #000 36%);
   }
   .hidden { display: none !important; }
   h1 {
@@ -110,7 +110,7 @@
     box-shadow: 0 0 12px rgba(255, 41, 117, 0.35); animation: none; letter-spacing: 0;
     padding: 6px 14px; margin: 0; border-radius: 999px; cursor: pointer;
   }
-  .copyright { font-size: 11px; opacity: 0.5; margin-top: 4px; }
+  .copyright { font-size: 11px; opacity: 0.6; margin-top: 4px; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6); }
   .byline a { color: var(--cyan); font-weight: 700; text-decoration: none; }
 
   /* ----- Classic theme: the original daytime look, polished ----- */
@@ -868,10 +868,10 @@
       }
       if (isPlayer && T.underglow) {
         // Neon underglow
-        const ug = g.createRadialGradient(ox, oy, w * 0.2, ox, oy, w * 1.05);
-        ug.addColorStop(0, 'rgba(0,229,255,0.6)'); ug.addColorStop(1, 'rgba(0,229,255,0)');
-        g.save(); g.translate(ox, oy); g.scale(1, h / w * 0.75); g.translate(-ox, -oy);
-        g.fillStyle = ug; g.beginPath(); g.arc(ox, oy, w * 1.05, 0, 7); g.fill(); g.restore();
+        const ug = g.createRadialGradient(ox, oy, w * 0.45, ox, oy, w * 0.72);
+        ug.addColorStop(0, 'rgba(0,229,255,0.4)'); ug.addColorStop(1, 'rgba(0,229,255,0)');
+        g.save(); g.translate(ox, oy); g.scale(1, h / w * 0.62); g.translate(-ox, -oy);
+        g.fillStyle = ug; g.beginPath(); g.arc(ox, oy, w * 0.72, 0, 7); g.fill(); g.restore();
       } else {
         // Soft shadow
         g.fillStyle = 'rgba(0,0,0,0.35)'; rr(g, x + w * 0.06, y + h * 0.05, w, h, w * 0.3); g.fill();
