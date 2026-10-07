@@ -1,0 +1,530 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Tilt Racer">
+<meta name="theme-color" content="#111111">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-180.png">
+<title>Tilt Racer</title>
+<style>
+  :root { --fg: #fff; --accent: #ffcc00; --panel: rgba(10, 12, 18, 0.82); }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; height: 100%; overflow: hidden; background: #111; color: var(--fg);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    touch-action: none; user-select: none; -webkit-user-select: none; overscroll-behavior: none;
+  }
+  canvas { position: fixed; inset: 0; width: 100vw; height: 100vh; display: block; }
+  .overlay {
+    position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 12px; padding: 24px; text-align: center; background: var(--panel); z-index: 10;
+  }
+  .hidden { display: none !important; }
+  h1 { margin: 0; font-size: clamp(28px, 7vh, 56px); letter-spacing: 1px; }
+  h1 span { color: var(--accent); }
+  p { margin: 0; font-size: clamp(13px, 3.4vh, 18px); opacity: 0.9; max-width: 34em; line-height: 1.4; }
+  .big { font-size: clamp(36px, 10vh, 72px); font-weight: 800; color: var(--accent); }
+  button {
+    font: inherit; font-size: clamp(16px, 4.5vh, 24px); font-weight: 700; padding: 0.7em 1.8em; border: 0;
+    border-radius: 999px; background: var(--accent); color: #111; cursor: pointer; margin-top: 6px;
+  }
+  .small { font-size: 13px; opacity: 0.65; }
+  .msg { color: #ff8a80; font-weight: 600; }
+  #rotate { display: none; z-index: 20; background: #111; }
+  #rotate .phone {
+    width: 44px; height: 76px; border: 4px solid #fff; border-radius: 9px;
+    animation: turn 1.8s ease-in-out infinite;
+  }
+  @keyframes turn { 0%, 30% { transform: rotate(0); } 60%, 100% { transform: rotate(-90deg); } }
+  @media (orientation: portrait) and (pointer: coarse) { #rotate { display: flex; } }
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+
+<div id="menu" class="overlay">
+  <h1>TILT <span>RACER</span></h1>
+  <p>Hold your phone sideways like a steering wheel and <b>tilt to steer</b>.
+     Dodge traffic and grab coins. Hold the phone in a comfortable neutral position when you tap start.</p>
+  <button id="startBtn">Tap to start</button>
+  <p class="small">No tilt sensor? Use ← → / A D keys, or touch the left or right half of the screen.</p>
+  <p id="menuMsg" class="msg hidden"></p>
+</div>
+
+<div id="over" class="overlay hidden">
+  <p>CRASHED!</p>
+  <div class="big" id="finalScore">0</div>
+  <p id="bestLine"></p>
+  <button id="againBtn">Play again</button>
+  <p class="small">Hold your neutral position. Steering recalibrates when you tap.</p>
+</div>
+
+<div id="paused" class="overlay hidden">
+  <h1>Paused</h1>
+  <button id="resumeBtn">Resume</button>
+</div>
+
+<div id="rotate" class="overlay">
+  <div class="phone"></div>
+  <p>Rotate your phone to <b>landscape</b>.</p>
+  <p class="small">On iPhone, turn off Portrait Orientation Lock in Control Center.</p>
+</div>
+
+<script>
+(() => {
+  'use strict';
+
+  // ---------- Setup ----------
+  const cvs = document.getElementById('game');
+  const ctx = cvs.getContext('2d');
+  const $ = (id) => document.getElementById(id);
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const D2R = Math.PI / 180;
+  const LANES = 4;
+  const PLAYER_Y = 0.80;         // player car centre, in screen heights
+  const TRAFFIC_REL = 0.55;      // traffic closes in at this fraction of our speed
+  const SENSITIVITY = 0.42;      // ~25 degrees of tilt = full steering lock
+  const DEAD_ZONE = 0.06;
+  const isTouch = matchMedia('(pointer: coarse)').matches;
+
+  let W = 0, H = 0, roadW = 0, roadX = 0, carW = 0, carH = 0;
+
+  function resize() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth; H = window.innerHeight;
+    cvs.width = Math.round(W * dpr); cvs.height = Math.round(H * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    roadW = Math.min(W * 0.62, H * 1.3);
+    roadX = (W - roadW) / 2;
+    const laneW = roadW / LANES;
+    carH = Math.min(H * 0.17, laneW * 1.45);
+    carW = Math.min(carH * 0.56, laneW * 0.7);
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  // ---------- Storage ----------
+  function loadBest() { try { return +localStorage.getItem('tiltRacerBest') || 0; } catch (e) { return 0; } }
+  function saveBest(v) { try { localStorage.setItem('tiltRacerBest', String(v)); } catch (e) {} }
+
+  // ---------- Audio (tiny synth blips) ----------
+  let ac = null;
+  function initAudio() {
+    try {
+      ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+      if (ac.state === 'suspended') ac.resume();
+    } catch (e) { ac = null; }
+  }
+  function beep(freq, dur, type = 'sine', vol = 0.12, slide = 0) {
+    if (!ac) return;
+    try {
+      const t = ac.currentTime, o = ac.createOscillator(), g = ac.createGain();
+      o.type = type; o.frequency.setValueAtTime(freq, t);
+      if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(20, freq + slide), t + dur);
+      g.gain.setValueAtTime(vol, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(g).connect(ac.destination); o.start(t); o.stop(t + dur);
+    } catch (e) {}
+  }
+
+  // ---------- Input ----------
+  const input = {
+    tilt: null,        // sideways component of "up" in screen coordinates (-1..1)
+    neutral: null,     // calibrated tilt at start
+    source: 'none',    // 'orientation' | 'motion' | 'none'
+    steer: 0,          // smoothed steering, -1 (left) .. 1 (right)
+    left: false, right: false, touch: 0,
+  };
+
+  function screenAngle() {
+    const so = screen.orientation;
+    const a = so && typeof so.angle === 'number' ? so.angle : (window.orientation || 0);
+    return a * D2R;
+  }
+
+  // Project the world "up" vector (in device coords) onto the screen's horizontal axis.
+  // This works for any screen rotation and for both "steering wheel" and "flat tilt" grips.
+  function upToScreenX(ux, uy) {
+    const a = screenAngle();
+    return ux * Math.cos(a) - uy * Math.sin(a);
+  }
+
+  function onOrientation(e) {
+    if (e.beta == null || e.gamma == null) return;
+    const b = e.beta * D2R, g = e.gamma * D2R;
+    // World up expressed in device frame, from the spec's Z-X'-Y'' Euler angles.
+    const ux = -Math.cos(b) * Math.sin(g);
+    const uy = Math.sin(b);
+    input.tilt = upToScreenX(ux, uy);
+    input.source = 'orientation';
+  }
+
+  function onMotion(e) {
+    if (input.source === 'orientation') return; // prefer the fused orientation sensor
+    const a = e.accelerationIncludingGravity;
+    if (!a || a.x == null) return;
+    const n = Math.hypot(a.x, a.y, a.z) || 1;
+    input.tilt = upToScreenX(a.x / n, a.y / n);
+    input.source = 'motion';
+  }
+
+  let sensorsAttached = false;
+  function attachSensors() {
+    if (sensorsAttached) return;
+    sensorsAttached = true;
+    window.addEventListener('deviceorientation', onOrientation);
+    window.addEventListener('devicemotion', onMotion);
+  }
+
+  function requestSensorPermission() {
+    // iOS 13+: must be called synchronously inside a user gesture.
+    const DOE = window.DeviceOrientationEvent, DME = window.DeviceMotionEvent;
+    let p = null;
+    if (DOE && typeof DOE.requestPermission === 'function') p = DOE.requestPermission();
+    else if (DME && typeof DME.requestPermission === 'function') p = DME.requestPermission();
+    return p ? p.catch(() => 'denied') : Promise.resolve('granted');
+  }
+
+  function calibrate() { input.neutral = input.tilt; }
+
+  function updateSteer(dt) {
+    let target = 0;
+    if (input.tilt != null) {
+      if (input.neutral == null) input.neutral = input.tilt;
+      let d = -(input.tilt - input.neutral) / SENSITIVITY;
+      d = Math.abs(d) < DEAD_ZONE ? 0 : (d - Math.sign(d) * DEAD_ZONE) / (1 - DEAD_ZONE);
+      target = clamp(d, -1, 1);
+    }
+    const manual = (input.right ? 1 : 0) - (input.left ? 1 : 0) + input.touch;
+    if (manual) target = clamp(manual, -1, 1);
+    input.steer += (target - input.steer) * Math.min(1, dt * 14);
+  }
+
+  const keyMap = { ArrowLeft: 'left', a: 'left', A: 'left', ArrowRight: 'right', d: 'right', D: 'right' };
+  window.addEventListener('keydown', (e) => {
+    if (keyMap[e.key]) { input[keyMap[e.key]] = true; e.preventDefault(); }
+    if ((e.key === ' ' || e.key === 'Enter') && G.state !== 'play') { startOrResume(); e.preventDefault(); }
+  });
+  window.addEventListener('keyup', (e) => { if (keyMap[e.key]) input[keyMap[e.key]] = false; });
+
+  function touchSteer(e) {
+    if (G.state !== 'play') return;
+    let dir = 0;
+    for (const t of e.touches) dir += t.clientX < W / 2 ? -1 : 1;
+    input.touch = clamp(dir, -1, 1);
+    e.preventDefault();
+  }
+  cvs.addEventListener('touchstart', touchSteer, { passive: false });
+  cvs.addEventListener('touchmove', touchSteer, { passive: false });
+  cvs.addEventListener('touchend', touchSteer, { passive: false });
+  cvs.addEventListener('touchcancel', () => { input.touch = 0; });
+
+  // ---------- Fullscreen / landscape / wake lock ----------
+  function lockLandscape() {
+    try { const p = screen.orientation && screen.orientation.lock && screen.orientation.lock('landscape'); if (p && p.catch) p.catch(() => {}); } catch (e) {}
+  }
+  function goFullscreen() {
+    if (!isTouch) return;
+    const el = document.documentElement;
+    const req = el.requestFullscreen || el.webkitRequestFullscreen;
+    if (!req || document.fullscreenElement || document.webkitFullscreenElement) { lockLandscape(); return; }
+    try {
+      const p = req.call(el, { navigationUI: 'hide' });
+      if (p && p.then) p.then(lockLandscape).catch(() => {});
+    } catch (e) {}
+  }
+  let wakeLock = null;
+  async function keepAwake() {
+    try { if ('wakeLock' in navigator && !wakeLock) { wakeLock = await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release', () => { wakeLock = null; }); } } catch (e) {}
+  }
+
+  // ---------- Game state ----------
+  const COLORS = ['#3d7bfd', '#2ec27e', '#f6d32d', '#9141ac', '#ffffff', '#ff7800', '#5bc8f5'];
+  const G = {
+    state: 'menu', t: 0, dist: 0, speed: 0, score: 0, coins: 0, best: loadBest(),
+    px: 0.5, traffic: [], items: [], spawnIn: 0, shake: 0, flash: 0, lastLanes: [],
+  };
+
+  const laneX = (i) => (i + 0.5) / LANES;
+
+  function reset() {
+    G.t = 0; G.dist = 0; G.speed = 0.9; G.score = 0; G.coins = 0;
+    G.px = 0.5; G.traffic = []; G.items = []; G.spawnIn = 0.6; G.shake = 0; G.flash = 0;
+    input.steer = 0; input.touch = 0;
+    calibrate();
+  }
+
+  function spawnRow() {
+    // At most LANES-2 cars per row, so there's always a way through.
+    const maxCars = G.t > 25 ? 2 : (G.t > 8 && Math.random() < 0.45 ? 2 : 1);
+    const lanes = [0, 1, 2, 3].sort(() => Math.random() - 0.5).slice(0, maxCars);
+    const ch = carH / H;
+    for (const l of lanes) {
+      G.traffic.push({ x: laneX(l), y: -ch, color: COLORS[(Math.random() * COLORS.length) | 0] });
+    }
+    // Sometimes drop a coin in a free lane.
+    if (Math.random() < 0.55) {
+      const free = [0, 1, 2, 3].filter((l) => !lanes.includes(l));
+      const l = free[(Math.random() * free.length) | 0];
+      G.items.push({ x: laneX(l), y: -ch * 2.2, spin: Math.random() * 6 });
+    }
+    // Rows get closer together as the game goes on.
+    G.spawnIn = Math.max(0.5, 1.05 - G.t * 0.012) + Math.random() * 0.25;
+  }
+
+  function crash() {
+    G.state = 'crashing'; G.shake = 0.45; G.flash = 1;
+    beep(180, 0.5, 'sawtooth', 0.2, -150);
+    if (navigator.vibrate) try { navigator.vibrate([80, 40, 120]); } catch (e) {}
+    const final = G.score;
+    const newBest = final > G.best;
+    if (newBest) { G.best = final; saveBest(final); }
+    setTimeout(() => {
+      G.state = 'over';
+      $('finalScore').textContent = final;
+      $('bestLine').textContent = newBest ? 'New best score!' : 'Best: ' + G.best;
+      show('over');
+    }, 900);
+  }
+
+  function update(dt) {
+    updateSteer(dt);
+    if (G.shake > 0) G.shake = Math.max(0, G.shake - dt);
+    if (G.flash > 0) G.flash = Math.max(0, G.flash - dt * 2.5);
+    if (G.state !== 'play') return;
+
+    G.t += dt;
+    G.speed = Math.min(0.9 + G.t * 0.03, 2.5);    // screen heights per second
+    const dy = G.speed * dt;
+    G.dist += dy;
+    G.score = Math.floor(G.dist * 10) + G.coins * 50;
+
+    // Player
+    const cw = carW / roadW, ch = carH / H;
+    G.px = clamp(G.px + input.steer * 1.3 * dt, cw / 2 + 0.02, 1 - cw / 2 - 0.02);
+
+    // Spawning
+    G.spawnIn -= dy * TRAFFIC_REL;
+    if (G.spawnIn <= 0) spawnRow();
+
+    // Traffic
+    for (const c of G.traffic) {
+      c.y += dy * TRAFFIC_REL;
+      if (Math.abs(c.x - G.px) < cw * 0.82 && Math.abs(c.y - PLAYER_Y) < ch * 0.86) { crash(); return; }
+    }
+    G.traffic = G.traffic.filter((c) => c.y < 1 + ch);
+
+    // Coins
+    for (const it of G.items) {
+      it.y += dy; it.spin += dt * 5;
+      if (!it.taken && Math.abs(it.x - G.px) < cw * 0.9 && Math.abs(it.y - PLAYER_Y) < ch * 0.6) {
+        it.taken = true; G.coins++; beep(880, 0.08, 'square', 0.08); setTimeout(() => beep(1320, 0.12, 'square', 0.08), 70);
+      }
+    }
+    G.items = G.items.filter((it) => !it.taken && it.y < 1.2);
+  }
+
+  // ---------- Drawing ----------
+  function hash(n) { const s = Math.sin(n * 127.1) * 43758.5453; return s - Math.floor(s); }
+
+  function roundRect(x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+  }
+
+  function drawCar(cx, cy, color, isPlayer) {
+    const w = carW, h = carH, x = cx - w / 2, y = cy - h / 2;
+    ctx.fillStyle = 'rgba(0,0,0,0.25)';
+    roundRect(x + w * 0.08, y + h * 0.06, w, h, w * 0.25); ctx.fill();
+    ctx.fillStyle = '#111';                                   // wheels
+    const ww = w * 0.16, wh = h * 0.2;
+    for (const [wx, wy] of [[x - ww * 0.4, y + h * 0.14], [x + w - ww * 0.6, y + h * 0.14], [x - ww * 0.4, y + h * 0.66], [x + w - ww * 0.6, y + h * 0.66]]) {
+      roundRect(wx, wy, ww, wh, ww * 0.3); ctx.fill();
+    }
+    ctx.fillStyle = color;                                    // body
+    roundRect(x, y, w, h, w * 0.28); ctx.fill();
+    ctx.fillStyle = 'rgba(20,30,45,0.85)';                    // windows
+    roundRect(x + w * 0.14, y + h * (isPlayer ? 0.24 : 0.56), w * 0.72, h * 0.18, w * 0.12); ctx.fill();
+    roundRect(x + w * 0.18, y + h * (isPlayer ? 0.62 : 0.24), w * 0.64, h * 0.12, w * 0.1); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.18)';                 // roof shine
+    roundRect(x + w * 0.2, y + h * 0.44, w * 0.6, h * 0.12, w * 0.08); ctx.fill();
+    if (isPlayer) {
+      ctx.fillStyle = '#fff6b0';                              // headlights
+      ctx.fillRect(x + w * 0.12, y + h * 0.02, w * 0.18, h * 0.04);
+      ctx.fillRect(x + w * 0.7, y + h * 0.02, w * 0.18, h * 0.04);
+    } else {
+      ctx.fillStyle = '#ff3b30';                              // tail lights (facing us)
+      ctx.fillRect(x + w * 0.1, y + h * 0.94, w * 0.2, h * 0.04);
+      ctx.fillRect(x + w * 0.7, y + h * 0.94, w * 0.2, h * 0.04);
+    }
+  }
+
+  function drawWorld() {
+    const scroll = G.dist * H;
+
+    // Grass with scrolling stripes
+    ctx.fillStyle = '#3f8f3a'; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#378232';
+    const stripe = H * 0.25;
+    for (let y = (scroll % (stripe * 2)) - stripe * 2; y < H; y += stripe * 2) ctx.fillRect(0, y, W, stripe);
+
+    // Trees on both sides
+    const spacing = 0.33;
+    const base = Math.floor(G.dist / spacing);
+    for (let k = -1; k <= Math.ceil(1 / spacing) + 1; k++) {
+      const idx = base - k;
+      const y = (G.dist - idx * spacing) * H;
+      for (const side of [-1, 1]) {
+        const r = hash(idx * 2 + (side > 0 ? 1 : 0));
+        const margin = side < 0 ? roadX : W - roadX - roadW;
+        if (margin < H * 0.08) continue;
+        const tx = side < 0 ? roadX - H * 0.07 - r * (margin - H * 0.12) : roadX + roadW + H * 0.07 + r * (margin - H * 0.12);
+        const tr = H * (0.035 + hash(idx * 7 + side) * 0.03);
+        ctx.fillStyle = 'rgba(0,0,0,0.2)'; ctx.beginPath(); ctx.arc(tx + tr * 0.3, y + tr * 0.3, tr, 0, 7); ctx.fill();
+        ctx.fillStyle = '#1f6b2a'; ctx.beginPath(); ctx.arc(tx, y, tr, 0, 7); ctx.fill();
+        ctx.fillStyle = '#2b8a38'; ctx.beginPath(); ctx.arc(tx - tr * 0.25, y - tr * 0.25, tr * 0.55, 0, 7); ctx.fill();
+      }
+    }
+
+    // Road
+    ctx.fillStyle = '#4a4d52'; ctx.fillRect(roadX, 0, roadW, H);
+    // Kerbs
+    const kerbW = Math.max(6, roadW * 0.025), kerbH = H * 0.06;
+    for (let y = (scroll % (kerbH * 2)) - kerbH * 2, i = 0; y < H; y += kerbH, i++) {
+      ctx.fillStyle = (i + Math.floor(scroll / kerbH)) % 2 ? '#e8e8e8' : '#d7263d';
+      ctx.fillRect(roadX - kerbW, y, kerbW, kerbH + 1);
+      ctx.fillRect(roadX + roadW, y, kerbW, kerbH + 1);
+    }
+    // Lane dashes
+    ctx.fillStyle = 'rgba(255,255,255,0.75)';
+    const dashH = H * 0.09, gap = H * 0.11, dashW = Math.max(3, roadW * 0.012);
+    for (let l = 1; l < LANES; l++) {
+      const lx = roadX + (roadW * l) / LANES - dashW / 2;
+      for (let y = (scroll % (dashH + gap)) - (dashH + gap); y < H; y += dashH + gap) ctx.fillRect(lx, y, dashW, dashH);
+    }
+  }
+
+  function drawCoins() {
+    for (const it of G.items) {
+      const cx = roadX + it.x * roadW, cy = it.y * H, r = carW * 0.32;
+      const sx = Math.abs(Math.cos(it.spin)) * 0.75 + 0.25;
+      ctx.save(); ctx.translate(cx, cy); ctx.scale(sx, 1);
+      ctx.fillStyle = '#b8860b'; ctx.beginPath(); ctx.arc(0, 0, r, 0, 7); ctx.fill();
+      ctx.fillStyle = '#ffd700'; ctx.beginPath(); ctx.arc(0, 0, r * 0.78, 0, 7); ctx.fill();
+      ctx.fillStyle = '#fff3a0'; ctx.fillRect(-r * 0.12, -r * 0.45, r * 0.24, r * 0.9);
+      ctx.restore();
+    }
+  }
+
+  function drawWheel(cx, cy, r) {
+    ctx.save(); ctx.translate(cx, cy); ctx.rotate(input.steer * Math.PI / 2);
+    ctx.globalAlpha = 0.85;
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = r * 0.22;
+    ctx.beginPath(); ctx.arc(0, 0, r, 0, 7); ctx.stroke();
+    ctx.lineWidth = r * 0.16;
+    ctx.beginPath(); ctx.moveTo(-r, 0); ctx.lineTo(r, 0); ctx.moveTo(0, 0); ctx.lineTo(0, r); ctx.stroke();
+    ctx.fillStyle = '#ffcc00'; ctx.fillRect(-r * 0.1, -r * 1.15, r * 0.2, r * 0.3);
+    ctx.restore();
+  }
+
+  function drawHUD() {
+    const pad = Math.max(12, H * 0.03);
+    const fs = Math.max(14, Math.round(H * 0.05));
+    ctx.textBaseline = 'top';
+    ctx.font = `800 ${fs}px system-ui, sans-serif`;
+    ctx.fillStyle = 'rgba(0,0,0,0.45)';
+    roundRect(pad - 8, pad - 6, fs * 6.2, fs * 2.5, 10); ctx.fill();
+    ctx.fillStyle = '#fff'; ctx.textAlign = 'left';
+    ctx.fillText(String(G.score), pad, pad);
+    ctx.font = `600 ${Math.round(fs * 0.62)}px system-ui, sans-serif`;
+    ctx.fillStyle = '#ffcc00';
+    ctx.fillText(`${Math.round(G.speed * 60)} km/h  •  ${G.coins} coins`, pad, pad + fs * 1.15);
+
+    ctx.textAlign = 'right'; ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    ctx.fillText('BEST ' + G.best, W - pad, pad);
+    const mode = input.source === 'none' ? (isTouch ? 'touch' : 'keys') : 'tilt';
+    ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    ctx.fillText('control: ' + mode, W - pad, pad + fs * 0.85);
+
+    const wr = Math.max(18, H * 0.06);
+    drawWheel(W - pad - wr * 1.4, H - pad - wr * 1.4, wr);
+  }
+
+  function draw() {
+    ctx.save();
+    if (G.shake > 0) { const m = G.shake * H * 0.04; ctx.translate((Math.random() - 0.5) * m, (Math.random() - 0.5) * m); }
+    drawWorld();
+    drawCoins();
+    for (const c of G.traffic) drawCar(roadX + c.x * roadW, c.y * H, c.color, false);
+    drawCar(roadX + G.px * roadW, PLAYER_Y * H, '#e01b24', true);
+    ctx.restore();
+    if (G.flash > 0) { ctx.fillStyle = `rgba(255,255,255,${G.flash * 0.6})`; ctx.fillRect(0, 0, W, H); }
+    if (G.state !== 'menu') drawHUD();
+  }
+
+  // ---------- Loop ----------
+  let last = performance.now();
+  function frame(now) {
+    const dt = Math.min(0.05, (now - last) / 1000);
+    last = now;
+    const portraitPhone = isTouch && H > W;
+    if (!portraitPhone) update(dt);
+    draw();
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+
+  // ---------- UI flow ----------
+  function show(id) { for (const o of ['menu', 'over', 'paused']) $(o).classList.toggle('hidden', o !== id); }
+
+  function startOrResume() {
+    const permission = requestSensorPermission();   // must be first, inside the gesture
+    goFullscreen();
+    initAudio();
+    keepAwake();
+    attachSensors();
+    permission.then((res) => {
+      if (res !== 'granted') {
+        const m = $('menuMsg');
+        m.textContent = 'Motion access was denied, so touch controls are on. To use tilt, reload the page and tap Allow.';
+        m.classList.remove('hidden');
+      }
+    });
+    // Give the first sensor reading a moment to arrive before calibrating.
+    const wasPaused = G.state === 'paused';
+    if (!wasPaused) reset();
+    G.state = 'play';
+    show(null);
+    setTimeout(calibrate, 150);
+    beep(440, 0.1, 'triangle', 0.1); setTimeout(() => beep(660, 0.15, 'triangle', 0.1), 110);
+  }
+
+  $('startBtn').addEventListener('click', startOrResume);
+  $('againBtn').addEventListener('click', startOrResume);
+  $('resumeBtn').addEventListener('click', startOrResume);
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      if (G.state === 'play') { G.state = 'paused'; show('paused'); }
+    } else {
+      keepAwake();
+    }
+  });
+
+  // Draw a gently moving road behind the menu.
+  G.speed = 0.6;
+  setInterval(() => { if (G.state === 'menu') G.dist += 0.01; }, 16);
+
+  // Hook for automated tests.
+  window.__tiltRacer = { G, input };
+})();
+</script>
+</body>
+</html>
