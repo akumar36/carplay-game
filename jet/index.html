@@ -1,0 +1,992 @@
+<!doctype html>
+<!--
+  Neon Jet (CarPlay Games)
+  Copyright (c) 2026 @seltos.gtx (https://www.instagram.com/seltos.gtx/). All rights reserved.
+  Copying, modifying or redistributing this code without permission is not allowed.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="CarPlay Games">
+<meta name="theme-color" content="#12062a">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="icon" href="../icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../icon-180.png">
+<title>Neon Jet</title>
+<style>
+  :root { --fg: #fff; --accent: #ffd319; --pink: #ff2975; --cyan: #00e5ff; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; height: 100%; overflow: hidden; background: #12062a; color: var(--fg);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    touch-action: none; user-select: none; -webkit-user-select: none; overscroll-behavior: none;
+  }
+  canvas { position: fixed; inset: 0; width: 100vw; height: 100vh; display: block; }
+  .overlay {
+    position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 12px; padding: 24px; text-align: center; z-index: 10; overflow: hidden;
+    background:
+      radial-gradient(ellipse 80% 55% at 50% 115%, rgba(255, 41, 117, 0.5), transparent 70%),
+      linear-gradient(180deg, rgba(18, 6, 42, 0.9) 0%, rgba(43, 10, 78, 0.86) 70%, rgba(70, 12, 90, 0.84) 100%);
+  }
+  .hidden { display: none !important; }
+  h1 {
+    margin: 0; font-size: clamp(28px, 7.5vh, 60px); letter-spacing: 2px; font-weight: 900; font-style: italic;
+    background: linear-gradient(180deg, #ffffff 0%, #b8fbff 30%, #00e5ff 50%, #ff2975 85%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    filter: drop-shadow(0 0 14px rgba(0, 229, 255, 0.5)) drop-shadow(0 2px 0 rgba(18, 6, 42, 0.9));
+  }
+  p { margin: 0; font-size: clamp(13px, 3.4vh, 18px); opacity: 0.9; max-width: 34em; line-height: 1.4; }
+  .big {
+    font-size: clamp(36px, 11vh, 80px); font-weight: 900; font-style: italic; color: transparent;
+    background: linear-gradient(180deg, #fff3a0, #ffd319 45%, #ff2975); -webkit-background-clip: text; background-clip: text;
+  }
+  button {
+    font: inherit; font-size: clamp(16px, 4.5vh, 24px); font-weight: 800; padding: 0.7em 1.9em; border: 0;
+    border-radius: 999px; color: #fff; cursor: pointer; margin-top: 6px; letter-spacing: 0.5px;
+    background: linear-gradient(90deg, #ff2975, #ff901f);
+    box-shadow: 0 0 22px rgba(255, 41, 117, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  }
+  .small { font-size: 13px; opacity: 0.65; }
+  .msg { color: #ff8a80; font-weight: 600; }
+  .copyright { font-size: 11px; opacity: 0.6; margin-top: 4px; }
+  .byline a { color: var(--cyan); font-weight: 700; text-decoration: none; }
+  .homeLink { font-size: 13px; font-weight: 700; color: #fff; opacity: 0.75; text-decoration: none; }
+  #rotate { display: none; z-index: 20; background: #12062a; }
+  #rotate .phone {
+    width: 44px; height: 76px; border: 4px solid var(--cyan); border-radius: 9px;
+    animation: turn 1.8s ease-in-out infinite;
+  }
+  @keyframes turn { 0%, 30% { transform: rotate(0); } 60%, 100% { transform: rotate(-90deg); } }
+  @media (orientation: portrait) and (pointer: coarse) { #rotate { display: flex; } }
+
+  #topBar { position: fixed; top: max(8px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); z-index: 16; }
+  #soundBtn, #fsBtn {
+    font: 700 13px system-ui, sans-serif; color: #fff; background: rgba(18, 6, 42, 0.6);
+    border: 1px solid rgba(255, 41, 117, 0.6); box-shadow: none; margin: 0; cursor: pointer;
+  }
+  #soundBtn { padding: 6px 14px; border-radius: 999px; white-space: nowrap; }
+  #fsBtn {
+    position: fixed; top: max(8px, env(safe-area-inset-top)); right: max(10px, env(safe-area-inset-right)); z-index: 16;
+    width: 38px; height: 38px; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 12px;
+  }
+  #fsBtn svg { width: 20px; height: 20px; }
+
+  /* Branding: shown beside the menus; during play the billboard appears inside the game world instead */
+  .ig-logo {
+    display: inline-flex; align-items: center; justify-content: center; flex: none;
+    width: 40px; height: 40px; border-radius: 12px;
+    background: radial-gradient(circle at 30% 107%, #fdf497 0%, #fdf497 5%, #fd5949 45%, #d6249f 60%, #285aeb 90%);
+  }
+  .ig-logo svg { width: 64%; height: 64%; }
+  #brand {
+    position: fixed; top: 50%; left: 12px; transform: translateY(-50%); z-index: 15;
+    display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 8px;
+    border-radius: 18px; background: rgba(18, 6, 42, 0.6); color: #fff; text-decoration: none;
+    border: 1px solid rgba(255, 255, 255, 0.14); text-align: center;
+  }
+  #brand .handle { font-weight: 800; font-size: 14px; white-space: nowrap; }
+  #brand .dev { font-size: 9px; font-weight: 800; letter-spacing: 1.5px; opacity: 0.75; white-space: nowrap; }
+  #brand .follow { font-size: 11px; font-weight: 600; opacity: 0.85; }
+  .igBtn {
+    display: inline-flex; align-items: center; gap: 10px; padding: 0.45em 1.2em 0.45em 0.5em;
+    border-radius: 999px; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.18); color: #fff; text-decoration: none;
+    font-weight: 700; font-size: clamp(14px, 3.6vh, 18px);
+  }
+  .igBtn .ig-logo { width: 32px; height: 32px; border-radius: 10px; }
+  #adBanner {
+    position: fixed; top: 50%; right: 12px; transform: translateY(-50%); z-index: 15;
+    display: flex; flex-direction: column; align-items: center; text-decoration: none; color: #fff;
+  }
+  #adBanner .board {
+    position: relative; width: 100%; padding: 10px 8px 9px; border-radius: 14px; text-align: center;
+    border: 2px solid transparent;
+    background:
+      linear-gradient(160deg, #1a1030, #0d0b1a) padding-box,
+      linear-gradient(90deg, #ff2fd0, #ffcc00, #00e5ff, #ff2fd0, #ffcc00) border-box;
+    background-size: 100% 100%, 300% 100%;
+    animation: adBorder 4s linear infinite, adGlow 2.4s ease-in-out infinite;
+    display: flex; flex-direction: column; align-items: center; gap: 4px; overflow: hidden;
+  }
+  #adBanner .board::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(110deg, transparent 35%, rgba(255,255,255,0.18) 50%, transparent 65%);
+    transform: translateX(-120%); animation: adSweep 3.5s ease-in-out infinite;
+  }
+  #adBanner .tag {
+    font-size: 9px; font-weight: 800; letter-spacing: 1.5px; white-space: nowrap; padding: 2px 7px; border-radius: 999px;
+    background: #ff2fd0; color: #fff; box-shadow: 0 0 10px #ff2fd0;
+  }
+  #adBanner .main {
+    font-size: 17px; font-weight: 900; line-height: 1.05; text-transform: uppercase; letter-spacing: 0.5px;
+    background: linear-gradient(90deg, #ffcc00, #fff, #00e5ff, #ffcc00); background-size: 300% 100%;
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    animation: adText 3s linear infinite;
+  }
+  #adBanner .cta { font-size: 10px; font-weight: 600; opacity: 0.85; line-height: 1.3; }
+  #adBanner .cta b { color: #00e5ff; font-weight: 800; }
+  #adBanner .legs { display: flex; justify-content: space-between; width: 56%; height: 14px; }
+  #adBanner .legs i { width: 5px; height: 100%; background: #6b5a45; border-radius: 0 0 2px 2px; }
+  @keyframes adBorder { to { background-position: 0 0, 300% 0; } }
+  @keyframes adGlow {
+    0%, 100% { box-shadow: 0 0 8px rgba(255, 47, 208, 0.45), 0 0 18px rgba(0, 229, 255, 0.15); }
+    50% { box-shadow: 0 0 14px rgba(255, 204, 0, 0.6), 0 0 28px rgba(255, 47, 208, 0.35); }
+  }
+  @keyframes adSweep { 0%, 55% { transform: translateX(-120%); } 85%, 100% { transform: translateX(120%); } }
+  @keyframes adText { to { background-position: 300% 0; } }
+  @media (prefers-reduced-motion: reduce) {
+    #adBanner .board, #adBanner .board::after, #adBanner .main { animation: none; }
+  }
+  body.playing #brand, body.playing #adBanner { display: none; }
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+
+<button id="fsBtn" class="hidden" type="button" aria-label="Enter fullscreen"></button>
+<div id="topBar"><button id="soundBtn" type="button" aria-label="Change sound setting">🔊 Sound on</button></div>
+
+<a id="brand" href="https://www.instagram.com/seltos.gtx/" target="_blank" rel="noopener">
+  <span class="dev">DEVELOPED BY</span>
+  <span class="ig-logo"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.4" cy="6.6" r="1.1" fill="#fff" stroke="none"/></svg></span>
+  <span class="handle">@seltos.gtx</span>
+  <span class="follow">Follow on Instagram</span>
+</a>
+
+<a id="adBanner" href="https://www.instagram.com/seltos.gtx/" target="_blank" rel="noopener" aria-label="Advertise here: contact @seltos.gtx on Instagram">
+  <span class="board">
+    <span class="tag">AD SPACE</span>
+    <span class="main">Your<br>brand<br>here</span>
+    <span class="cta">Contact<br><b>@seltos.gtx</b></span>
+  </span>
+  <span class="legs"><i></i><i></i></span>
+</a>
+
+<div id="menu" class="overlay">
+  <h1>NEON JET</h1>
+  <p class="byline small">by <a href="https://www.instagram.com/seltos.gtx/" target="_blank" rel="noopener">@seltos.gtx</a></p>
+  <p>Hold your phone sideways like a steering wheel. <b>Tilt the right side down to dive</b>, up to climb.
+     Fly through the gaps, grab coins and hearts. You have <b>3 lives</b>.</p>
+  <button id="startBtn">Tap to fly</button>
+  <p class="small">No tilt sensor? Use ↑ ↓ / W S keys, or touch the top or bottom half of the screen.</p>
+  <p id="menuMsg" class="msg hidden"></p>
+  <a class="homeLink" href="../">← All games</a>
+  <p class="copyright">© 2026 @seltos.gtx · All rights reserved</p>
+</div>
+
+<div id="over" class="overlay hidden">
+  <p>GAME OVER</p>
+  <div class="big" id="finalScore">0</div>
+  <p id="bestLine"></p>
+  <button id="againBtn">Fly again</button>
+  <a class="igBtn" href="https://www.instagram.com/seltos.gtx/" target="_blank" rel="noopener">
+    <span class="ig-logo"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.4" cy="6.6" r="1.1" fill="#fff" stroke="none"/></svg></span>
+    Follow @seltos.gtx
+  </a>
+  <a class="homeLink" href="../">← All games</a>
+  <p class="copyright">© 2026 @seltos.gtx · All rights reserved</p>
+</div>
+
+<div id="paused" class="overlay hidden">
+  <h1>Paused</h1>
+  <button id="resumeBtn">Resume</button>
+</div>
+
+<div id="rotate" class="overlay">
+  <div class="phone"></div>
+  <p>Rotate your phone to <b>landscape</b>.</p>
+  <p class="small">On iPhone, turn off Portrait Orientation Lock in Control Center.</p>
+</div>
+
+<script>
+(() => {
+  'use strict';
+
+  // ---------- Setup ----------
+  // World units are screen heights: y = 0 is the top of the sky, GROUND is where the floor starts,
+  // and x runs along the flight path (G.dist is how far we've flown).
+  const cvs = document.getElementById('game');
+  const ctx = cvs.getContext('2d');
+  const $ = (id) => document.getElementById(id);
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const D2R = Math.PI / 180;
+  const PLANE_X = 0.24;          // jet position, as a fraction of screen width
+  const GROUND = 0.9;
+  const SENSITIVITY = 0.36;      // ~21 degrees of tilt = full climb / dive
+  const DEAD_ZONE = 0.07;
+  const CLIMB = 1.0;             // screen heights per second at full tilt
+  const START_SPEED = 0.55, MAX_SPEED = 1.25, SPEED_RAMP = 0.01;
+  const GAP_START = 0.46, GAP_MIN = 0.32, TOWER_W = 0.13;
+  const HIT_W = 0.05, HIT_H = 0.024;   // smaller than the jet sprite, to be forgiving
+  const MAX_LIVES = 3, INVINCIBLE_TIME = 2;
+  const COUNTDOWN = 2.4;
+  const isTouch = matchMedia('(pointer: coarse)').matches;
+
+  let W = 0, H = 0, PX = 0;      // PX: jet's distance from the left edge, in world units
+
+  function resize() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth; H = window.innerHeight;
+    cvs.width = Math.round(W * dpr); cvs.height = Math.round(H * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    PX = (PLANE_X * W) / H;
+    placeSide($('brand'), 'left', 150);
+    placeSide($('adBanner'), 'right', 140);
+  }
+
+  // Badge and billboard sit in the space beside the centred menu text, and hide if there's no room.
+  function placeSide(el, side, maxW) {
+    const margin = (W - Math.min(W, 600)) / 2;
+    if (margin < 96) { el.classList.add('hidden'); return; }
+    el.classList.remove('hidden');
+    const bw = Math.min(margin - 16, maxW);
+    el.style.width = bw + 'px';
+    el.style[side] = (margin - bw) / 2 + 'px';
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  // ---------- Storage ----------
+  function load(key, fallback) { try { const v = localStorage.getItem(key); return v == null ? fallback : v; } catch (e) { return fallback; } }
+  function save(key, v) { try { localStorage.setItem(key, String(v)); } catch (e) {} }
+
+  // ---------- Audio (tiny synth blips) ----------
+  let ac = null, muted = load('jetSound', 'on') === 'off';
+  function initAudio() {
+    if (muted) return;
+    try {
+      ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+      if (ac.state === 'suspended') ac.resume();
+    } catch (e) { ac = null; }
+  }
+  function beep(freq, dur, type = 'sine', vol = 0.12, slide = 0) {
+    if (!ac || muted) return;
+    try {
+      const t = ac.currentTime, o = ac.createOscillator(), g = ac.createGain();
+      o.type = type; o.frequency.setValueAtTime(freq, t);
+      if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(20, freq + slide), t + dur);
+      g.gain.setValueAtTime(vol, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(g).connect(ac.destination); o.start(t); o.stop(t + dur);
+    } catch (e) {}
+  }
+  function setMuted(m) {
+    muted = m; save('jetSound', m ? 'off' : 'on');
+    $('soundBtn').textContent = m ? '🔇 Muted' : '🔊 Sound on';
+    if (m && ac) try { ac.suspend(); } catch (e) {}
+    if (!m) initAudio();
+  }
+
+  // ---------- Input (same tilt model as CarPlay Racer) ----------
+  const input = {
+    tilt: null,        // sideways component of "up" in screen coordinates (-1..1)
+    neutral: null,     // calibrated tilt at start
+    source: 'none',    // 'orientation' | 'motion' | 'none'
+    steer: 0,          // smoothed: -1 (climb) .. 1 (dive); clockwise rotation dives
+    up: false, down: false, touch: 0,
+  };
+
+  function screenAngle() {
+    const so = screen.orientation;
+    let a = so && typeof so.angle === 'number' ? so.angle : (window.orientation || 0);
+    // Some browsers report 0 even when the page is landscape; assume the common landscape rotation.
+    if (a % 180 === 0 && window.innerWidth > window.innerHeight) a = 90;
+    return a * D2R;
+  }
+
+  // Project the world "up" vector (in device coords) onto the screen's horizontal axis.
+  function upToScreenX(ux, uy) {
+    const a = screenAngle();
+    return ux * Math.cos(a) - uy * Math.sin(a);
+  }
+
+  function onOrientation(e) {
+    if (e.beta == null || e.gamma == null) return;
+    const b = e.beta * D2R, g = e.gamma * D2R;
+    const ux = -Math.cos(b) * Math.sin(g);
+    const uy = Math.sin(b);
+    input.tilt = upToScreenX(ux, uy);
+    input.source = 'orientation';
+  }
+
+  function onMotion(e) {
+    if (input.source === 'orientation') return; // prefer the fused orientation sensor
+    const a = e.accelerationIncludingGravity;
+    if (!a || a.x == null) return;
+    const n = Math.hypot(a.x, a.y, a.z) || 1;
+    input.tilt = upToScreenX(a.x / n, a.y / n);
+    input.source = 'motion';
+  }
+
+  let sensorsAttached = false;
+  function attachSensors() {
+    if (sensorsAttached) return;
+    sensorsAttached = true;
+    window.addEventListener('deviceorientation', onOrientation);
+    window.addEventListener('devicemotion', onMotion);
+  }
+
+  function requestSensorPermission() {
+    // iOS 13+: must be called synchronously inside a user gesture.
+    const DOE = window.DeviceOrientationEvent, DME = window.DeviceMotionEvent;
+    let p = null;
+    if (DOE && typeof DOE.requestPermission === 'function') p = DOE.requestPermission();
+    else if (DME && typeof DME.requestPermission === 'function') p = DME.requestPermission();
+    return p ? p.catch(() => 'denied') : Promise.resolve('granted');
+  }
+
+  function updateSteer(dt) {
+    let target = 0;
+    if (input.tilt != null) {
+      if (input.neutral == null || G.state === 'countdown') input.neutral = input.tilt;
+      let d = -(input.tilt - input.neutral) / SENSITIVITY;
+      d = Math.abs(d) < DEAD_ZONE ? 0 : (d - Math.sign(d) * DEAD_ZONE) / (1 - DEAD_ZONE);
+      target = clamp(d, -1, 1);
+    }
+    const manual = (input.down ? 1 : 0) - (input.up ? 1 : 0) + input.touch;
+    if (manual) target = clamp(manual, -1, 1);
+    input.steer += (target - input.steer) * Math.min(1, dt * 14);
+  }
+
+  const keyMap = { ArrowUp: 'up', w: 'up', W: 'up', ArrowDown: 'down', s: 'down', S: 'down' };
+  window.addEventListener('keydown', (e) => {
+    if (keyMap[e.key]) { input[keyMap[e.key]] = true; e.preventDefault(); }
+    if ((e.key === ' ' || e.key === 'Enter') && ['menu', 'over', 'paused'].includes(G.state)) { startOrResume(); e.preventDefault(); }
+    if (e.key === 'm' || e.key === 'M') setMuted(!muted);
+  });
+  window.addEventListener('keyup', (e) => { if (keyMap[e.key]) input[keyMap[e.key]] = false; });
+
+  function touchSteer(e) {
+    if (G.state !== 'play') return;
+    let dir = 0;
+    for (const t of e.touches) dir += t.clientY < H / 2 ? -1 : 1;
+    input.touch = clamp(dir, -1, 1);
+    e.preventDefault();
+  }
+  cvs.addEventListener('touchstart', touchSteer, { passive: false });
+  cvs.addEventListener('touchmove', touchSteer, { passive: false });
+  cvs.addEventListener('touchend', touchSteer, { passive: false });
+  cvs.addEventListener('touchcancel', () => { input.touch = 0; });
+
+  // ---------- Fullscreen / landscape / wake lock ----------
+  function lockLandscape() {
+    try { const p = screen.orientation && screen.orientation.lock && screen.orientation.lock('landscape'); if (p && p.catch) p.catch(() => {}); } catch (e) {}
+  }
+  function goFullscreen() {
+    if (!isTouch) return;
+    const el = document.documentElement;
+    const req = el.requestFullscreen || el.webkitRequestFullscreen;
+    if (!req || document.fullscreenElement || document.webkitFullscreenElement) { lockLandscape(); return; }
+    try {
+      const p = req.call(el, { navigationUI: 'hide' });
+      if (p && p.then) p.then(lockLandscape).catch(() => {});
+    } catch (e) {}
+  }
+  // iPhone Safari has no fullscreen API for pages, so the button stays hidden there (and when installed).
+  const fsElement = () => document.fullscreenElement || document.webkitFullscreenElement;
+  const fsSupported = !!(document.fullscreenEnabled || document.webkitFullscreenEnabled) &&
+    !matchMedia('(display-mode: fullscreen), (display-mode: standalone)').matches;
+  const FS_ICONS = {
+    enter: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg>',
+    exit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4v5H4M15 4v5h5M20 15h-5v5M4 15h5v5"/></svg>',
+  };
+  function toggleFullscreen() {
+    try {
+      if (fsElement()) { (document.exitFullscreen || document.webkitExitFullscreen).call(document); return; }
+      const el = document.documentElement;
+      const p = (el.requestFullscreen || el.webkitRequestFullscreen).call(el, { navigationUI: 'hide' });
+      if (p && p.then) p.then(lockLandscape).catch(() => {});
+    } catch (e) {}
+  }
+  function updateFsBtn() {
+    const btn = $('fsBtn'), on = !!fsElement();
+    btn.innerHTML = on ? FS_ICONS.exit : FS_ICONS.enter;
+    btn.setAttribute('aria-label', on ? 'Exit fullscreen' : 'Enter fullscreen');
+  }
+  let wakeLock = null;
+  async function keepAwake() {
+    try { if ('wakeLock' in navigator && !wakeLock) { wakeLock = await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release', () => { wakeLock = null; }); } } catch (e) {}
+  }
+
+  // ---------- Game state ----------
+  const G = {
+    state: 'menu', t: 0, clock: 0, dist: 0, speed: 0, score: 0, coins: 0, gates: 0, best: +load('jetBest', 0) || 0,
+    py: 0.45, vy: 0, towers: [], items: [], mines: [], signs: [], popups: [],
+    nextX: 0, lastGy: 0.45, lastSpacing: 0.9, count: 0,
+    shake: 0, flash: 0, lives: MAX_LIVES, inv: 0, countdown: 0,
+  };
+
+  function reset() {
+    G.t = 0; G.dist = 0; G.speed = START_SPEED; G.score = 0; G.coins = 0; G.gates = 0;
+    G.py = 0.45; G.vy = 0;
+    G.towers.length = 0; G.items.length = 0; G.mines.length = 0; G.signs.length = 0; G.popups.length = 0;
+    G.nextX = PX + 1.5; G.lastGy = 0.45; G.lastSpacing = 0.9; G.count = 0;
+    G.shake = 0; G.flash = 0; G.lives = MAX_LIVES; G.inv = 0;
+    input.steer = 0; input.touch = 0; input.neutral = input.tilt;
+  }
+
+  function popup(text, color) { G.popups.push({ x: PX, y: G.py - 0.1, text, color, life: 1 }); }
+
+  // Remove objects that have scrolled off the left edge, without allocating a new array.
+  function prune(arr, minX) {
+    let j = 0;
+    for (let i = 0; i < arr.length; i++) { const o = arr[i]; if (!o.taken && o.x > minX) arr[j++] = o; }
+    arr.length = j;
+  }
+
+  function spawnTower() {
+    const t = G.t, x = G.nextX;
+    const gap = Math.max(GAP_MIN, GAP_START - t * 0.004);
+    // The gap moves at most this far from the previous one, so every gap is reachable.
+    // At high speed there's less time between towers, so cap the move to what a comfortable climb covers.
+    const time = (G.lastSpacing - TOWER_W) / Math.max(G.speed, START_SPEED);
+    const shift = Math.min(0.2 + Math.min(0.18, t * 0.005), CLIMB * time * 0.45);
+    const gy = clamp(G.lastGy + (Math.random() * 2 - 1) * shift, 0.1 + gap / 2, GROUND - 0.06 - gap / 2);
+    G.towers.push({ x, w: TOWER_W, gy, gh: gap, passed: false });
+
+    // In the open stretch before this tower: a heart (rare, only if a life is missing), a mine (later on) or a coin.
+    if (G.count > 0) {
+      const mx = x - G.lastSpacing / 2 + TOWER_W / 2, my = (gy + G.lastGy) / 2;
+      if (G.lives < MAX_LIVES && Math.random() < 0.1) G.items.push({ kind: 'heart', x: mx, y: my, spin: 0 });
+      else if (t > 20 && Math.random() < Math.min(0.45, 0.15 + (t - 20) * 0.01)) {
+        const off = (Math.random() < 0.5 ? -1 : 1) * (0.1 + Math.random() * 0.05);
+        G.mines.push({ x: mx, y0: clamp(my + off, 0.08, GROUND - 0.08), amp: 0.04 + Math.random() * 0.05, ph: Math.random() * 6 });
+      } else if (Math.random() < 0.65) G.items.push({ kind: 'coin', x: mx, y: my, spin: Math.random() * 6 });
+    }
+    if (Math.random() < 0.3) G.items.push({ kind: 'coin', x: x + TOWER_W / 2, y: gy, spin: Math.random() * 6 });
+    if (G.count % 6 === 1) G.signs.push({ x: x + G.lastSpacing * 0.5 });   // roadside-style billboard on the ground
+
+    G.count++;
+    G.lastGy = gy;
+    G.lastSpacing = Math.max(0.6, 0.95 - t * 0.004) + Math.random() * 0.15;
+    G.nextX = x + G.lastSpacing;
+  }
+
+  function hit() {
+    G.lives--; G.shake = 0.35; G.flash = 0.8; G.inv = INVINCIBLE_TIME;
+    if (navigator.vibrate) try { navigator.vibrate(G.lives > 0 ? 120 : [80, 40, 160]); } catch (e) {}
+    if (G.lives > 0) {
+      beep(220, 0.3, 'sawtooth', 0.16, -120);
+      popup('-1 ♥', '#ff5a5a');
+      G.t *= 0.85;   // ease off the difficulty a little after a hit
+      return;
+    }
+    gameOver();
+  }
+
+  function gameOver() {
+    G.state = 'crashing'; G.shake = 0.45; G.flash = 1;
+    beep(180, 0.5, 'sawtooth', 0.2, -150);
+    const final = G.score;
+    const newBest = final > G.best;
+    if (newBest) { G.best = final; save('jetBest', final); }
+    setTimeout(() => {
+      G.state = 'over';
+      $('finalScore').textContent = final;
+      $('bestLine').textContent = newBest ? 'New best score!' : 'Best: ' + G.best;
+      show('over');
+    }, 900);
+  }
+
+  function nextTower() {
+    const px = G.dist + PX;
+    for (const o of G.towers) if (o.x + o.w > px - HIT_W) return o;
+    return null;
+  }
+
+  function moveJet(dt) {
+    G.vy += (input.steer * CLIMB - G.vy) * Math.min(1, dt * 8);
+    G.py += G.vy * dt;
+    // Altitude assist: with the phone held level, drift gently towards the next gap.
+    const o = nextTower();
+    if (o && Math.abs(input.steer) < 0.15 && o.x - (G.dist + PX) < 0.7) G.py += (o.gy - G.py) * Math.min(1, dt * 1.2);
+    G.py = clamp(G.py, 0.05, GROUND - 0.05);
+  }
+
+  function update(dt) {
+    updateSteer(dt);
+    G.clock += dt;
+    if (G.shake > 0) G.shake = Math.max(0, G.shake - dt);
+    if (G.flash > 0) G.flash = Math.max(0, G.flash - dt * 2.5);
+    for (const p of G.popups) { p.life -= dt; p.y -= dt * 0.12; }
+    let j = 0; for (const p of G.popups) if (p.life > 0) G.popups[j++] = p; G.popups.length = j;
+
+    if (G.state === 'menu') { G.dist += 0.35 * dt; return; }
+    if (G.state === 'countdown') {
+      const before = Math.ceil(G.countdown);
+      G.countdown -= dt;
+      G.dist += START_SPEED * 0.4 * dt;
+      moveJet(dt);
+      if (G.countdown <= 0) { G.state = 'play'; beep(880, 0.25, 'triangle', 0.12); }
+      else if (Math.ceil(G.countdown) !== before) beep(440, 0.12, 'triangle', 0.1);
+      return;
+    }
+    if (G.state !== 'play') return;
+
+    G.t += dt;
+    G.speed = Math.min(START_SPEED + G.t * SPEED_RAMP, MAX_SPEED);
+    G.dist += G.speed * dt;
+    G.score = Math.floor(G.dist * 10) + G.coins * 50;
+    if (G.inv > 0) G.inv = Math.max(0, G.inv - dt);
+    moveJet(dt);
+
+    while (G.nextX < G.dist + W / H + 0.3) spawnTower();
+
+    const px = G.dist + PX;
+    for (const o of G.towers) {
+      if (!G.inv && Math.abs(px - (o.x + o.w / 2)) < o.w / 2 + HIT_W &&
+          (G.py - HIT_H < o.gy - o.gh / 2 || G.py + HIT_H > o.gy + o.gh / 2)) {
+        hit();
+        if (G.state !== 'play') return;
+      }
+      if (!o.passed && o.x + o.w < px - HIT_W) { o.passed = true; G.gates++; }
+    }
+    for (const m of G.mines) {
+      const my = m.y0 + Math.sin(G.clock * 2 + m.ph) * m.amp;
+      if (!G.inv && Math.abs(px - m.x) < 0.03 + HIT_W * 0.8 && Math.abs(G.py - my) < 0.03 + HIT_H) {
+        hit();
+        if (G.state !== 'play') return;
+      }
+    }
+    for (const it of G.items) {
+      it.spin += dt * 5;
+      if (!it.taken && Math.abs(it.x - px) < HIT_W + 0.03 && Math.abs(it.y - G.py) < HIT_H + 0.04) {
+        it.taken = true;
+        if (it.kind === 'heart') {
+          G.lives = Math.min(MAX_LIVES, G.lives + 1);
+          popup('+1 ♥', '#ff7eb6');
+          beep(660, 0.1, 'triangle', 0.1); setTimeout(() => beep(990, 0.18, 'triangle', 0.1), 90);
+        } else {
+          G.coins++;
+          popup('+50', '#ffd700');
+          beep(880, 0.08, 'square', 0.08); setTimeout(() => beep(1320, 0.12, 'square', 0.08), 70);
+        }
+      }
+    }
+    const minX = G.dist - 0.5;
+    prune(G.towers, minX); prune(G.items, minX); prune(G.mines, minX); prune(G.signs, minX);
+  }
+
+  // ---------- Sprites (pre-rendered once per screen size, then just stamped) ----------
+  function hash(n) { const s = Math.sin(n * 127.1) * 43758.5453; return s - Math.floor(s); }
+  function rr(g, x, y, w, h, r) {
+    g.beginPath();
+    g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r);
+    g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath();
+  }
+  function makeSprite(w, h, paint) {
+    const d = Math.min(window.devicePixelRatio || 1, 2);
+    const c = document.createElement('canvas');
+    c.width = Math.max(1, Math.ceil(w * d)); c.height = Math.max(1, Math.ceil(h * d));
+    const g = c.getContext('2d'); g.scale(d, d); paint(g);
+    return { c, w, h, d };
+  }
+
+  const SPR = { key: '' };
+  function ensureSprites() {
+    const key = `${W}x${H}@${window.devicePixelRatio}`;
+    if (SPR.key === key) return;
+    SPR.key = key;
+    SPR.jet = makeJet(); SPR.coin = makeCoin(); SPR.mine = makeMine(); SPR.sign = makeSign(); SPR.sun = makeSun();
+    SPR.towerTop = makeTower(true); SPR.towerBottom = makeTower(false);
+    SPR.far = makeSkyline(0.15, 0.32, '#2a0c4a', 'rgba(255,41,117,0.35)', 1);
+    SPR.near = makeSkyline(0.08, 0.2, '#1a0632', 'rgba(0,229,255,0.4)', 2);
+    SPR.sky = ctx.createLinearGradient(0, 0, 0, GROUND * H);
+    SPR.sky.addColorStop(0, '#0d0420'); SPR.sky.addColorStop(0.55, '#2b0a4e'); SPR.sky.addColorStop(1, '#6a1460');
+    SPR.floor = ctx.createLinearGradient(0, GROUND * H, 0, H);
+    SPR.floor.addColorStop(0, '#2a0838'); SPR.floor.addColorStop(1, '#0d0420');
+  }
+
+  function makeJet() {
+    const w = H * 0.15, h = H * 0.07, sw = w * 1.25, sh = h * 1.9, ox = sw * 0.52, oy = sh / 2;
+    const s = makeSprite(sw, sh, (g) => {
+      const x = ox - w / 2, y = oy - h / 2;
+      const glow = g.createRadialGradient(ox, oy, h * 0.2, ox, oy, w * 0.6);
+      glow.addColorStop(0, 'rgba(0,229,255,0.28)'); glow.addColorStop(1, 'rgba(0,229,255,0)');
+      g.save(); g.translate(ox, oy); g.scale(1, 0.5); g.translate(-ox, -oy);
+      g.fillStyle = glow; g.beginPath(); g.arc(ox, oy, w * 0.6, 0, 7); g.fill(); g.restore();
+      // Tail fin and far wing
+      g.fillStyle = '#a3164f';
+      g.beginPath(); g.moveTo(x + w * 0.04, y + h * 0.42); g.lineTo(x - w * 0.02, y - h * 0.35); g.lineTo(x + w * 0.16, y - h * 0.3); g.lineTo(x + w * 0.3, y + h * 0.4); g.closePath(); g.fill();
+      g.beginPath(); g.moveTo(x + w * 0.38, y + h * 0.4); g.lineTo(x + w * 0.5, y - h * 0.2); g.lineTo(x + w * 0.62, y - h * 0.2); g.lineTo(x + w * 0.66, y + h * 0.4); g.closePath(); g.fill();
+      // Fuselage
+      const body = g.createLinearGradient(0, y, 0, y + h);
+      body.addColorStop(0, '#ff8fb5'); body.addColorStop(0.45, '#ff2975'); body.addColorStop(1, '#7a0f3c');
+      g.fillStyle = body;
+      g.beginPath(); g.moveTo(x, y + h * 0.3); g.lineTo(x + w * 0.72, y + h * 0.22);
+      g.quadraticCurveTo(x + w * 1.02, y + h * 0.45, x + w, y + h * 0.55);
+      g.quadraticCurveTo(x + w * 0.9, y + h * 0.8, x + w * 0.62, y + h * 0.82);
+      g.lineTo(x, y + h * 0.72); g.closePath(); g.fill();
+      g.strokeStyle = 'rgba(255,255,255,0.4)'; g.lineWidth = 1; g.stroke();
+      // Cockpit
+      const glass = g.createLinearGradient(0, y + h * 0.15, 0, y + h * 0.5);
+      glass.addColorStop(0, '#b8fbff'); glass.addColorStop(1, '#0a6f86');
+      g.fillStyle = glass;
+      g.beginPath(); g.ellipse(x + w * 0.66, y + h * 0.3, w * 0.15, h * 0.17, -0.12, 0, 7); g.fill();
+      g.fillStyle = 'rgba(255,255,255,0.7)';
+      g.beginPath(); g.ellipse(x + w * 0.63, y + h * 0.24, w * 0.06, h * 0.05, -0.12, 0, 7); g.fill();
+      // Near wing and stripe
+      g.fillStyle = '#ffd319';
+      g.fillRect(x + w * 0.08, y + h * 0.48, w * 0.6, h * 0.07);
+      g.fillStyle = '#ff5c96';
+      g.beginPath(); g.moveTo(x + w * 0.32, y + h * 0.6); g.lineTo(x + w * 0.62, y + h * 0.6); g.lineTo(x + w * 0.5, y + h * 1.25); g.lineTo(x + w * 0.36, y + h * 1.25); g.closePath(); g.fill();
+      g.fillStyle = '#00e5ff'; g.fillRect(x + w * 0.37, y + h * 1.17, w * 0.13, h * 0.08);
+    });
+    s.ox = ox; s.oy = oy; s.jw = w; s.jh = h;
+    return s;
+  }
+
+  function makeCoin() {
+    const r = H * 0.028, size = r * 4.4;
+    return makeSprite(size, size, (g) => {
+      const c = size / 2;
+      const halo = g.createRadialGradient(c, c, r * 0.6, c, c, r * 2.2);
+      halo.addColorStop(0, 'rgba(255,211,25,0.55)'); halo.addColorStop(1, 'rgba(255,211,25,0)');
+      g.fillStyle = halo; g.beginPath(); g.arc(c, c, r * 2.2, 0, 7); g.fill();
+      const face = g.createLinearGradient(c - r, c - r, c + r, c + r);
+      face.addColorStop(0, '#fff3a0'); face.addColorStop(0.45, '#ffd319'); face.addColorStop(1, '#e07b00');
+      g.fillStyle = face; g.beginPath(); g.arc(c, c, r, 0, 7); g.fill();
+      g.strokeStyle = 'rgba(160,80,0,0.6)'; g.lineWidth = r * 0.12; g.beginPath(); g.arc(c, c, r * 0.72, 0, 7); g.stroke();
+      g.fillStyle = '#fff8cf'; g.font = `900 ${r * 1.05}px system-ui, sans-serif`;
+      g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('★', c, c + r * 0.04);
+    });
+  }
+
+  function makeMine() {
+    const r = H * 0.03, size = r * 4;
+    return makeSprite(size, size, (g) => {
+      const c = size / 2;
+      const halo = g.createRadialGradient(c, c, r * 0.8, c, c, r * 2);
+      halo.addColorStop(0, 'rgba(255,41,117,0.45)'); halo.addColorStop(1, 'rgba(255,41,117,0)');
+      g.fillStyle = halo; g.beginPath(); g.arc(c, c, r * 2, 0, 7); g.fill();
+      g.strokeStyle = '#ff2975'; g.lineWidth = r * 0.22; g.lineCap = 'round';
+      g.beginPath();
+      for (let i = 0; i < 8; i++) { const a = (i / 8) * Math.PI * 2; g.moveTo(c + Math.cos(a) * r * 0.7, c + Math.sin(a) * r * 0.7); g.lineTo(c + Math.cos(a) * r * 1.4, c + Math.sin(a) * r * 1.4); }
+      g.stroke();
+      const body = g.createRadialGradient(c - r * 0.35, c - r * 0.35, r * 0.1, c, c, r);
+      body.addColorStop(0, '#6b4b8f'); body.addColorStop(1, '#1a0b2e');
+      g.fillStyle = body; g.beginPath(); g.arc(c, c, r, 0, 7); g.fill();
+    });
+  }
+
+  function makeTower(capAtBottom) {
+    // A full-height neon tower; each frame draws just the slice that's needed.
+    const tw = TOWER_W * H, th = GROUND * H, pad = H * 0.012, cap = H * 0.03;
+    return makeSprite(tw + pad * 2, th, (g) => {
+      g.fillStyle = 'rgba(0,229,255,0.12)'; g.fillRect(0, 0, tw + pad * 2, th);
+      const body = g.createLinearGradient(pad, 0, pad + tw, 0);
+      body.addColorStop(0, '#120624'); body.addColorStop(0.5, '#2c0f52'); body.addColorStop(1, '#120624');
+      g.fillStyle = body; g.fillRect(pad, 0, tw, th);
+      const cw = tw / 5, chh = H * 0.035;
+      for (let row = 0, y = H * 0.02; y < th; y += chh, row++) {
+        for (let col = 0; col < 3; col++) {
+          if (hash(row * 3.7 + col * 11.3) < 0.45) continue;
+          g.fillStyle = hash(row + col * 5.1) < 0.5 ? 'rgba(255,211,25,0.55)' : 'rgba(0,229,255,0.45)';
+          g.fillRect(pad + cw * (col + 1) - cw * 0.25, y, cw * 0.5, chh * 0.45);
+        }
+      }
+      g.fillStyle = '#6ff7ff'; g.fillRect(pad, 0, 2, th); g.fillRect(pad + tw - 2, 0, 2, th);
+      const cy = capAtBottom ? th - cap : 0;
+      g.fillStyle = 'rgba(255,41,117,0.35)'; g.fillRect(0, capAtBottom ? cy - cap * 0.4 : 0, tw + pad * 2, cap * 1.4);
+      g.fillStyle = '#ff2975'; g.fillRect(pad - 2, cy, tw + 4, cap);
+      g.fillStyle = '#ffb3cf'; g.fillRect(pad - 2, capAtBottom ? th - 3 : 0, tw + 4, 3);
+    });
+  }
+
+  function makeSign() {
+    // In-world version of the "ad space" billboard, so the branding stays visible during play.
+    const bw = H * 0.36, bh = H * 0.15, post = H * 0.07;
+    return makeSprite(bw + 8, bh + post + 4, (g) => {
+      const x = 4, y = 2;
+      g.fillStyle = '#4a3b30'; g.fillRect(x + bw * 0.22, y + bh, 5, post); g.fillRect(x + bw * 0.78 - 5, y + bh, 5, post);
+      g.fillStyle = 'rgba(255,47,208,0.25)'; rr(g, x - 3, y - 3, bw + 6, bh + 6, 12); g.fill();
+      g.fillStyle = '#140b26'; rr(g, x, y, bw, bh, 10); g.fill();
+      const edge = g.createLinearGradient(x, 0, x + bw, 0);
+      edge.addColorStop(0, '#ff2fd0'); edge.addColorStop(0.5, '#ffcc00'); edge.addColorStop(1, '#00e5ff');
+      g.strokeStyle = edge; g.lineWidth = 2.5; rr(g, x, y, bw, bh, 10); g.stroke();
+      g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.fillStyle = '#ff2fd0'; rr(g, x + bw / 2 - bh * 0.42, y + bh * 0.1, bh * 0.84, bh * 0.2, bh * 0.1); g.fill();
+      g.fillStyle = '#fff'; g.font = `800 ${bh * 0.13}px system-ui, sans-serif`; g.fillText('AD SPACE', x + bw / 2, y + bh * 0.205);
+      g.fillStyle = '#ffd319'; g.font = `900 ${bh * 0.22}px system-ui, sans-serif`; g.fillText('YOUR BRAND HERE', x + bw / 2, y + bh * 0.52);
+      g.fillStyle = '#6ff7ff'; g.font = `700 ${bh * 0.15}px system-ui, sans-serif`; g.fillText('Contact @seltos.gtx', x + bw / 2, y + bh * 0.8);
+    });
+  }
+
+  function makeSun() {
+    const r = H * 0.2, size = r * 2.6;
+    return makeSprite(size, size, (g) => {
+      const c = size / 2;
+      const halo = g.createRadialGradient(c, c, r * 0.8, c, c, r * 1.3);
+      halo.addColorStop(0, 'rgba(255,41,117,0.35)'); halo.addColorStop(1, 'rgba(255,41,117,0)');
+      g.fillStyle = halo; g.beginPath(); g.arc(c, c, r * 1.3, 0, 7); g.fill();
+      const face = g.createLinearGradient(0, c - r, 0, c + r);
+      face.addColorStop(0, '#ffd319'); face.addColorStop(0.5, '#ff901f'); face.addColorStop(1, '#ff2975');
+      g.fillStyle = face; g.beginPath(); g.arc(c, c, r, 0, 7); g.fill();
+      g.globalCompositeOperation = 'destination-out';
+      for (let k = 0; k < 6; k++) g.fillRect(0, c + r * (0.1 + k * 0.16), size, r * (0.03 + k * 0.016));
+    });
+  }
+
+  function makeSkyline(minH, maxH, fill, edge, seed) {
+    // A tileable strip of building silhouettes, one screen wide.
+    const tw = Math.max(W, H * 1.5), th = GROUND * H;
+    const s = makeSprite(tw, th, (g) => {
+      let x = 0, i = 0;
+      while (x < tw) {
+        const bw = H * (0.06 + hash(seed * 31 + i * 1.7) * 0.08);
+        const bh = H * (minH + hash(seed * 17 + i * 2.3) * (maxH - minH));
+        const w = Math.min(bw, tw - x);
+        g.fillStyle = fill; g.fillRect(x, th - bh, w, bh);
+        g.fillStyle = edge; g.fillRect(x, th - bh, w, 1.5);
+        g.fillStyle = 'rgba(255,211,25,0.18)';
+        for (let wy = th - bh + H * 0.02; wy < th - H * 0.01; wy += H * 0.03) {
+          for (let wx = x + H * 0.012; wx < x + w - H * 0.012; wx += H * 0.022) {
+            if (hash(wx * 0.37 + wy * 0.11 + seed) < 0.3) g.fillRect(wx, wy, H * 0.008, H * 0.012);
+          }
+        }
+        x += bw; i++;
+      }
+    });
+    return s;
+  }
+
+  // ---------- Drawing ----------
+  const sx = (wx) => (wx - G.dist) * H;     // world x -> screen x
+
+  function drawLayer(L, factor) {
+    const off = (G.dist * H * factor) % L.w;
+    ctx.drawImage(L.c, -off, 0, L.w, L.h);
+    if (L.w - off < W) ctx.drawImage(L.c, L.w - off, 0, L.w, L.h);
+  }
+
+  function drawWorld() {
+    ensureSprites();
+    const gy = GROUND * H;
+    ctx.fillStyle = SPR.sky; ctx.fillRect(0, 0, W, gy);
+    const S = SPR.sun; ctx.drawImage(S.c, W * 0.7 - S.w / 2, gy - S.h * 0.62, S.w, S.h);
+    drawLayer(SPR.far, 0.12);
+    drawLayer(SPR.near, 0.3);
+
+    // Neon grid floor
+    ctx.fillStyle = SPR.floor; ctx.fillRect(0, gy, W, H - gy);
+    ctx.strokeStyle = 'rgba(255,41,117,0.55)'; ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(0, gy); ctx.lineTo(W, gy);
+    for (let k = 1; k <= 3; k++) { const y = gy + (H - gy) * (k * k) / 9; ctx.moveTo(0, y); ctx.lineTo(W, y); }
+    const gs = H * 0.12, off = (G.dist * H) % gs;
+    for (let x = -off - W; x < W * 2; x += gs) { ctx.moveTo(x, gy); ctx.lineTo(W / 2 + (x - W / 2) * 2.2, H); }
+    ctx.stroke();
+
+    // Billboards on the ground
+    const B = SPR.sign;
+    for (const s of G.signs) { const x = sx(s.x); if (x > -B.w && x < W) ctx.drawImage(B.c, x - B.w / 2, gy - B.h + 2, B.w, B.h); }
+
+    // Towers
+    const tt = SPR.towerTop, tb = SPR.towerBottom, pad = (tt.w - TOWER_W * H) / 2;
+    for (const o of G.towers) {
+      const x = sx(o.x) - pad;
+      if (x > W || x + tt.w < 0) continue;
+      const h1 = (o.gy - o.gh / 2) * H, y2 = (o.gy + o.gh / 2) * H, h2 = gy - y2;
+      if (h1 > 1) ctx.drawImage(tt.c, 0, (tt.h - h1) * tt.d, tt.c.width, h1 * tt.d, x, 0, tt.w, h1);
+      if (h2 > 1) ctx.drawImage(tb.c, 0, 0, tb.c.width, h2 * tb.d, x, y2, tb.w, h2);
+    }
+  }
+
+  function heartPath(r) {
+    ctx.beginPath();
+    ctx.moveTo(0, r * 0.9);
+    ctx.bezierCurveTo(-r * 1.4, -r * 0.1, -r * 0.6, -r * 1.2, 0, -r * 0.45);
+    ctx.bezierCurveTo(r * 0.6, -r * 1.2, r * 1.4, -r * 0.1, 0, r * 0.9);
+    ctx.closePath();
+  }
+
+  function drawThings() {
+    const r = H * 0.028;
+    for (const it of G.items) {
+      const x = sx(it.x), y = it.y * H;
+      if (x < -50 || x > W + 50) continue;
+      if (it.kind === 'heart') {
+        const s = 1 + Math.sin(G.clock * 6) * 0.08;
+        ctx.save(); ctx.translate(x, y); ctx.scale(s, s);
+        ctx.fillStyle = '#fff'; heartPath(r * 1.25); ctx.fill();
+        ctx.fillStyle = '#ff2975'; heartPath(r); ctx.fill();
+        ctx.restore();
+        continue;
+      }
+      const C = SPR.coin, k = Math.abs(Math.cos(it.spin)) * 0.75 + 0.25;
+      ctx.save(); ctx.translate(x, y); ctx.scale(k, 1);
+      ctx.drawImage(C.c, -C.w / 2, -C.h / 2, C.w, C.h);
+      ctx.restore();
+    }
+    const M = SPR.mine, blink = Math.sin(G.clock * 8) > 0;
+    for (const m of G.mines) {
+      const x = sx(m.x), y = (m.y0 + Math.sin(G.clock * 2 + m.ph) * m.amp) * H;
+      if (x < -M.w || x > W + M.w) continue;
+      ctx.drawImage(M.c, x - M.w / 2, y - M.h / 2, M.w, M.h);
+      if (blink) { ctx.fillStyle = '#ff5c96'; ctx.beginPath(); ctx.arc(x, y, M.w * 0.07, 0, 7); ctx.fill(); }
+    }
+  }
+
+  function drawJet() {
+    if (G.inv > 0 && Math.floor(G.inv * 8) % 2) return;
+    const J = SPR.jet, x = PLANE_X * W, y = G.py * H;
+    ctx.save(); ctx.translate(x, y); ctx.rotate(clamp(G.vy * 0.45, -0.45, 0.45));
+    // Exhaust flame (flickers)
+    const fl = J.jw * (0.22 + Math.random() * 0.12);
+    ctx.fillStyle = 'rgba(255,144,31,0.85)';
+    ctx.beginPath(); ctx.moveTo(-J.jw / 2 + 2, -J.jh * 0.14); ctx.lineTo(-J.jw / 2 - fl, J.jh * 0.01); ctx.lineTo(-J.jw / 2 + 2, J.jh * 0.18); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#fff3a0';
+    ctx.beginPath(); ctx.moveTo(-J.jw / 2 + 2, -J.jh * 0.06); ctx.lineTo(-J.jw / 2 - fl * 0.5, J.jh * 0.01); ctx.lineTo(-J.jw / 2 + 2, J.jh * 0.1); ctx.closePath(); ctx.fill();
+    ctx.drawImage(J.c, -J.ox, -J.oy, J.w, J.h);
+    ctx.restore();
+  }
+
+  function roundRect(x, y, w, h, r) { rr(ctx, x, y, w, h, r); }
+
+  function drawHUD() {
+    const pad = Math.max(12, H * 0.03);
+    const fs = Math.max(14, Math.round(H * 0.05));
+    ctx.textBaseline = 'top';
+    ctx.fillStyle = 'rgba(18,6,42,0.62)'; roundRect(pad - 8, pad - 6, fs * 6.4, fs * 3.4, 12); ctx.fill();
+    ctx.strokeStyle = 'rgba(255,41,117,0.8)'; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.font = `800 ${fs}px system-ui, sans-serif`;
+    ctx.fillStyle = '#fff'; ctx.textAlign = 'left';
+    ctx.fillText(String(G.score), pad, pad);
+    ctx.font = `600 ${Math.round(fs * 0.62)}px system-ui, sans-serif`;
+    ctx.fillStyle = '#ffd319';
+    ctx.fillText(`${G.gates} gate${G.gates === 1 ? '' : 's'}  •  ${G.coins} coin${G.coins === 1 ? '' : 's'}`, pad, pad + fs * 1.15);
+    const hr = fs * 0.34;
+    for (let i = 0; i < MAX_LIVES; i++) {
+      ctx.save(); ctx.translate(pad + hr + i * hr * 2.7, pad + fs * 2.4 + hr);
+      ctx.fillStyle = i < G.lives ? '#ff2975' : 'rgba(255,255,255,0.22)'; heartPath(hr); ctx.fill();
+      ctx.restore();
+    }
+
+    const right = W - pad - (fsSupported ? 48 : 0);
+    ctx.textAlign = 'right'; ctx.fillStyle = '#6ff7ff';
+    ctx.fillText('BEST ' + G.best, right, pad);
+    const mode = input.source === 'none' ? (isTouch ? 'touch' : 'keys') : 'tilt';
+    ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    ctx.fillText('control: ' + mode, right, pad + fs * 0.85);
+
+    // Attitude indicator: the bar tilts with your phone
+    const ar = Math.max(18, H * 0.06), ax = W - pad - ar * 1.4, ay = H - pad - ar * 1.4;
+    ctx.strokeStyle = 'rgba(0,229,255,0.25)'; ctx.lineWidth = ar * 0.4;
+    ctx.beginPath(); ctx.arc(ax, ay, ar, 0, 7); ctx.stroke();
+    ctx.strokeStyle = '#6ff7ff'; ctx.lineWidth = ar * 0.14;
+    ctx.beginPath(); ctx.arc(ax, ay, ar, 0, 7); ctx.stroke();
+    ctx.save(); ctx.translate(ax, ay); ctx.rotate(input.steer * 0.6);
+    ctx.fillStyle = '#ff2975'; ctx.fillRect(-ar * 0.75, -ar * 0.08, ar * 1.5, ar * 0.16); ctx.fillRect(-ar * 0.08, -ar * 0.4, ar * 0.16, ar * 0.4);
+    ctx.restore();
+
+    ctx.textAlign = 'left'; ctx.textBaseline = 'bottom'; ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    ctx.font = `700 ${Math.round(fs * 0.55)}px system-ui, sans-serif`;
+    ctx.fillText('@seltos.gtx', pad, H - pad * 0.5);
+  }
+
+  function draw() {
+    ctx.save();
+    if (G.shake > 0) { const m = G.shake * H * 0.04; ctx.translate((Math.random() - 0.5) * m, (Math.random() - 0.5) * m); }
+    drawWorld();
+    drawThings();
+    if (G.state !== 'menu') drawJet();
+    ctx.restore();
+    if (G.flash > 0) { ctx.fillStyle = `rgba(255,41,117,${G.flash * 0.45})`; ctx.fillRect(0, 0, W, H); }
+
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    for (const p of G.popups) {
+      ctx.globalAlpha = Math.min(1, p.life * 2);
+      ctx.font = `800 ${Math.round(H * 0.06)}px system-ui, sans-serif`;
+      ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(18,6,42,0.8)';
+      ctx.strokeText(p.text, p.x * H, p.y * H);
+      ctx.fillStyle = p.color; ctx.fillText(p.text, p.x * H, p.y * H);
+    }
+    ctx.globalAlpha = 1;
+
+    if (G.state === 'countdown') {
+      const n = Math.ceil(G.countdown), f = G.countdown - Math.floor(G.countdown);
+      ctx.save(); ctx.translate(W / 2, H * 0.4); ctx.scale(1 + f * 0.4, 1 + f * 0.4);
+      ctx.font = `900 ${Math.round(H * 0.22)}px system-ui, sans-serif`;
+      ctx.lineWidth = 8; ctx.strokeStyle = 'rgba(18,6,42,0.8)'; ctx.strokeText(String(n), 0, 0);
+      ctx.fillStyle = '#ffd319'; ctx.fillText(String(n), 0, 0);
+      ctx.restore();
+      ctx.font = `700 ${Math.round(H * 0.05)}px system-ui, sans-serif`;
+      ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(18,6,42,0.8)';
+      ctx.strokeText('Hold your phone steady', W / 2, H * 0.58);
+      ctx.fillStyle = '#6ff7ff'; ctx.fillText('Hold your phone steady', W / 2, H * 0.58);
+    }
+
+    if (G.state !== 'menu') drawHUD();
+  }
+
+  // ---------- Loop ----------
+  let last = performance.now();
+  function frame(now) {
+    const dt = Math.min(0.05, (now - last) / 1000);
+    last = now;
+    const portraitPhone = isTouch && H > W;
+    if (!portraitPhone) update(dt);
+    draw();
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+
+  // ---------- UI flow ----------
+  function show(id) {
+    for (const o of ['menu', 'over', 'paused']) $(o).classList.toggle('hidden', o !== id);
+    document.body.classList.toggle('playing', !id);
+  }
+
+  function startOrResume() {
+    const permission = requestSensorPermission();   // must be first, inside the gesture
+    goFullscreen();
+    initAudio();
+    keepAwake();
+    attachSensors();
+    permission.then((res) => {
+      if (res !== 'granted') {
+        const m = $('menuMsg');
+        m.textContent = 'Motion access was denied, so touch controls are on. To use tilt, reload the page and tap Allow.';
+        m.classList.remove('hidden');
+      }
+    });
+    const wasPaused = G.state === 'paused';
+    if (!wasPaused) reset();
+    G.state = 'countdown';
+    G.countdown = wasPaused ? 1.5 : COUNTDOWN;
+    show(null);
+    beep(440, 0.12, 'triangle', 0.1);
+  }
+
+  $('startBtn').addEventListener('click', startOrResume);
+  $('againBtn').addEventListener('click', startOrResume);
+  $('resumeBtn').addEventListener('click', startOrResume);
+  $('soundBtn').textContent = muted ? '🔇 Muted' : '🔊 Sound on';
+  $('soundBtn').addEventListener('click', (e) => { e.stopPropagation(); setMuted(!muted); });
+  if (fsSupported) {
+    $('fsBtn').classList.remove('hidden');
+    updateFsBtn();
+    $('fsBtn').addEventListener('click', (e) => { e.stopPropagation(); toggleFullscreen(); });
+    document.addEventListener('fullscreenchange', updateFsBtn);
+    document.addEventListener('webkitfullscreenchange', updateFsBtn);
+    window.addEventListener('keydown', (e) => { if (e.key === 'f' || e.key === 'F') toggleFullscreen(); });
+  }
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      if (G.state === 'play' || G.state === 'countdown') { G.state = 'paused'; show('paused'); }
+    } else {
+      keepAwake();
+    }
+  });
+
+  // Hook for automated tests.
+  window.__neonJet = { G, input };
+})();
+</script>
+</body>
+</html>

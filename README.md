@@ -11,6 +11,7 @@ The home page lists every game; tap one to play it.
 | Game | Link |
 |---|---|
 | CarPlay Racer | https://carplay-game.seltosgtx.workers.dev/racer/ |
+| Neon Jet | https://carplay-game.seltosgtx.workers.dev/jet/ |
 | CarPlay Racer Lite (the original, no music) | https://carplay-game.seltosgtx.workers.dev/racer-lite/ |
 
 ## CarPlay Racer: how to play
@@ -48,8 +49,8 @@ The site goes live at `https://akumar36.github.io/carplay-game/` within a minute
 
 - `index.html`: the home page. The game list is the `GAMES` array near the bottom.
 - `racer/index.html`: CarPlay Racer (canvas rendering, sensor input, music and sound, Neon/Classic themes, UI)
+- `jet/index.html`: Neon Jet, a side-scroller: tilt to climb and dive through gaps between neon towers (↑ ↓ / W S or touch top/bottom as fallback, M mutes)
 - `racer-lite/index.html`: CarPlay Racer Lite, the original single-theme racer with simple beeps
-- `beta/index.html`: redirects the old `/beta/` link to `/racer/`
 - `manifest.webmanifest`, `icon*`: home-screen / PWA metadata, shared by all games
 
 ### Adding a game
