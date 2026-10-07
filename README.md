@@ -46,3 +46,7 @@ The site goes live at `https://akumar36.github.io/carplay-game/` within a minute
 
 New features are tried out at `/beta/` (https://carplay-game.seltosgtx.workers.dev/beta/) before going to the main link.
 The current beta adds **music and sound**: a synthwave loop that is composed in code once while the menu is showing, then just replayed (no music file to download); an engine sound that follows your speed with gear shifts; and crash, coin and countdown sounds. The button at the top cycles *Sound on → Effects only → Muted*, and Muted switches audio processing off completely.
+
+## License
+
+© 2026 @seltos.gtx. All rights reserved. See [LICENSE](LICENSE). Not open source: please don't copy or rehost without permission.
