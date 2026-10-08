@@ -12,7 +12,6 @@
 (() => {
   'use strict';
   const $ = (id) => document.getElementById(id);
-  const isTouch = matchMedia('(pointer: coarse)').matches;
   const light = () => document.documentElement.dataset.mode === 'light';
   const gameName = () => document.title.split(' · ')[0];
   // The page's public address (from its share tags), so the card shows the real link even when testing locally
@@ -159,6 +158,23 @@
   }
 
   // ---------- 2. "Tilt like this" hint ----------
+  const HINTS = {
+    'midnight-run': 'Tilt your phone like a steering wheel to steer',
+    'lane-rush': 'Tilt your phone like a steering wheel to steer',
+    'lane-rush-classic': 'Tilt your phone like a steering wheel to steer',
+    'pothole-panic': 'Tilt your phone like a steering wheel to steer',
+    'hill-climb': 'Tilt your phone right for gas, left to brake',
+    'sky-dash': 'Tilt your phone to climb and dive',
+    'brick-smash': 'Tilt your phone to slide the paddle',
+    'star-strike': 'Tilt your phone to move your ship',
+    'light-trail': 'Turn your phone like a steering wheel to turn',
+    'park-it': 'Turn your phone to steer, hold D / R to drive',
+  };
+  // The game's folder name, wherever the site is hosted (e.g. /midnight-run/ or /carplay-game/midnight-run/)
+  const hintText = () => {
+    const folder = location.pathname.split('/').filter((p) => p && p !== 'index.html').find((p) => HINTS[p]);
+    return HINTS[folder] || 'Tilt your phone like a steering wheel to steer';
+  };
   const KEY = 'tiltHintSeen:' + location.pathname, SHOW_TIMES = 2;
   let seen = 0;
   try { seen = +localStorage.getItem(KEY) || 0; } catch (e) {}
@@ -171,7 +187,7 @@
         <path d="M5 14l4-3 1 5M41 14l-4-3-1 5" fill="none" stroke="#ffd319" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
         <g class="phone"><rect x="9" y="15" width="28" height="16" rx="4" fill="#ff2975"/><rect x="12.5" y="17.5" width="21" height="11" rx="2" fill="#12062a"/>
         <circle cx="23" cy="23" r="3" fill="none" stroke="#6ff7ff" stroke-width="1.6"/></g></svg>
-      <span>${isTouch ? 'Steer by turning your phone like a wheel' : 'Use the arrow keys to steer'}</span>`;
+      <span>${hintText()}</span>`;
     document.body.appendChild(hint);
     let hideT = 0, shown = seen;
     const body = document.body;
