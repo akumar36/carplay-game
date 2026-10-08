@@ -36,7 +36,7 @@
       radial-gradient(ellipse 80% 55% at 50% 115%, rgba(255, 41, 117, 0.55), transparent 70%),
       linear-gradient(180deg, rgba(18, 6, 42, 0.93) 0%, rgba(43, 10, 78, 0.9) 70%, rgba(70, 12, 90, 0.88) 100%);
   }
-  .overlay > * { position: relative; z-index: 1; }
+  .overlay > *, .panel > * { position: relative; z-index: 1; }
   /* Outrun sunset sun behind the menu and game-over screens */
   .sunset::before {
     content: ""; position: absolute; left: 50%; bottom: 0; width: min(54vh, 40vw); aspect-ratio: 1;
@@ -46,6 +46,7 @@
     mask-image: linear-gradient(180deg, #000 0 18%, transparent 18% 20%, #000 20% 26%, transparent 26% 29%, #000 29% 32%, transparent 32% 36%, #000 36%);
   }
   .hidden { display: none !important; }
+  .panel { display: contents; }          /* groups the menu content; becomes a card in light mode */
   h1 {
     margin: 0; font-family: 'Orbitron', system-ui, sans-serif; font-size: clamp(24px, 7vh, 54px); letter-spacing: 2px; font-weight: 900; font-style: italic;
     background: linear-gradient(180deg, #ffffff 0%, #fff3a0 30%, #ffd319 48%, #ff2975 78%, #c23cff 100%);
@@ -224,15 +225,21 @@
   .overlay > .copyright { max-width: none; }
   /* ----- Light mode (chosen on the home page): bright screens that stay readable in daylight ----- */
   html[data-mode="light"] body { background: #eef2fb; color: #1b1f33; }
-  /* A soft spotlight behind the text and buttons; the game stays visible around the edges */
-  html[data-mode="light"] .overlay {
-    color: #1b1f33;
-    background:
-      radial-gradient(ellipse 40% 72% at 50% 50%, rgba(250, 251, 255, 0.95) 0%, rgba(250, 251, 255, 0.9) 62%, rgba(250, 251, 255, 0) 100%),
-      radial-gradient(ellipse 80% 55% at 50% 115%, rgba(255, 138, 61, 0.22), transparent 70%),
-      linear-gradient(180deg, rgba(238, 242, 252, 0.5), rgba(226, 233, 252, 0.45));
+  /* Light mode: the menu sits on a white card; the game behind only gets a light tint */
+  html[data-mode="light"] .overlay { color: #1b1f33; background: rgba(232, 237, 252, 0.4); }
+  html[data-mode="light"] .panel {
+    display: flex; flex-direction: column; align-items: center; gap: inherit; position: relative; z-index: 1;
+    max-width: min(640px, 100%); padding: 18px 28px; border-radius: 24px;
+    background: rgba(255, 255, 255, 0.94); border: 1px solid rgba(27, 31, 51, 0.08);
+    box-shadow: 0 12px 40px rgba(40, 30, 90, 0.2);
   }
-  @media (max-width: 700px) { html[data-mode="light"] .overlay { background: radial-gradient(ellipse 52% 75% at 50% 50%, rgba(250, 251, 255, 0.95) 0%, rgba(250, 251, 255, 0.9) 65%, rgba(250, 251, 255, 0.35) 100%), linear-gradient(180deg, rgba(238, 242, 252, 0.5), rgba(226, 233, 252, 0.45)); } }
+  html[data-mode="light"] .overlay > .copyright { width: fit-content; margin-left: auto; margin-right: auto; padding: 3px 12px; border-radius: 999px; background: rgba(255, 255, 255, 0.9); }
+  /* Short screens (most phones) have no room for a card: use an even light tint instead */
+  @media (max-height: 460px) {
+    html[data-mode="light"] .overlay { background: rgba(246, 248, 255, 0.9); }
+    html[data-mode="light"] .panel { display: contents; }
+    html[data-mode="light"] .overlay > .copyright { background: none; padding: 0; }
+  }
   html[data-mode="light"] .sunset::before { opacity: 0.4; }
   html[data-mode="light"] h1, html[data-mode="light"] .big {
     background: linear-gradient(180deg, #ff6a00 0%, #ff2975 55%, #8c1eff 100%); -webkit-background-clip: text; background-clip: text; color: transparent;
@@ -282,6 +289,7 @@
 </a>
 
 <div id="menu" class="overlay sunset">
+  <div class="panel">
   <h1>LANE RUSH</h1>
   <p class="byline small">by <a href="https://www.instagram.com/seltos.gtx/" target="_blank" rel="noopener">@seltos.gtx</a></p>
   <p>Hold your phone sideways like a steering wheel and <b>tilt to steer</b>.
@@ -290,10 +298,12 @@
   <p class="small">No tilt sensor? Use ← → / A D keys, or touch the left or right half of the screen.</p>
   <p id="iosHint" class="small hidden">No sound? Turn off your iPhone's silent switch.</p>
   <p id="menuMsg" class="msg hidden"></p>
+  </div>
   <p class="copyright"><span class="safety">⚠ Play safe: stay aware of your surroundings</span> · © 2026 @seltos.gtx · All rights reserved</p>
 </div>
 
 <div id="over" class="overlay sunset hidden">
+  <div class="panel">
   <p>GAME OVER</p>
   <div class="big" id="finalScore">0</div>
   <p id="bestLine"></p>
@@ -301,12 +311,15 @@
     <span class="ig-logo"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.4" cy="6.6" r="1.1" fill="#fff" stroke="none"/></svg></span>
     Follow @seltos.gtx
   </a></div>
+  </div>
   <p class="copyright"><span class="safety">⚠ Play safe: stay aware of your surroundings</span> · © 2026 @seltos.gtx · All rights reserved</p>
 </div>
 
 <div id="paused" class="overlay hidden">
+  <div class="panel">
   <h1>Paused</h1>
   <div class="actions"><button id="resumeBtn">Resume</button><a class="homeLink" href="../" aria-label="All games"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg><span>All games</span></a></div>
+  </div>
 </div>
 
 <div id="rotate" class="overlay">
