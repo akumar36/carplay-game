@@ -71,8 +71,10 @@ The site goes live at `https://akumar36.github.io/carplay-game/` within a minute
 - `park-it/index.html`: Park It!: tilt to steer, hold D / R (or ↑ ↓) to drive and reverse; 8 parking levels with stars and parking sensors
 - `hill-climb/index.html`: Hill Climb: side-view jeep physics; lean right for gas, left to brake, and lean in the air to tip the jeep; watch the fuel
 - `lane-rush-classic/index.html`: Lane Rush Classic, the original single-theme racer with simple beeps
+- `shared/extras.js`: loaded by every game: the **Share** button on the game-over screen (makes a story-sized score card and opens the share sheet, or saves the image) and the first-time "steer by turning your phone" hint
+- `og/`: share-preview images (1200×630) for the home page and each game. The `og:` tags in each page use full URLs on `carplay-game.seltosgtx.workers.dev`; update them if the domain changes
 - `fonts/`: Orbitron (title font, latin subset, SIL Open Font License, see `fonts/OFL.txt`)
-- `manifest.webmanifest`, `icon*`: home-screen / PWA metadata, shared by all games
+- `manifest.webmanifest`, `icon*`: Tilt Arcade app icon (tilted steering wheel over a synthwave sun) and home-screen / PWA metadata, shared by all games
 
 ### Adding a game
 

@@ -17,6 +17,17 @@
 <link rel="icon" href="../icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="../icon-180.png">
 <title>Lane Rush</title>
+<!-- Share preview (link previews in Instagram, WhatsApp etc.) -->
+<meta name="description" content="Tilt your phone like a steering wheel to dodge traffic, grab coins and hearts. Neon or classic look, with synthwave music. Free, no download.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Tilt Arcade">
+<meta property="og:title" content="Lane Rush · Tilt Arcade">
+<meta property="og:description" content="Tilt your phone like a steering wheel to dodge traffic, grab coins and hearts. Neon or classic look, with synthwave music. Free, no download.">
+<meta property="og:url" content="https://carplay-game.seltosgtx.workers.dev/lane-rush/">
+<meta property="og:image" content="https://carplay-game.seltosgtx.workers.dev/og/lane-rush.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
 <script>try { if (localStorage.getItem('carplayTheme') === 'classic') document.documentElement.dataset.theme = 'classic'; } catch (e) {}</script>
 <script>try { if (localStorage.getItem('tiltMode') === 'light') document.documentElement.dataset.mode = 'light'; } catch (e) {}</script>
 <style>
@@ -1434,5 +1445,6 @@
   window.__tiltRacer = { G, input, theme: () => themeName, setTheme: (n) => setTheme(n), musicBuffer: () => musicBuf, audio: () => ({ ctx: ac && ac.state, mode: soundMode, music: !!music, musicBuf: !!musicBuf, engine: !!eng, engineHz: eng && +eng.o1.frequency.value.toFixed(1) }) };
 })();
 </script>
+<script src="../shared/extras.js" defer></script>
 </body>
 </html>

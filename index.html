@@ -13,11 +13,21 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Tilt Arcade">
 <meta name="theme-color" content="#12062a">
-<meta name="description" content="Free tilt-to-play browser games by @seltos.gtx.">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon-180.png">
 <title>Tilt Arcade</title>
+<!-- Share preview (link previews in Instagram, WhatsApp etc.) -->
+<meta name="description" content="10 free games you play by tilting your phone: racing, flying, parking, hill climbing and more. No download, no sign-up. By @seltos.gtx.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Tilt Arcade">
+<meta property="og:title" content="Tilt Arcade · free tilt-to-play games">
+<meta property="og:description" content="10 free games you play by tilting your phone: racing, flying, parking, hill climbing and more. No download, no sign-up. By @seltos.gtx.">
+<meta property="og:url" content="https://carplay-game.seltosgtx.workers.dev/">
+<meta property="og:image" content="https://carplay-game.seltosgtx.workers.dev/og/home.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
 <script>try { if (localStorage.getItem('tiltMode') === 'light') document.documentElement.dataset.mode = 'light'; } catch (e) {}</script>
 <style>
   @font-face { font-family: 'Orbitron'; font-weight: 900; font-display: swap; src: url(fonts/orbitron-900.woff2) format('woff2'); }
@@ -69,6 +79,9 @@
   html[data-mode="light"] .thumb.has-light .t-light { display: block; }
   html[data-mode="light"] .thumb.has-light .t-dark { display: none; }
   .info { padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
+  .titleRow { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .best { flex: none; padding: 4px 10px; border-radius: 999px; font-size: 13px; font-weight: 800; color: #ffd319; background: rgba(255, 211, 25, 0.12); border: 1px solid rgba(255, 211, 25, 0.45); white-space: nowrap; }
+  html[data-mode="light"] .best { color: #9a5b00; background: rgba(255, 179, 0, 0.14); border-color: rgba(217, 119, 6, 0.5); }
   .info h2 { margin: 0; font-family: 'Orbitron', system-ui, sans-serif; font-size: 19px; font-weight: 900; font-style: italic; letter-spacing: 0.5px; }
   .info p { margin: 0; font-size: 14px; opacity: 0.8; line-height: 1.4; }
   .tags { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -228,6 +241,7 @@
   const GAMES = [
     {
       title: 'Midnight Run',
+      bestKey: 'driveBest',
       light: [["#0b0320", "#2f8fe8"], ["#2b0a4e", "#8fd0ff"], ["#8a1f6e", "#ffe7c2"], ["#2a0838", "#4aae45"], ["#12052a", "#3f9e3a"], ["#2a2048", "#6a6d73"], ["#15102a", "#55585e"], ["#2a0c4a", "#8e9fd0"], ["#1a0632", "#6c80bb"], ["#ffe3f0", "#f5f5f5"], ["fill=\"#6ff7ff\"", "fill=\"#ffffff\""], ["<g fill=\"#fff\"><circle cx=\"30\" cy=\"18\"", "<g fill=\"#fff\" opacity=\"0\"><circle cx=\"30\" cy=\"18\""]],          // colour swaps for the daytime thumbnail
       href: 'midnight-run/',
       desc: 'Get behind the wheel: turn your phone to steer down a neon highway. Overtake traffic, hold the curves, grab coins.',
@@ -316,6 +330,7 @@
     },
     {
       title: 'Hill Climb',
+      bestKey: 'hillBest',
       href: 'hill-climb/',
       desc: 'Lean right for gas, left to brake, and tip the jeep in the air. Climb as far as you can without flipping or running dry.',
       tags: ['Lean to drive', 'Landscape', 'Physics'],
@@ -346,6 +361,7 @@
     },
     {
       title: 'Lane Rush',
+      bestKey: 'tiltRacerBest',
       lightFrom: 'Lane Rush Classic',     // its daytime look is the Classic theme
       href: 'lane-rush/',
       desc: 'Tilt your phone like a steering wheel to dodge traffic, grab coins and hearts. Neon or classic look, with synthwave music.',
@@ -375,6 +391,7 @@
     },
     {
       title: 'Sky Dash',
+      bestKey: 'jetBest',
       light: [["#0d0420", "#3fa9f5"], ["#2b0a4e", "#9fd8ff"], ["#6a1460", "#ffe7c2"], ["#2a0c4a", "#a9bddb"], ["#2a0838", "#8fcf7f"], ["stroke=\"#ff2975\" stroke-opacity=\".55\"", "stroke=\"#ffffff\" stroke-opacity=\".7\""]],          // colour swaps for the daytime thumbnail
       href: 'sky-dash/',
       desc: 'Tilt your phone to climb and dive through the gaps between neon towers. Dodge mines, grab coins and hearts.',
@@ -410,6 +427,7 @@
     },
     {
       title: 'Pothole Panic',
+      bestKey: 'potholeBest',
       href: 'pothole-panic/',
       desc: 'Real roads, real chaos: tilt to dodge potholes, wandering cows, weaving autos and wrong-side scooters. Close shaves score extra.',
       tags: ['Tilt to steer', 'Landscape', 'Near-miss bonus'],
@@ -434,6 +452,7 @@
     },
     {
       title: 'Brick Smash',
+      bestKey: 'bricksBest',
       light: [["#12062a", "#eef1ff"], ["#46105a", "#d6ddfa"], ["#0b0418", "#ffffff"], ["#1a0832", "#eceffd"], ["#6ff7ff", "#00a6c4"], ["<radialGradient id=\"bBall\"><stop offset=\".3\" stop-color=\"#fff\"/>", "<radialGradient id=\"bBall\"><stop offset=\".3\" stop-color=\"#3949ab\"/>"]],          // colour swaps for the daytime thumbnail
       href: 'brick-smash/',
       desc: 'Tilt your phone to slide the paddle and smash every brick. Catch coins, hearts and the wide-paddle power-up.',
@@ -463,6 +482,7 @@
     },
     {
       title: 'Star Strike',
+      bestKey: 'blasterBest',
       light: [["#12062a", "#eef1ff"], ["#46105a", "#d6ddfa"], ["#05010e", "#7cc8ff"], ["#2a0838", "#dff2ff"], ["#6ff7ff", "#00a6c4"], ["#b8fbff", "#0d47a1"]],          // colour swaps for the daytime thumbnail
       href: 'star-strike/',
       desc: 'Tilt your phone to fly your ship. It fires by itself: blast enemy waves, dodge their fire, grab coins and hearts.',
@@ -493,6 +513,7 @@
     },
     {
       title: 'Light Trail',
+      bestKey: 'snakeBest',
       light: [["#12062a", "#eef1ff"], ["#46105a", "#d6ddfa"], ["#1d0a3a", "#ffffff"], ["#07020f", "#e3e8fb"], ["#6ff7ff", "#00838f"], ["#b8fbff", "#00acc1"]],          // colour swaps for the daytime thumbnail
       href: 'light-trail/',
       desc: 'Turn your phone like a steering wheel to snake around the arena. Eat orbs to grow; don\'t hit the walls or your own trail.',
@@ -516,6 +537,7 @@
     },
     {
       title: 'Park It!',
+      bestKey: 'parkBest',
       href: 'park-it/',
       desc: 'Steer with your phone and use the D / R pedals to drive and reverse. Can you park it perfectly? 8 levels, 3 stars each.',
       tags: ['Turn to steer', 'Pedals', 'Levels'],
@@ -539,6 +561,7 @@
     },
     {
       title: 'Lane Rush Classic',
+      bestKey: 'tiltRacerBest',
       href: 'lane-rush-classic/',
       desc: 'The original racer: a simple daytime look with no music, so it is extra light on older phones and battery.',
       tags: ['Tilt to steer', 'Landscape', 'Lightest'],
@@ -574,6 +597,12 @@
     }
     return out;
   };
+  // Your best score in each game (saved on this device by the game itself)
+  const bestHTML = (g) => {
+    let b = 0;
+    try { b = +localStorage.getItem(g.bestKey) || 0; } catch (e) {}
+    return b > 0 ? `<span class="best" title="Your best score">🏆 ${b.toLocaleString()}</span>` : '';
+  };
   const thumbHTML = (g) => {
     let light = null;
     if (g.light) light = swapColours(g.thumb, g.light, 'L');
@@ -586,7 +615,7 @@
     <a class="card" href="${esc(g.href)}">
       ${thumbHTML(g)}
       <span class="info">
-        <h2>${esc(g.title)}</h2>
+        <span class="titleRow"><h2>${esc(g.title)}</h2>${bestHTML(g)}</span>
         <p>${esc(g.desc)}</p>
         <span class="tags">${g.tags.map((t) => `<span>${esc(t)}</span>`).join('')}</span>
         <span class="play">▶ Play</span>
