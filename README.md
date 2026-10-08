@@ -82,7 +82,7 @@ The site goes live at `https://akumar36.github.io/carplay-game/` within a minute
 
 ## Controls
 
-Steer with tilt, ← → / A D, or touch. Every game has a **pause button** at the bottom right during play (or **P** / **Esc**); the pause screen has Resume and All games. **T** switches theme (Neon / Classic), **M** cycles sound (*Sound on → Effects only → Muted*). Theme and sound choices are remembered per device.
+Steer with tilt, ← → / A D, or touch. **Light / dark mode:** switch it on the home page or from the ☀️ / 🌙 button on any game's start, pause or game-over screen; it's remembered on the device and applies to every game. Every game has a **pause button** at the bottom right during play (or **P** / **Esc**); the pause screen has Resume and All games. **T** switches theme (Neon / Classic), **M** cycles sound (*Sound on → Effects only → Muted*). Theme and sound choices are remembered per device.
 
 ## License
 

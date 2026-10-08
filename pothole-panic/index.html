@@ -94,12 +94,12 @@
   @keyframes turn { 0%, 30% { transform: rotate(0); } 60%, 100% { transform: rotate(-90deg); } }
   @media (orientation: portrait) and (pointer: coarse) { #rotate { display: flex; } }
 
-  #topBar { position: fixed; top: max(8px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); z-index: 16; }
-  #soundBtn {
+  #topBar { position: fixed; top: max(8px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); z-index: 16; display: flex; gap: 8px; }
+  #soundBtn, #modeBtn {
     font: 700 17px system-ui, sans-serif; color: #fff; background: rgba(18, 6, 42, 0.6);
     border: 1px solid rgba(255, 41, 117, 0.6); box-shadow: none; margin: 0; cursor: pointer;
   }
-  #soundBtn { min-height: 56px; padding: 0 22px; border-radius: 999px; white-space: nowrap; }
+  #soundBtn, #modeBtn { min-height: 56px; padding: 0 22px; border-radius: 999px; white-space: nowrap; }
   body.playing #topBar { display: none; }
 
   /* Instagram branding, in the space left of the playfield */
@@ -211,7 +211,7 @@
   html[data-mode="light"] .copyright .safety { color: #b45309; }
   html[data-mode="light"] .actions .homeLink { color: #1b1f33; background: rgba(255, 255, 255, 0.75); border-color: rgba(27, 31, 51, 0.35); }
   html[data-mode="light"] .igBtn { color: #1b1f33; background: rgba(255, 255, 255, 0.8); border-color: rgba(27, 31, 51, 0.2); }
-  html[data-mode="light"] #soundBtn, html[data-mode="light"] #themeBtn { background: rgba(255, 255, 255, 0.85); color: #1b1f33; border-color: rgba(255, 41, 117, 0.55); box-shadow: none; }
+  html[data-mode="light"] #soundBtn, html[data-mode="light"] #themeBtn, html[data-mode="light"] #modeBtn { background: rgba(255, 255, 255, 0.85); color: #1b1f33; border-color: rgba(255, 41, 117, 0.55); box-shadow: none; }
   html[data-mode="light"] #pauseBtn { background: rgba(255, 255, 255, 0.88); color: #1b1f33; border-color: rgba(255, 41, 117, 0.7); box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15); }
   html[data-mode="light"] #rotate { background: #eef2fb; }
   html[data-mode="light"] #rotate .phone { border-color: #1b1f33; box-shadow: none; }
@@ -222,7 +222,7 @@
 
 <button id="pauseBtn" type="button" aria-label="Pause"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4.5" width="4.2" height="15" rx="1.2"/><rect x="13.8" y="4.5" width="4.2" height="15" rx="1.2"/></svg></button>
 
-<div id="topBar"><button id="soundBtn" type="button" aria-label="Change sound setting">🔊 Sound on</button></div>
+<div id="topBar"><button id="modeBtn" type="button" aria-label="Switch between light and dark mode">☀️ Light</button><button id="soundBtn" type="button" aria-label="Change sound setting">🔊 Sound on</button></div>
 
 <a id="brand" href="https://www.instagram.com/seltos.gtx/" target="_blank" rel="noopener" aria-label="Developed by @seltos.gtx: follow on Instagram">
   <span class="dev">DEVELOPED BY</span>
@@ -296,7 +296,7 @@
   const DEAD_ZONE = 0.07;
   const MAX_LIVES = 3, INVINCIBLE_TIME = 2, COUNTDOWN = 2.4;
   const isTouch = matchMedia('(pointer: coarse)').matches;
-  const LIGHT = document.documentElement.dataset.mode === 'light';   // light mode, picked on the home page
+  let LIGHT = document.documentElement.dataset.mode === 'light';   // light mode, picked on the home page
 
   let W = 0, H = 0, FW = 0, FX = 0, FH = 1;
   let adBottom = 0;             // bottom edge of the roadside billboard, so the HUD wheel can avoid it
@@ -1045,6 +1045,19 @@
   window.addEventListener('keydown', (e) => { if (e.key === 'p' || e.key === 'P' || e.key === 'Escape') pauseGame(); });
   $('soundBtn').textContent = muted ? '🔇 Muted' : '🔊 Sound on';
   $('soundBtn').addEventListener('click', (e) => { e.stopPropagation(); setMuted(!muted); });
+
+  // Light / dark switch on the menus (the same setting as the home page); applies straight away
+  const DARK_META = (document.querySelector('meta[name="theme-color"]') || {}).content;
+  function setMode(light) {
+    LIGHT = light;
+    if (light) document.documentElement.dataset.mode = 'light'; else delete document.documentElement.dataset.mode;
+    try { localStorage.setItem('tiltMode', light ? 'light' : 'dark'); } catch (e) {}
+    const meta = document.querySelector('meta[name="theme-color"]'); if (meta) meta.content = light ? '#eef2fb' : DARK_META;
+    SPR.key = '';                                     // repaint the cached sprites and backgrounds
+    $('modeBtn').textContent = light ? '🌙 Dark' : '☀️ Light';
+  }
+  $('modeBtn').textContent = LIGHT ? '🌙 Dark' : '☀️ Light';
+  $('modeBtn').addEventListener('click', (e) => { e.stopPropagation(); setMode(!LIGHT); });
 
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) {
