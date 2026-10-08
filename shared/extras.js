@@ -224,8 +224,8 @@
         <linearGradient id="hgSkin" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f6cfa0"/><stop offset="1" stop-color="#d9a273"/></linearGradient>
       </defs>
       <!-- palms and fingers behind the phone -->
-      <path d="M8 132 L14 92 Q12 60 30 50 Q46 44 56 52 L58 108 Q52 124 40 132 Z" fill="url(#hgSkin)" stroke="#b97a4e" stroke-width="2"/>
-      <path d="M232 132 L226 92 Q228 60 210 50 Q194 44 184 52 L182 108 Q188 124 200 132 Z" fill="url(#hgSkin)" stroke="#b97a4e" stroke-width="2"/>
+      <path d="M6 132 L12 94 Q10 64 28 54 Q44 48 54 56 L52 112 Q46 126 36 132 Z" fill="url(#hgSkin)" stroke="#b97a4e" stroke-width="2"/>
+      <path d="M234 132 L228 94 Q230 64 212 54 Q196 48 186 56 L188 112 Q194 126 204 132 Z" fill="url(#hgSkin)" stroke="#b97a4e" stroke-width="2"/>
       <!-- iPhone, landscape -->
       <rect x="40" y="28" width="160" height="80" rx="17" fill="#18181c" stroke="#9aa0ab" stroke-width="3"/>
       <rect x="48" y="35" width="144" height="66" rx="11" fill="url(#hgScreen)"/>
@@ -234,9 +234,13 @@
       <rect x="52" y="56" width="7" height="24" rx="3.5" fill="#000"/>
       <!-- level line: hold it steady -->
       <path d="M70 46H170" stroke="#fff" stroke-width="2.5" stroke-dasharray="6 5" stroke-linecap="round" opacity=".85"/>
-      <!-- thumbs on the front edges -->
-      <path d="M40 40 Q56 34 66 44 Q70 52 60 56 Q48 58 40 54 Z" fill="url(#hgSkin)" stroke="#b97a4e" stroke-width="2"/>
-      <path d="M200 40 Q184 34 174 44 Q170 52 180 56 Q192 58 200 54 Z" fill="url(#hgSkin)" stroke="#b97a4e" stroke-width="2"/>
+      <!-- thumbs: from the palm at the lower side, resting on the screen edge and pointing inward -->
+      <path d="M36 104 Q44 84 66 72" fill="none" stroke="#b97a4e" stroke-width="19" stroke-linecap="round"/>
+      <path d="M36 104 Q44 84 66 72" fill="none" stroke="#efc08f" stroke-width="15" stroke-linecap="round"/>
+      <ellipse cx="65" cy="72.5" rx="5" ry="3.6" transform="rotate(-28 65 72.5)" fill="#fbe3cb" stroke="#d9a273" stroke-width="1"/>
+      <path d="M204 104 Q196 84 174 72" fill="none" stroke="#b97a4e" stroke-width="19" stroke-linecap="round"/>
+      <path d="M204 104 Q196 84 174 72" fill="none" stroke="#efc08f" stroke-width="15" stroke-linecap="round"/>
+      <ellipse cx="175" cy="72.5" rx="5" ry="3.6" transform="rotate(28 175 72.5)" fill="#fbe3cb" stroke="#d9a273" stroke-width="1"/>
     </svg><span>Hold the phone sideways, like this</span>`;
   document.body.appendChild(guide);
   let hook = null;
