@@ -409,20 +409,7 @@
   cvs.addEventListener('touchend', touchSteer, { passive: false });
   cvs.addEventListener('touchcancel', () => { input.touch = 0; });
 
-  // ---------- Fullscreen / landscape / wake lock ----------
-  function lockLandscape() {
-    try { const p = screen.orientation && screen.orientation.lock && screen.orientation.lock('landscape'); if (p && p.catch) p.catch(() => {}); } catch (e) {}
-  }
-  function goFullscreen() {
-    if (!isTouch) return;
-    const el = document.documentElement;
-    const req = el.requestFullscreen || el.webkitRequestFullscreen;
-    if (!req || document.fullscreenElement || document.webkitFullscreenElement) { lockLandscape(); return; }
-    try {
-      const p = req.call(el, { navigationUI: 'hide' });
-      if (p && p.then) p.then(lockLandscape).catch(() => {});
-    } catch (e) {}
-  }
+  // ---------- Wake lock (keeps the screen on while playing) ----------
   let wakeLock = null;
   async function keepAwake() {
     try { if ('wakeLock' in navigator && !wakeLock) { wakeLock = await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release', () => { wakeLock = null; }); } } catch (e) {}
@@ -986,7 +973,6 @@
 
   function startOrResume() {
     const permission = requestSensorPermission();   // must be first, inside the gesture
-    goFullscreen();
     initAudio();
     keepAwake();
     attachSensors();
