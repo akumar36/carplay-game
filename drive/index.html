@@ -1,0 +1,1106 @@
+<!doctype html>
+<!--
+  Neon Drive (CarPlay Games)
+  Copyright (c) 2026 @seltos.gtx (https://www.instagram.com/seltos.gtx/). All rights reserved.
+  Copying, modifying or redistributing this code without permission is not allowed.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="CarPlay Games">
+<meta name="theme-color" content="#12062a">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="icon" href="../icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../icon-180.png">
+<title>Neon Drive</title>
+<style>
+  @font-face { font-family: 'Orbitron'; font-weight: 900; font-display: swap; src: url(../fonts/orbitron-900.woff2) format('woff2'); }
+  :root { --fg: #fff; --accent: #ffd319; --pink: #ff2975; --cyan: #00e5ff; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; height: 100%; overflow: hidden; background: #12062a; color: var(--fg);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    touch-action: none; user-select: none; -webkit-user-select: none; overscroll-behavior: none;
+  }
+  canvas { position: fixed; inset: 0; width: 100vw; height: 100vh; display: block; }
+  .overlay {
+    position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 12px; padding: 24px; text-align: center; z-index: 10; overflow: hidden;
+    background:
+      radial-gradient(ellipse 80% 55% at 50% 115%, rgba(255, 41, 117, 0.5), transparent 70%),
+      linear-gradient(180deg, rgba(18, 6, 42, 0.9) 0%, rgba(43, 10, 78, 0.86) 70%, rgba(70, 12, 90, 0.84) 100%);
+  }
+  .hidden { display: none !important; }
+  h1 {
+    margin: 0; font-family: 'Orbitron', system-ui, sans-serif; font-size: clamp(24px, 7vh, 54px); letter-spacing: 2px; font-weight: 900; font-style: italic;
+    background: linear-gradient(180deg, #ffffff 0%, #fff3a0 30%, #ffd319 48%, #ff2975 78%, #c23cff 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    filter: drop-shadow(0 0 14px rgba(255, 41, 117, 0.55)) drop-shadow(0 2px 0 rgba(18, 6, 42, 0.9));
+  }
+  p { margin: 0; font-size: clamp(13px, 3.4vh, 18px); opacity: 0.9; max-width: 34em; line-height: 1.4; }
+  .big {
+    font-size: clamp(36px, 11vh, 80px); font-weight: 900; font-style: italic; color: transparent;
+    background: linear-gradient(180deg, #fff3a0, #ffd319 45%, #ff2975); -webkit-background-clip: text; background-clip: text;
+  }
+  button {
+    font: inherit; font-size: clamp(20px, 6vh, 30px); font-weight: 800; padding: 0.7em 1.9em; border: 0;
+    border-radius: 999px; color: #fff; cursor: pointer; margin-top: 6px; letter-spacing: 0.5px;
+    background: linear-gradient(90deg, #ff2975, #ff901f);
+    box-shadow: 0 0 22px rgba(255, 41, 117, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  }
+  .small { font-size: 13px; opacity: 0.65; }
+  .msg { color: #ff8a80; font-weight: 600; }
+  .copyright { font-size: 11px; opacity: 0.6; margin-top: 4px; }
+  .byline a { color: var(--cyan); font-weight: 700; text-decoration: none; }
+  /* Big touch targets: these games are meant for car screens too */
+  .actions { display: flex; flex-direction: column; gap: 10px; align-items: center; }
+  .actions button { margin: 0; }
+  .actions .homeLink {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 56px; min-width: 56px; white-space: nowrap;
+    padding: 0 22px; border-radius: 999px; font-size: clamp(17px, 4.8vh, 22px); font-weight: 800; color: #fff;
+    text-decoration: none; background: rgba(0, 0, 0, 0.35); border: 2px solid rgba(255, 255, 255, 0.4);
+  }
+  .actions .homeLink:active { transform: scale(0.96); }
+  .actions .homeLink svg { width: 24px; height: 24px; flex: none; }
+  /* Keep menu content below the top buttons and between the side badges (--side is set from JS) */
+  .overlay { padding: 78px calc(var(--side, 0px) + 16px) 14px; }
+  @media (max-height: 420px) { .overlay { gap: 6px; } }
+  @media (max-height: 360px) {
+    .overlay { padding-top: 70px; }
+    .actions { gap: 6px; }
+    .actions .homeLink { min-height: 46px; }
+    .overlay .big { font-size: 34px; }
+    .overlay .igBtn { padding-top: 0.25em; padding-bottom: 0.25em; }
+  }
+  @media (max-height: 460px) {
+    .overlay p.small:not(.byline) { display: none; }
+    .overlay { padding-bottom: 26px; }
+    .overlay > .copyright { position: absolute; left: 0; right: 0; bottom: 6px; margin: 0; max-width: none; }
+    /* Main button on top; the buttons below it share one row */
+    .actions { display: grid; grid-template-columns: auto auto; justify-content: center; justify-items: center; }
+    .actions > button, .actions > :last-child:nth-child(2) { grid-column: 1 / -1; }
+  }
+  #rotate { display: none; z-index: 20; background: #12062a; }
+  #rotate .phone {
+    width: 44px; height: 76px; border: 4px solid var(--cyan); border-radius: 9px;
+    animation: turn 1.8s ease-in-out infinite;
+  }
+  @keyframes turn { 0%, 30% { transform: rotate(0); } 60%, 100% { transform: rotate(-90deg); } }
+  @media (orientation: portrait) and (pointer: coarse) { #rotate { display: flex; } }
+
+  #topBar { position: fixed; top: max(8px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); z-index: 16; }
+  #soundBtn {
+    font: 700 17px system-ui, sans-serif; color: #fff; background: rgba(18, 6, 42, 0.6);
+    border: 1px solid rgba(255, 41, 117, 0.6); box-shadow: none; margin: 0; cursor: pointer;
+  }
+  #soundBtn { min-height: 56px; padding: 0 22px; border-radius: 999px; white-space: nowrap; }
+  /* The road fills the screen while driving, so the side badges step aside (billboards stand by the road instead) */
+  body.playing #topBar, body.playing #brand, body.playing #adBanner { display: none; }
+
+  /* Instagram branding, in the space left of the playfield */
+  .ig-logo {
+    display: inline-flex; align-items: center; justify-content: center; flex: none;
+    width: 40px; height: 40px; border-radius: 12px;
+    background: radial-gradient(circle at 30% 107%, #fdf497 0%, #fdf497 5%, #fd5949 45%, #d6249f 60%, #285aeb 90%);
+  }
+  .ig-logo svg { width: 64%; height: 64%; }
+  /* "Developed by" creator card (left). Sizes follow the card's width (container units), so it fits any gap. */
+  #brand {
+    position: fixed; top: 50%; left: 12px; transform: translateY(-50%); z-index: 15; container-type: inline-size;
+    display: flex; flex-direction: column; align-items: center; gap: 7px; padding: 14px 8px 12px; border-radius: 20px;
+    color: #fff; text-decoration: none; text-align: center; border: 2px solid transparent;
+    background: linear-gradient(170deg, #1c0b38, #0d0620) padding-box,
+                linear-gradient(135deg, #feda75, #fa7e1e, #d62976, #962fbf, #4f5bd5) border-box;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 22px rgba(214, 41, 118, 0.35);
+  }
+  #brand .dev { font-size: 8.5px; font-weight: 800; letter-spacing: 1px; letter-spacing: max(0.3px, min(2px, calc(2.6cqw - 1.4px))); color: #ffb3d9; white-space: nowrap; }
+  #brand .ring { display: flex; padding: 3px; border-radius: 16px; background: linear-gradient(135deg, #feda75, #fa7e1e, #d62976, #962fbf, #4f5bd5); }
+  #brand .ring .ig-logo { width: 42px; height: 42px; width: min(46px, 50cqw); height: min(46px, 50cqw); border: 3px solid #160830; border-radius: 13px; }
+  #brand .handle { font-weight: 800; font-size: 13px; font-size: min(15px, 16.5cqw); white-space: nowrap; }
+  #brand .follow {
+    display: inline-flex; padding: 0.5em 1.1em; border-radius: 999px; font-size: 11px; font-size: min(12px, 14cqw); font-weight: 800; white-space: nowrap;
+    background: linear-gradient(90deg, #fa7e1e, #d62976, #962fbf); box-shadow: 0 4px 12px rgba(214, 41, 118, 0.45);
+  }
+  #brand:active { transform: translateY(-50%) scale(0.96); }
+
+  /* Roadside "ad space" billboard (right): lamps, metal frame, catwalk and legs */
+  #adBanner {
+    position: fixed; top: 50%; right: 12px; transform: translateY(-50%); z-index: 15; container-type: inline-size;
+    display: flex; flex-direction: column; align-items: center; text-decoration: none; color: #fff;
+  }
+  #adBanner .lamps { display: flex; justify-content: space-around; width: 86%; height: 9px; position: relative; z-index: 1; }
+  #adBanner .lamps i { width: 12px; height: 9px; border-radius: 6px 6px 2px 2px; background: #2a2a38; position: relative; }
+  #adBanner .lamps i::before { content: ""; position: absolute; left: 3px; right: 3px; bottom: 0; height: 3px; border-radius: 2px; background: #fff3c4; box-shadow: 0 0 6px #ffe9a0; }
+  #adBanner .lamps i::after {
+    content: ""; position: absolute; left: 50%; top: 8px; width: 46px; height: 34px; transform: translateX(-50%); pointer-events: none;
+    background: radial-gradient(ellipse at 50% 0, rgba(255, 240, 200, 0.28), rgba(255, 240, 200, 0) 65%);
+  }
+  #adBanner .board { width: 100%; padding: 4px; border-radius: 6px; background: linear-gradient(180deg, #4a4458, #262230); box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5); }
+  #adBanner .panel {
+    position: relative; overflow: hidden; display: flex; flex-direction: column; align-items: center; gap: 5px;
+    padding: 10px 6px 9px; border-radius: 3px; text-align: center;
+    background: linear-gradient(160deg, #ff2975 0%, #8c1eff 55%, #2b0a4e 100%);
+  }
+  #adBanner .panel::after {      /* light sweep across the board */
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(110deg, transparent 35%, rgba(255, 255, 255, 0.22) 50%, transparent 65%);
+    transform: translateX(-120%); animation: adSweep 3.5s ease-in-out infinite;
+  }
+  #adBanner .tag { font-size: 8.5px; font-weight: 800; letter-spacing: 1px; letter-spacing: max(0.5px, min(2px, calc(2cqw - 0.8px))); color: #12062a; background: #ffd319; padding: 2px 7px; border-radius: 3px; white-space: nowrap; }
+  #adBanner .main { font: 900 13px/1.08 'Orbitron', system-ui, sans-serif; font-size: min(15px, 14cqw); letter-spacing: 0.5px; color: #fff; text-shadow: 0 2px 0 rgba(18, 6, 42, 0.5); }
+  #adBanner .cta { margin-top: 2px; font-size: 9.5px; font-size: min(10.5px, 9.6cqw); font-weight: 800; padding: 0.4em 0.8em; border-radius: 999px; background: #12062a; color: #6ff7ff; white-space: nowrap; }
+  #adBanner .walk { width: 92%; height: 5px; background: repeating-linear-gradient(90deg, #5a5368 0 3px, #2a2633 3px 6px); }
+  #adBanner .legs { display: flex; justify-content: space-between; width: 58%; height: 18px; }
+  #adBanner .legs i { width: 6px; background: linear-gradient(90deg, #3a3446, #6b6280, #3a3446); }
+  #adBanner:active .board { transform: scale(0.96); }
+  @keyframes adSweep { 0%, 55% { transform: translateX(-120%); } 85%, 100% { transform: translateX(120%); } }
+  @media (prefers-reduced-motion: reduce) { #adBanner .panel::after { animation: none; } }
+  .igBtn {
+    display: inline-flex; align-items: center; gap: 10px; padding: 0.45em 1.2em 0.45em 0.5em;
+    border-radius: 999px; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.18); color: #fff; text-decoration: none;
+    font-weight: 700; font-size: clamp(14px, 3.6vh, 18px);
+  }
+  .igBtn .ig-logo { width: 32px; height: 32px; border-radius: 10px; }
+
+  /* Pause button: bottom right, only while playing; big enough for car screens */
+  #pauseBtn {
+    display: none; position: fixed; z-index: 16;
+    right: max(12px, env(safe-area-inset-right)); bottom: max(12px, env(safe-area-inset-bottom));
+    width: 60px; height: 60px; padding: 0; margin: 0; border-radius: 16px; animation: none; cursor: pointer;
+    align-items: center; justify-content: center; color: #fff;
+    background: rgba(18, 6, 42, 0.6); border: 2px solid rgba(255, 41, 117, 0.7); box-shadow: 0 0 14px rgba(255, 41, 117, 0.35);
+  }
+  #pauseBtn svg { width: 26px; height: 26px; }
+  #pauseBtn:active { transform: scale(0.94); }
+  body.playing #pauseBtn { display: flex; }
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+
+<button id="pauseBtn" type="button" aria-label="Pause"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4.5" width="4.2" height="15" rx="1.2"/><rect x="13.8" y="4.5" width="4.2" height="15" rx="1.2"/></svg></button>
+
+<div id="topBar"><button id="soundBtn" type="button" aria-label="Change sound setting">🔊 Sound on</button></div>
+
+<a id="brand" href="https://www.instagram.com/seltos.gtx/" target="_blank" rel="noopener" aria-label="Developed by @seltos.gtx: follow on Instagram">
+  <span class="dev">DEVELOPED BY</span>
+  <span class="ring"><span class="ig-logo"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.4" cy="6.6" r="1.1" fill="#fff" stroke="none"/></svg></span></span>
+  <span class="handle">@seltos.gtx</span>
+  <span class="follow">＋ Follow</span>
+</a>
+
+<a id="adBanner" href="https://www.instagram.com/seltos.gtx/" target="_blank" rel="noopener" aria-label="Advertise here: message @seltos.gtx on Instagram">
+  <span class="lamps"><i></i><i></i><i></i></span>
+  <span class="board"><span class="panel">
+    <span class="tag">AD SPACE</span>
+    <span class="main">YOUR<br>BRAND<br>HERE</span>
+    <span class="cta">DM @seltos.gtx</span>
+  </span></span>
+  <span class="walk"></span>
+  <span class="legs"><i></i><i></i></span>
+</a>
+
+<div id="menu" class="overlay">
+  <h1>NEON DRIVE</h1>
+  <p class="byline small">by <a href="https://www.instagram.com/seltos.gtx/" target="_blank" rel="noopener">@seltos.gtx</a></p>
+  <p>You're behind the wheel: <b>turn your phone to steer</b>. The car speeds up by itself.
+     Overtake traffic, hold the road in the curves and grab coins. You have <b>3 lives</b>.</p>
+  <div class="actions"><button id="startBtn">Tap to drive</button><a class="homeLink" href="../" aria-label="All games"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg><span>All games</span></a></div>
+  <p class="small">No tilt sensor? Use ← → / A D keys to steer, or touch the left or right half of the screen.</p>
+  <p id="menuMsg" class="msg hidden"></p>
+  <p class="copyright">© 2026 @seltos.gtx · All rights reserved</p>
+</div>
+
+<div id="over" class="overlay hidden">
+  <p>GAME OVER</p>
+  <div class="big" id="finalScore">0</div>
+  <p id="bestLine"></p>
+  <div class="actions"><button id="againBtn">Play again</button><a class="homeLink" href="../" aria-label="All games"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg><span>All games</span></a><a class="igBtn" href="https://www.instagram.com/seltos.gtx/" target="_blank" rel="noopener">
+    <span class="ig-logo"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.4" cy="6.6" r="1.1" fill="#fff" stroke="none"/></svg></span>
+    Follow @seltos.gtx
+  </a></div>
+  <p class="copyright">© 2026 @seltos.gtx · All rights reserved</p>
+</div>
+
+<div id="paused" class="overlay hidden">
+  <h1>Paused</h1>
+  <div class="actions"><button id="resumeBtn">Resume</button><a class="homeLink" href="../" aria-label="All games"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg><span>All games</span></a></div>
+</div>
+
+<div id="rotate" class="overlay">
+  <div class="phone"></div>
+  <p>Rotate your phone to <b>landscape</b>.</p>
+  <p class="small">On iPhone, turn off Portrait Orientation Lock in Control Center.</p>
+</div>
+
+<script>
+(() => {
+  'use strict';
+
+  // ---------- Setup ----------
+  // Field units: the playfield is 1 unit wide and FH units tall; everything in the game lives in these units.
+  const cvs = document.getElementById('game');
+  const ctx = cvs.getContext('2d');
+  const $ = (id) => document.getElementById(id);
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const D2R = Math.PI / 180;
+  const SENSITIVITY = 0.36;      // ~21 degrees of tilt = full speed
+  const DEAD_ZONE = 0.07;
+  const MAX_LIVES = 3, INVINCIBLE_TIME = 2, COUNTDOWN = 2.4;
+  const isTouch = matchMedia('(pointer: coarse)').matches;
+
+  let W = 0, H = 0, FW = 0, FX = 0, FH = 1;
+  let adBottom = 0;             // bottom edge of the roadside billboard, so the HUD wheel can avoid it
+
+  function resize() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth; H = window.innerHeight;
+    cvs.width = Math.round(W * dpr); cvs.height = Math.round(H * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    FW = Math.min(W * 0.62, H * 1.3);
+    FX = (W - FW) / 2;
+    FH = H / FW;
+    placeSide($('brand'), 'left', 150);
+    placeSide($('adBanner'), 'right', 140);
+    const ad = $('adBanner');
+    adBottom = ad.classList.contains('hidden') ? 0 : ad.getBoundingClientRect().bottom;
+    document.documentElement.style.setProperty('--side', (FX - 6 >= 84 ? FX - 6 : 0) + 'px');
+  }
+
+  // Badge and billboard sit centred in the space beside the playfield, and hide if there's no room.
+  function placeSide(el, side, maxW) {
+    const margin = FX - 6;
+    if (margin < 84) { el.classList.add('hidden'); return; }
+    el.classList.remove('hidden');
+    const bw = Math.min(margin - 16, maxW);
+    el.style.width = bw + 'px';
+    el.style[side] = (margin - bw) / 2 + 'px';
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  // ---------- Storage ----------
+  function load(key, fallback) { try { const v = localStorage.getItem(key); return v == null ? fallback : v; } catch (e) { return fallback; } }
+  function save(key, v) { try { localStorage.setItem(key, String(v)); } catch (e) {} }
+
+  // ---------- Audio (tiny synth blips) ----------
+  let ac = null, muted = load('driveSound', 'on') === 'off';
+  function initAudio() {
+    if (muted) return;
+    try {
+      ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+      if (ac.state === 'suspended') ac.resume();
+    } catch (e) { ac = null; }
+  }
+  function beep(freq, dur, type = 'sine', vol = 0.12, slide = 0) {
+    if (!ac || muted) return;
+    try {
+      const t = ac.currentTime, o = ac.createOscillator(), g = ac.createGain();
+      o.type = type; o.frequency.setValueAtTime(freq, t);
+      if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(20, freq + slide), t + dur);
+      g.gain.setValueAtTime(vol, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(g).connect(ac.destination); o.start(t); o.stop(t + dur);
+    } catch (e) {}
+  }
+  function setMuted(m) {
+    muted = m; save('driveSound', m ? 'off' : 'on');
+    $('soundBtn').textContent = m ? '🔇 Muted' : '🔊 Sound on';
+    if (m && ac) try { ac.suspend(); } catch (e) {}
+    if (!m) initAudio();
+  }
+
+  // ---------- Input (same tilt model as Racer) ----------
+  const input = {
+    tilt: null,        // sideways component of "up" in screen coordinates (-1..1)
+    neutral: null,     // calibrated tilt at start
+    source: 'none',    // 'orientation' | 'motion' | 'none'
+    steer: 0,          // smoothed steering, -1 (left) .. 1 (right)
+    left: false, right: false, touch: 0,
+  };
+
+  function screenAngle() {
+    const so = screen.orientation;
+    let a = so && typeof so.angle === 'number' ? so.angle : (window.orientation || 0);
+    // Some browsers report 0 even when the page is landscape; assume the common landscape rotation.
+    if (a % 180 === 0 && window.innerWidth > window.innerHeight) a = 90;
+    return a * D2R;
+  }
+
+  // Project the world "up" vector (in device coords) onto the screen's horizontal axis.
+  function upToScreenX(ux, uy) {
+    const a = screenAngle();
+    return ux * Math.cos(a) - uy * Math.sin(a);
+  }
+
+  function onOrientation(e) {
+    if (e.beta == null || e.gamma == null) return;
+    const b = e.beta * D2R, g = e.gamma * D2R;
+    const ux = -Math.cos(b) * Math.sin(g);
+    const uy = Math.sin(b);
+    input.tilt = upToScreenX(ux, uy);
+    input.source = 'orientation';
+  }
+
+  function onMotion(e) {
+    if (input.source === 'orientation') return; // prefer the fused orientation sensor
+    const a = e.accelerationIncludingGravity;
+    if (!a || a.x == null) return;
+    const n = Math.hypot(a.x, a.y, a.z) || 1;
+    input.tilt = upToScreenX(a.x / n, a.y / n);
+    input.source = 'motion';
+  }
+
+  let sensorsAttached = false;
+  function attachSensors() {
+    if (sensorsAttached) return;
+    sensorsAttached = true;
+    window.addEventListener('deviceorientation', onOrientation);
+    window.addEventListener('devicemotion', onMotion);
+  }
+
+  function requestSensorPermission() {
+    // iOS 13+: must be called synchronously inside a user gesture.
+    const DOE = window.DeviceOrientationEvent, DME = window.DeviceMotionEvent;
+    let p = null;
+    if (DOE && typeof DOE.requestPermission === 'function') p = DOE.requestPermission();
+    else if (DME && typeof DME.requestPermission === 'function') p = DME.requestPermission();
+    return p ? p.catch(() => 'denied') : Promise.resolve('granted');
+  }
+
+  function updateSteer(dt) {
+    let target = 0;
+    if (input.tilt != null) {
+      if (input.neutral == null || G.state === 'countdown') input.neutral = input.tilt;
+      let d = -(input.tilt - input.neutral) / SENSITIVITY;
+      d = Math.abs(d) < DEAD_ZONE ? 0 : (d - Math.sign(d) * DEAD_ZONE) / (1 - DEAD_ZONE);
+      target = clamp(d, -1, 1);
+    }
+    const manual = (input.right ? 1 : 0) - (input.left ? 1 : 0) + input.touch;
+    if (manual) target = clamp(manual, -1, 1);
+    input.steer += (target - input.steer) * Math.min(1, dt * 14);
+  }
+
+  const keyMap = { ArrowLeft: 'left', a: 'left', A: 'left', ArrowRight: 'right', d: 'right', D: 'right' };
+  window.addEventListener('keydown', (e) => {
+    if (keyMap[e.key]) { input[keyMap[e.key]] = true; e.preventDefault(); }
+    if (e.key === ' ' || e.key === 'Enter') {
+      if (['menu', 'over', 'paused'].includes(G.state)) { startOrResume(); e.preventDefault(); }
+    }
+    if (e.key === 'm' || e.key === 'M') setMuted(!muted);
+  });
+  window.addEventListener('keyup', (e) => { if (keyMap[e.key]) input[keyMap[e.key]] = false; });
+
+  function touchSteer(e) {
+    if (G.state !== 'play') return;
+    let dir = 0;
+    for (const t of e.touches) dir += t.clientX < W / 2 ? -1 : 1;
+    input.touch = clamp(dir, -1, 1);
+    e.preventDefault();
+  }
+  cvs.addEventListener('touchstart', touchSteer, { passive: false });
+  cvs.addEventListener('touchmove', touchSteer, { passive: false });
+  cvs.addEventListener('touchend', touchSteer, { passive: false });
+  cvs.addEventListener('touchcancel', () => { input.touch = 0; });
+
+  // ---------- Wake lock (keeps the screen on while playing) ----------
+  let wakeLock = null;
+  async function keepAwake() {
+    try { if ('wakeLock' in navigator && !wakeLock) { wakeLock = await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release', () => { wakeLock = null; }); } } catch (e) {}
+  }
+
+  // ---------- Track (classic pseudo-3D road: a loop of short segments with curves and hills) ----------
+  const SEG = 200, RUMBLE = 3, ROAD_W = 2000, LANES = 3, CAM_H = 1000, FOV = 100, DRAW = 150;
+  const CAM_DEPTH = 1 / Math.tan((FOV / 2) * D2R);
+  const PLAYER_Z = CAM_H * CAM_DEPTH;             // the car's nose sits this far ahead of the camera
+  const LANE_X = [-2 / 3, 0, 2 / 3];
+  const CAR_W = 700, CAR_HW = (CAR_W / 2) / ROAD_W, PLAYER_HW = 0.15;
+  const segments = [];
+  let trackLength = 0;
+
+  const easeIn = (a, b, p) => a + (b - a) * p * p;
+  const easeInOut = (a, b, p) => a + (b - a) * ((-Math.cos(p * Math.PI) / 2) + 0.5);
+  const lerp = (a, b, p) => a + (b - a) * p;
+  const lastY = () => (segments.length ? segments[segments.length - 1].p2.wy : 0);
+  const wrapZ = (z) => ((z % trackLength) + trackLength) % trackLength;
+  const findSegment = (z) => segments[Math.floor(wrapZ(z) / SEG) % segments.length];
+  const pt = (wy, wz) => ({ wx: 0, wy, wz, cx: 0, cy: 0, cz: 0, scale: 0, sx: 0, sy: 0, sw: 0 });
+
+  function addSegment(curve, y) {
+    const n = segments.length;
+    segments.push({ index: n, curve, p1: pt(lastY(), n * SEG), p2: pt(y, (n + 1) * SEG), stripe: Math.floor(n / RUMBLE) % 2,
+      sprites: [], cars: [], items: [], clip: 0 });
+  }
+  function addRoad(enter, hold, leave, curve, height) {
+    const y0 = lastY(), y1 = y0 + height * SEG, total = enter + hold + leave;
+    for (let n = 0; n < enter; n++) addSegment(easeIn(0, curve, n / enter), easeInOut(y0, y1, n / total));
+    for (let n = 0; n < hold; n++) addSegment(curve, easeInOut(y0, y1, (enter + n) / total));
+    for (let n = 0; n < leave; n++) addSegment(easeInOut(curve, 0, n / leave), easeInOut(y0, y1, (enter + hold + n) / total));
+  }
+  const pick = (a) => a[(Math.random() * a.length) | 0];
+
+  function buildTrack() {
+    segments.length = 0;
+    addRoad(40, 60, 40, 0, 0);                      // straight start
+    while (segments.length < 2400) {
+      const len = pick([25, 40, 60]);
+      const curve = Math.random() < 0.3 ? 0 : pick([-1, 1]) * pick([2, 3, 4, 5]);
+      const hill = Math.random() < 0.45 ? 0 : pick([-1, 1]) * pick([10, 20, 35]);
+      addRoad(len, len, len, curve, hill);
+    }
+    addRoad(60, 60, 60, 0, -lastY() / SEG);         // level out so the loop joins up
+    addRoad(30, 30, 30, 0, 0);
+    trackLength = segments.length * SEG;
+
+    // Roadside scenery (also obstacles if you leave the road), billboards, coins and hearts
+    for (let n = 20; n < segments.length - 10; n++) {
+      const s = segments[n];
+      if (n % 8 === 0) s.sprites.push({ kind: 'lamp', offset: n % 16 ? 1.22 : -1.22, ww: 520, cw: 0.04 });
+      if (n % 5 === 0 && Math.random() < 0.7) s.sprites.push({ kind: 'palm', offset: pick([-1, 1]) * (1.5 + Math.random() * 1.4), ww: 1700, cw: 0.07 });
+      if (n % 130 === 60) s.sprites.push({ kind: 'sign', offset: (n / 130) % 2 < 1 ? -1.75 : 1.75, ww: 2600, cw: 0.35 });
+      if (n % 110 === 30) {
+        const lane = pick(LANE_X), count = 3 + ((Math.random() * 3) | 0);
+        for (let k = 0; k < count; k++) { const t = segments[n + k * 3]; if (t) t.items.push({ kind: 'coin', offset: lane, taken: false }); }
+      }
+      if (n % 420 === 210) s.items.push({ kind: 'heart', offset: pick(LANE_X), taken: false });
+    }
+  }
+
+  // ---------- Game state ----------
+  const TOP = 12000;                       // top speed (world units per second)
+  const ACCEL = TOP / 4, OFFROAD_DECEL = -TOP / 1.6, OFFROAD_LIMIT = TOP / 4;
+  const CENTRIFUGAL = 0.3;
+  const G = {
+    state: 'menu', t: 0, clock: 0, score: 0, coins: 0, best: +load('driveBest', 0) || 0,
+    lives: MAX_LIVES, inv: 0, countdown: 0,
+    pos: 0, x: 0, speed: 0, maxSpeed: TOP * 0.7, dist: 0, bg: 0,
+    cars: [], popups: [], shake: 0, flash: 0,
+  };
+  const PARTS = []; for (let i = 0; i < 60; i++) PARTS.push({ life: 0, x: 0, y: 0, vx: 0, vy: 0, c: '#fff' });
+
+  function addCar() {
+    // Anywhere on the loop except just ahead of the start line
+    let z = 0;
+    do { z = Math.random() * trackLength; } while (z < SEG * 60);
+    const car = { z, offset: pick(LANE_X) + (Math.random() - 0.5) * 0.1, speed: TOP * (0.25 + Math.random() * 0.3), ci: (Math.random() * 6) | 0, percent: 0 };
+    findSegment(z).cars.push(car);
+    G.cars.push(car);
+  }
+
+  function reset() {
+    G.t = 0; G.score = 0; G.coins = 0; G.lives = MAX_LIVES; G.inv = 0;
+    G.pos = 0; G.x = 0; G.speed = 0; G.maxSpeed = TOP * 0.7; G.dist = 0;
+    G.popups.length = 0; G.shake = 0; G.flash = 0;
+    for (const p of PARTS) p.life = 0;
+    for (const s of segments) { s.cars.length = 0; for (const it of s.items) it.taken = false; }
+    G.cars.length = 0;
+    for (let i = 0; i < 22; i++) addCar();
+    input.steer = 0; input.touch = 0; input.neutral = input.tilt;
+  }
+
+  function popup(text, color) { G.popups.push({ x: 0.5, y: 0.55, text, color, life: 1 }); }
+
+  function burst(color, n) {
+    for (const p of PARTS) {
+      if (p.life > 0) continue;
+      const a = -Math.PI * (0.15 + Math.random() * 0.7), s = 0.3 + Math.random() * 0.6;
+      p.life = 0.5 + Math.random() * 0.4; p.x = 0.5 + (Math.random() - 0.5) * 0.2; p.y = 0.72; p.vx = Math.cos(a) * s; p.vy = Math.sin(a) * s; p.c = color;
+      if (--n === 0) break;
+    }
+  }
+
+  function hit(slowTo) {
+    G.lives--; G.shake = 0.4; G.flash = 0.8; G.inv = INVINCIBLE_TIME;
+    G.speed = Math.min(G.speed, slowTo);
+    if (navigator.vibrate) try { navigator.vibrate(G.lives > 0 ? 120 : [80, 40, 160]); } catch (e) {}
+    burst('#ff5c96', 16);
+    if (G.lives > 0) {
+      beep(160, 0.35, 'sawtooth', 0.18, -100);
+      popup('-1 ♥', '#ff5a5a');
+      return;
+    }
+    gameOver();
+  }
+
+  function gameOver() {
+    G.state = 'crashing'; G.shake = 0.5; G.flash = 1;
+    beep(120, 0.6, 'sawtooth', 0.2, -80);
+    const final = G.score;
+    const newBest = final > G.best;
+    if (newBest) { G.best = final; save('driveBest', final); }
+    setTimeout(() => {
+      G.state = 'over';
+      $('finalScore').textContent = final;
+      $('bestLine').textContent = newBest ? 'New best score!' : 'Best: ' + G.best;
+      show('over');
+    }, 900);
+  }
+
+  const overlap = (x1, w1, x2, w2) => Math.abs(x1 - x2) < w1 + w2;
+
+  function updateCars(dt) {
+    for (const car of G.cars) {
+      const old = findSegment(car.z);
+      car.z = wrapZ(car.z + car.speed * dt);
+      car.percent = (car.z % SEG) / SEG;
+      const now = findSegment(car.z);
+      if (now !== old) { old.cars.splice(old.cars.indexOf(car), 1); now.cars.push(car); }
+    }
+  }
+
+  function update(dt) {
+    updateSteer(dt);
+    G.clock += dt;
+    if (G.shake > 0) G.shake = Math.max(0, G.shake - dt);
+    if (G.flash > 0) G.flash = Math.max(0, G.flash - dt * 2.5);
+    for (const p of G.popups) { p.life -= dt; p.y -= dt * 0.08; }
+    let j = 0; for (const p of G.popups) if (p.life > 0) G.popups[j++] = p; G.popups.length = j;
+    for (const p of PARTS) if (p.life > 0) { p.life -= dt; p.x += p.vx * dt * 0.3; p.y += p.vy * dt * 0.3; p.vy += dt * 0.9; }
+
+    if (G.state === 'menu') {      // attract mode: cruise down the middle behind the menu
+      G.pos = wrapZ(G.pos + TOP * 0.25 * dt); G.x = 0; G.speed = TOP * 0.25;
+      G.bg = (G.bg + findSegment(G.pos + PLAYER_Z).curve * 0.25 * dt * 0.05 + 1) % 1;
+      updateCars(dt);
+      return;
+    }
+    if (G.state === 'countdown') {
+      const before = Math.ceil(G.countdown);
+      G.countdown -= dt;
+      if (G.countdown <= 0) { G.state = 'play'; beep(880, 0.25, 'triangle', 0.12); }
+      else if (Math.ceil(G.countdown) !== before) beep(440, 0.12, 'triangle', 0.1);
+      return;
+    }
+    if (G.state !== 'play') return;
+
+    G.t += dt;
+    if (G.inv > 0) G.inv = Math.max(0, G.inv - dt);
+    G.maxSpeed = TOP * (0.7 + 0.3 * Math.min(1, G.t / 90));
+    const seg = findSegment(G.pos + PLAYER_Z), sp = G.speed / TOP;
+
+    // Steering: the wheel moves you sideways; curves push you towards the outside.
+    const dx = dt * 2 * sp;
+    G.x += input.steer * dx;
+    G.x -= dx * sp * seg.curve * CENTRIFUGAL;
+    G.x = clamp(G.x, -2.6, 2.6);
+
+    // Speed: the car accelerates by itself; off the road it slows right down.
+    if (Math.abs(G.x) > 1 && G.speed > OFFROAD_LIMIT) G.speed = Math.max(OFFROAD_LIMIT, G.speed + OFFROAD_DECEL * dt);
+    else G.speed = Math.min(G.maxSpeed, G.speed + ACCEL * dt);
+
+    G.pos = wrapZ(G.pos + G.speed * dt);
+    G.dist += G.speed * dt;
+    G.bg = (G.bg + seg.curve * sp * dt * 0.05 + 1) % 1;
+    G.score = Math.floor(G.dist / 250) + G.coins * 50;
+
+    // More traffic as you go
+    if (G.cars.length < Math.min(60, 22 + G.t / 3)) addCar();
+    updateCars(dt);
+
+    if (!G.inv) {
+      // Roadside scenery when you're off the road
+      if (Math.abs(G.x) > 1) {
+        for (const s of seg.sprites) {
+          if (overlap(G.x, PLAYER_HW, s.offset + (s.offset < 0 ? -1 : 1) * s.cw, s.cw)) {
+            hit(TOP * 0.08);
+            G.x = Math.sign(G.x) * 0.85;      // put the car back on the edge of the road
+            if (G.state !== 'play') return;
+            break;
+          }
+        }
+      }
+      // Traffic just ahead of the nose
+      const next = segments[(seg.index + 1) % segments.length];
+      for (const list of [seg.cars, next.cars]) {
+        for (const car of list) {
+          if (G.speed > car.speed && overlap(G.x, PLAYER_HW, car.offset, CAR_HW * 0.8)) {
+            hit(car.speed * 0.6);
+            if (G.state !== 'play') return;
+            break;
+          }
+        }
+      }
+    }
+
+    for (const it of seg.items) {
+      if (it.taken || !overlap(G.x, PLAYER_HW, it.offset, 0.12)) continue;
+      if (it.kind === 'heart') {
+        if (G.lives >= MAX_LIVES) continue;
+        it.taken = true;
+        G.lives++;
+        popup('+1 ♥', '#ff7eb6');
+        beep(660, 0.1, 'triangle', 0.1); setTimeout(() => beep(990, 0.18, 'triangle', 0.1), 90);
+      } else {
+        it.taken = true;
+        G.coins++;
+        popup('+50', '#ffd700');
+        beep(880, 0.08, 'square', 0.08); setTimeout(() => beep(1320, 0.12, 'square', 0.08), 70);
+      }
+    }
+  }
+
+  // ---------- Sprites (pre-rendered once, then just stamped and scaled) ----------
+  function hash(n) { const s = Math.sin(n * 127.1) * 43758.5453; return s - Math.floor(s); }
+  function rr(g, x, y, w, h, r) {
+    g.beginPath();
+    g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r);
+    g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath();
+  }
+  function shade(hex, t) {
+    const n = parseInt(hex.slice(1), 16), m = t > 0 ? 255 : 0, a = Math.abs(t);
+    const c = [n >> 16, (n >> 8) & 255, n & 255].map((v) => Math.round(v + (m - v) * a));
+    return `rgb(${c[0]},${c[1]},${c[2]})`;
+  }
+  function makeSprite(w, h, paint, density) {
+    const d = density || Math.min(window.devicePixelRatio || 1, 2);
+    const c = document.createElement('canvas');
+    c.width = Math.max(1, Math.ceil(w * d)); c.height = Math.max(1, Math.ceil(h * d));
+    const g = c.getContext('2d'); g.scale(d, d); paint(g);
+    return { c, w, h };
+  }
+  function glow(g, x, y, r0, r1, rgb, a) {
+    const gr = g.createRadialGradient(x, y, r0, x, y, r1);
+    gr.addColorStop(0, `rgba(${rgb},${a})`); gr.addColorStop(1, `rgba(${rgb},0)`);
+    g.fillStyle = gr; g.beginPath(); g.arc(x, y, r1, 0, 7); g.fill();
+  }
+
+  const CAR_COLORS = ['#00e5ff', '#ffd319', '#8c6bff', '#2de2a6', '#ff901f', '#e6e6ff'];
+  function makeCarRear(color) {
+    // Traffic seen from behind: body, rear window, glowing tail lights
+    const w = 220, h = 150;
+    return makeSprite(w, h, (g) => {
+      g.fillStyle = 'rgba(0,0,0,0.45)'; g.beginPath(); g.ellipse(w / 2, h - 8, w * 0.48, 10, 0, 0, 7); g.fill();
+      g.fillStyle = '#0b0614'; rr(g, 18, h - 40, 40, 32, 8); g.fill(); rr(g, w - 58, h - 40, 40, 32, 8); g.fill();
+      const body = g.createLinearGradient(0, 30, 0, h - 14);
+      body.addColorStop(0, shade(color, 0.35)); body.addColorStop(0.5, color); body.addColorStop(1, shade(color, -0.5));
+      g.fillStyle = body;
+      g.beginPath(); g.moveTo(40, 52); g.lineTo(w - 40, 52); g.lineTo(w - 6, 84); g.lineTo(w - 6, h - 22); g.lineTo(6, h - 22); g.lineTo(6, 84); g.closePath(); g.fill();
+      g.fillStyle = shade(color, -0.2); g.beginPath(); g.moveTo(52, 14); g.lineTo(w - 52, 14); g.lineTo(w - 36, 54); g.lineTo(36, 54); g.closePath(); g.fill();
+      const glass = g.createLinearGradient(0, 20, 0, 50); glass.addColorStop(0, '#2a1d5c'); glass.addColorStop(1, '#0d0a24');
+      g.fillStyle = glass; g.beginPath(); g.moveTo(60, 22); g.lineTo(w - 60, 22); g.lineTo(w - 46, 50); g.lineTo(46, 50); g.closePath(); g.fill();
+      glow(g, 40, 96, 4, 40, '255,40,80', 0.55); glow(g, w - 40, 96, 4, 40, '255,40,80', 0.55);
+      g.fillStyle = '#ff2a55'; rr(g, 16, 88, 48, 14, 4); g.fill(); rr(g, w - 64, 88, 48, 14, 4); g.fill();
+      g.fillStyle = '#ffd1dc'; rr(g, 22, 92, 20, 5, 2); g.fill(); rr(g, w - 42, 92, 20, 5, 2); g.fill();
+      g.fillStyle = '#12062a'; rr(g, w / 2 - 30, 104, 60, 16, 3); g.fill();
+      g.fillStyle = 'rgba(255,255,255,0.25)'; g.fillRect(10, 84, w - 20, 2);
+    }, 1);
+  }
+
+  function makePalm() {
+    const w = 260, h = 380;
+    return makeSprite(w, h, (g) => {
+      g.strokeStyle = '#3b2a4a'; g.lineWidth = 16; g.lineCap = 'round';
+      g.beginPath(); g.moveTo(w / 2 + 18, h - 6); g.quadraticCurveTo(w / 2 - 20, h * 0.55, w / 2, 120); g.stroke();
+      g.strokeStyle = '#6a4a7a'; g.lineWidth = 4;
+      for (let y = h - 30; y > 140; y -= 26) { g.beginPath(); g.moveTo(w / 2 - 8, y); g.lineTo(w / 2 + 10, y - 4); g.stroke(); }
+      for (let i = 0; i < 9; i++) {
+        const a = -Math.PI / 2 + (i - 4) * 0.42, len = 110 + hash(i * 3.3) * 30;
+        const ex = w / 2 + Math.cos(a) * len, ey = 120 + Math.sin(a) * len * 0.55 + 40;
+        g.strokeStyle = i % 2 ? '#2de2a6' : '#1aa889'; g.lineWidth = 9;
+        g.beginPath(); g.moveTo(w / 2, 118); g.quadraticCurveTo((w / 2 + ex) / 2, 70 - hash(i) * 20, ex, ey); g.stroke();
+      }
+      g.fillStyle = '#ff901f'; for (const [dx, dy] of [[-10, 126], [8, 128], [0, 138]]) { g.beginPath(); g.arc(w / 2 + dx, dy, 8, 0, 7); g.fill(); }
+    }, 1);
+  }
+
+  function makeLamp() {
+    const w = 120, h = 420;
+    return makeSprite(w, h, (g) => {
+      glow(g, w / 2 + 26, 34, 4, 56, '0,229,255', 0.45);
+      g.fillStyle = '#3a3446'; g.fillRect(w / 2 - 5, 30, 10, h - 30);
+      g.fillRect(w / 2 - 5, 26, 40, 8);
+      g.fillStyle = '#6ff7ff'; rr(g, w / 2 + 18, 30, 28, 8, 4); g.fill();
+      g.fillStyle = '#ff2975'; g.fillRect(w / 2 - 5, h - 60, 10, 4); g.fillRect(w / 2 - 5, h - 140, 10, 4);
+    }, 1);
+  }
+
+  function makeSign() {
+    // In-world "ad space" billboard, so the branding stays visible during play
+    const w = 520, h = 330;
+    return makeSprite(w, h, (g) => {
+      g.fillStyle = '#3a3446'; g.fillRect(120, 200, 16, h - 200); g.fillRect(w - 136, 200, 16, h - 200);
+      g.fillStyle = '#4a4458'; rr(g, 10, 20, w - 20, 190, 8); g.fill();
+      const panel = g.createLinearGradient(20, 30, w - 20, 200);
+      panel.addColorStop(0, '#ff2975'); panel.addColorStop(0.55, '#8c1eff'); panel.addColorStop(1, '#2b0a4e');
+      g.fillStyle = panel; rr(g, 20, 30, w - 40, 170, 4); g.fill();
+      for (const lx of [110, w / 2, w - 110]) { g.fillStyle = '#2a2a38'; rr(g, lx - 14, 6, 28, 16, 6); g.fill(); g.fillStyle = '#fff3c4'; g.fillRect(lx - 9, 18, 18, 4); }
+      g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.fillStyle = '#ffd319'; rr(g, w / 2 - 70, 46, 140, 28, 4); g.fill();
+      g.fillStyle = '#12062a'; g.font = '800 18px system-ui, sans-serif'; g.fillText('AD SPACE', w / 2, 61);
+      g.fillStyle = '#fff'; g.font = "900 38px Orbitron, system-ui, sans-serif"; g.fillText('YOUR BRAND HERE', w / 2, 114);
+      g.fillStyle = '#12062a'; rr(g, w / 2 - 110, 146, 220, 38, 19); g.fill();
+      g.fillStyle = '#6ff7ff'; g.font = '800 22px system-ui, sans-serif'; g.fillText('DM @seltos.gtx', w / 2, 166);
+    }, 1);
+  }
+
+  function makeCoin() {
+    const r = 40, size = r * 4.4;
+    return makeSprite(size, size, (g) => {
+      const c = size / 2;
+      glow(g, c, c, r * 0.6, r * 2.2, '255,211,25', 0.55);
+      const face = g.createLinearGradient(c - r, c - r, c + r, c + r);
+      face.addColorStop(0, '#fff3a0'); face.addColorStop(0.45, '#ffd319'); face.addColorStop(1, '#e07b00');
+      g.fillStyle = face; g.beginPath(); g.arc(c, c, r, 0, 7); g.fill();
+      g.strokeStyle = 'rgba(160,80,0,0.6)'; g.lineWidth = r * 0.12; g.beginPath(); g.arc(c, c, r * 0.72, 0, 7); g.stroke();
+      g.fillStyle = '#fff8cf'; g.font = `900 ${r * 1.05}px system-ui, sans-serif`;
+      g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('★', c, c + r * 0.04);
+    }, 1);
+  }
+
+  function makeHeart() {
+    const r = 46, size = r * 4;
+    return makeSprite(size, size, (g) => {
+      const c = size / 2;
+      glow(g, c, c, r * 0.5, r * 1.9, '255,41,117', 0.55);
+      const path = (k) => { g.beginPath(); g.moveTo(c, c + k * 0.9); g.bezierCurveTo(c - k * 1.4, c - k * 0.1, c - k * 0.6, c - k * 1.2, c, c - k * 0.45); g.bezierCurveTo(c + k * 0.6, c - k * 1.2, c + k * 1.4, c - k * 0.1, c, c + k * 0.9); g.closePath(); };
+      g.fillStyle = '#fff'; path(r * 1.25); g.fill();
+      g.fillStyle = '#ff2975'; path(r); g.fill();
+    }, 1);
+  }
+
+  function makeSky() {
+    return makeSprite(W, H, (g) => {
+      const sky = g.createLinearGradient(0, 0, 0, H * 0.55);
+      sky.addColorStop(0, '#0b0320'); sky.addColorStop(0.6, '#2b0a4e'); sky.addColorStop(1, '#7a1a6a');
+      g.fillStyle = sky; g.fillRect(0, 0, W, H);
+      for (let i = 0; i < 80; i++) {
+        g.fillStyle = `rgba(255,255,255,${0.3 + hash(i * 1.7) * 0.6})`;
+        g.fillRect(hash(i * 3.1) * W, hash(i * 7.7) * H * 0.4, 1.5, 1.5);
+      }
+    });
+  }
+
+  function makeSun() {
+    const r = H * 0.2, s = r * 2.6;
+    return makeSprite(s, s, (g) => {
+      const c = s / 2;
+      glow(g, c, c, r * 0.8, r * 1.3, '255,41,117', 0.35);
+      const face = g.createLinearGradient(0, c - r, 0, c + r);
+      face.addColorStop(0, '#ffd319'); face.addColorStop(0.5, '#ff901f'); face.addColorStop(1, '#ff2975');
+      g.fillStyle = face; g.beginPath(); g.arc(c, c, r, 0, 7); g.fill();
+      g.globalCompositeOperation = 'destination-out';
+      for (let k = 0; k < 6; k++) g.fillRect(0, c + r * (0.1 + k * 0.16), s, r * (0.03 + k * 0.016));
+    });
+  }
+
+  function makeMountains() {
+    // A tileable strip of mountains for the horizon; it slides sideways in the curves.
+    const tw = Math.max(W, 900), th = H * 0.16;
+    return makeSprite(tw, th, (g) => {
+      for (const [col, edge, amp, seed] of [['#2a0c4a', 'rgba(255,41,117,0.6)', 1, 1], ['#1a0632', 'rgba(0,229,255,0.5)', 0.65, 2]]) {
+        g.beginPath(); g.moveTo(0, th);
+        const n = 14;
+        for (let i = 0; i <= n; i++) g.lineTo((i / n) * tw, th - th * amp * (0.35 + 0.65 * hash(seed * 13 + (i % n) * 2.7)));
+        g.lineTo(tw, th); g.closePath();
+        g.fillStyle = col; g.fill(); g.strokeStyle = edge; g.lineWidth = 1.5; g.stroke();
+      }
+    });
+  }
+
+  function makeHood() {
+    // First-person view: the car's bonnet along the bottom, with a neon edge
+    const hh = H * 0.2;
+    return makeSprite(W, hh, (g) => {
+      const body = g.createLinearGradient(0, 0, 0, hh);
+      body.addColorStop(0, '#2a0838'); body.addColorStop(1, '#0b0418');
+      g.fillStyle = body;
+      g.beginPath(); g.moveTo(-10, hh); g.lineTo(-10, hh * 0.75); g.quadraticCurveTo(W * 0.5, hh * 0.05, W + 10, hh * 0.75); g.lineTo(W + 10, hh); g.closePath(); g.fill();
+      g.strokeStyle = '#ff2975'; g.lineWidth = 3;
+      g.beginPath(); g.moveTo(-10, hh * 0.75); g.quadraticCurveTo(W * 0.5, hh * 0.05, W + 10, hh * 0.75); g.stroke();
+      g.strokeStyle = 'rgba(255,255,255,0.12)'; g.lineWidth = 2;
+      g.beginPath(); g.moveTo(W * 0.32, hh); g.quadraticCurveTo(W * 0.5, hh * 0.35, W * 0.68, hh); g.stroke();
+    });
+  }
+
+  function makeWheel() {
+    const r = H * 0.2, s = r * 2.4;
+    return makeSprite(s, s, (g) => {
+      const c = s / 2;
+      g.lineCap = 'round';
+      g.strokeStyle = 'rgba(0,229,255,0.25)'; g.lineWidth = r * 0.3; g.beginPath(); g.arc(c, c, r, 0, 7); g.stroke();
+      g.strokeStyle = '#1d1030'; g.lineWidth = r * 0.17; g.beginPath(); g.arc(c, c, r, 0, 7); g.stroke();
+      g.strokeStyle = '#6ff7ff'; g.lineWidth = r * 0.04; g.beginPath(); g.arc(c, c, r + r * 0.07, 0, 7); g.stroke();
+      g.strokeStyle = '#1d1030'; g.lineWidth = r * 0.13;
+      g.beginPath(); g.moveTo(c - r, c); g.lineTo(c + r, c); g.moveTo(c, c); g.lineTo(c, c + r); g.stroke();
+      g.fillStyle = '#2a1844'; g.beginPath(); g.arc(c, c, r * 0.28, 0, 7); g.fill();
+      g.fillStyle = '#ff2975'; g.fillRect(c - r * 0.06, c - r * 1.1, r * 0.12, r * 0.2);
+    });
+  }
+
+  const SPR = { key: '' };
+  function ensureSprites() {
+    if (!SPR.cars) {
+      SPR.cars = CAR_COLORS.map(makeCarRear); SPR.palm = makePalm(); SPR.lamp = makeLamp();
+      SPR.coin = makeCoin(); SPR.heart = makeHeart();
+    }
+    // The billboard uses the title font; wait (briefly) for it to load before painting it
+    if (!SPR.sign && (!document.fonts || document.fonts.check('900 20px Orbitron') || G.clock > 3)) SPR.sign = makeSign();
+    const key = `${W}x${H}@${window.devicePixelRatio}`;
+    if (SPR.key === key) return;
+    SPR.key = key;
+    SPR.sky = makeSky(); SPR.sun = makeSun(); SPR.mtn = makeMountains(); SPR.hood = makeHood(); SPR.wheel = makeWheel();
+  }
+
+  // ---------- Drawing ----------
+  function project(p, camX, camY, camZ) {
+    p.cx = p.wx - camX; p.cy = p.wy - camY; p.cz = p.wz - camZ;
+    p.scale = CAM_DEPTH / p.cz;
+    p.sx = W / 2 + p.scale * p.cx * W / 2;
+    p.sy = H / 2 - p.scale * p.cy * H / 2;
+    p.sw = p.scale * ROAD_W * W / 2;
+  }
+  function quad(x1, y1, x2, y2, x3, y3, x4, y4, color) {
+    ctx.fillStyle = color;
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.lineTo(x3, y3); ctx.lineTo(x4, y4); ctx.closePath(); ctx.fill();
+  }
+
+  function drawSegment(s) {
+    const a = s.p1, b = s.p2, st = s.stripe;
+    ctx.fillStyle = st ? '#1c0736' : '#240a44'; ctx.fillRect(0, b.sy, W, a.sy - b.sy + 1);
+    const r1 = a.sw / 7, r2 = b.sw / 7;
+    const rum = st ? '#ff2975' : '#3a0d5e';
+    quad(a.sx - a.sw - r1, a.sy, a.sx - a.sw, a.sy, b.sx - b.sw, b.sy, b.sx - b.sw - r2, b.sy, rum);
+    quad(a.sx + a.sw + r1, a.sy, a.sx + a.sw, a.sy, b.sx + b.sw, b.sy, b.sx + b.sw + r2, b.sy, rum);
+    quad(a.sx - a.sw, a.sy, a.sx + a.sw, a.sy, b.sx + b.sw, b.sy, b.sx - b.sw, b.sy, st ? '#1b1530' : '#211a3a');
+    if (st && a.sw > 40) {
+      const l1 = a.sw / 40, l2 = b.sw / 40, lw1 = (a.sw * 2) / LANES, lw2 = (b.sw * 2) / LANES;
+      for (let k = 1; k < LANES; k++) {
+        const x1 = a.sx - a.sw + lw1 * k, x2 = b.sx - b.sw + lw2 * k;
+        quad(x1 - l1, a.sy, x1 + l1, a.sy, x2 + l2, b.sy, x2 - l2, b.sy, '#6ff7ff');
+      }
+    }
+  }
+
+  // Draw a pre-rendered sprite standing on the road, scaled by distance and clipped by hills in front of it.
+  function drawSprite(S, worldW, scale, x, y, ox, oy, clipY) {
+    const dw = worldW * scale * W / 2;
+    if (dw < 2 || dw > W * 3) return;
+    const dh = dw * S.h / S.w, dx = x + dw * ox, dy = y + dh * oy;
+    const clipH = clipY ? Math.max(0, dy + dh - clipY) : 0;
+    if (clipH >= dh) return;
+    ctx.drawImage(S.c, 0, 0, S.c.width, S.c.height * (1 - clipH / dh), dx, dy, dw, dh - clipH);
+  }
+
+  function drawWorld() {
+    ensureSprites();
+    ctx.drawImage(SPR.sky.c, 0, 0, W, H);
+    const S = SPR.sun; ctx.drawImage(S.c, W * 0.5 - S.w / 2 + Math.sin(G.bg * Math.PI * 2) * W * 0.18, H * 0.5 - S.h * 0.62, S.w, S.h);   // drifts with the curves
+    const M = SPR.mtn, mo = (G.bg * M.w) % M.w;
+    ctx.drawImage(M.c, -mo, H * 0.5 - M.h + 2, M.w, M.h);
+    ctx.drawImage(M.c, M.w - mo, H * 0.5 - M.h + 2, M.w, M.h);
+    if (M.w * 2 - mo < W) ctx.drawImage(M.c, M.w * 2 - mo, H * 0.5 - M.h + 2, M.w, M.h);
+
+    const N = segments.length;
+    const base = findSegment(G.pos), basePct = (G.pos % SEG) / SEG;
+    const ps = findSegment(G.pos + PLAYER_Z), pPct = ((G.pos + PLAYER_Z) % SEG) / SEG;
+    const camY = lerp(ps.p1.wy, ps.p2.wy, pPct) + CAM_H;
+    let maxy = H, x = 0, dx = -(base.curve * basePct);
+    for (let n = 0; n < DRAW; n++) {
+      const s = segments[(base.index + n) % N];
+      const camZ = G.pos - (s.index < base.index ? trackLength : 0);
+      project(s.p1, G.x * ROAD_W - x, camY, camZ);
+      project(s.p2, G.x * ROAD_W - x - dx, camY, camZ);
+      x += dx; dx += s.curve;
+      s.clip = maxy;
+      if (s.p1.cz <= CAM_DEPTH || s.p2.sy >= s.p1.sy || s.p2.sy >= maxy) continue;
+      drawSegment(s);
+      maxy = s.p1.sy;
+    }
+
+    // Scenery, items and traffic, far to near
+    for (let n = DRAW - 1; n > 0; n--) {
+      const s = segments[(base.index + n) % N];
+      if (s.p1.cz <= CAM_DEPTH) continue;
+      const sc = s.p1.scale, half = W / 2;
+      for (const sp of s.sprites) {
+        const img = SPR[sp.kind];
+        if (img) drawSprite(img, sp.ww, sc, s.p1.sx + sc * sp.offset * ROAD_W * half, s.p1.sy, sp.offset < 0 ? -1 : 0, -1, s.clip);
+      }
+      for (const it of s.items) {
+        if (it.taken || (it.kind === 'heart' && G.lives >= MAX_LIVES)) continue;
+        const bob = Math.sin(G.clock * 4 + s.index) * 0.08;
+        drawSprite(SPR[it.kind], 420, sc, s.p1.sx + sc * it.offset * ROAD_W * half, s.p1.sy, -0.5, -1.25 + bob, s.clip);
+      }
+      for (const car of s.cars) {
+        const csc = lerp(s.p1.scale, s.p2.scale, car.percent);
+        const cx = lerp(s.p1.sx, s.p2.sx, car.percent) + csc * car.offset * ROAD_W * half;
+        drawSprite(SPR.cars[car.ci], CAR_W, csc, cx, lerp(s.p1.sy, s.p2.sy, car.percent), -0.5, -1, s.clip);
+      }
+    }
+
+    // Speed streaks at the edges when going fast
+    const fast = G.state === 'play' ? clamp((G.speed / TOP - 0.6) / 0.4, 0, 1) : 0;
+    if (fast > 0) {
+      ctx.fillStyle = `rgba(255,255,255,${0.04 + fast * 0.1})`;
+      for (let i = 0; i < 8; i++) {
+        const side = i % 2 ? 1 : -1, k = ((G.clock * 2.5 + hash(i * 4.1)) % 1);
+        const sx = W / 2 + side * W * (0.25 + k * 0.3), sy = H * (0.5 + k * 0.35), len = H * (0.04 + k * 0.12);
+        ctx.fillRect(sx, sy, 2, len);
+      }
+    }
+  }
+
+  function heartPath(r) {
+    ctx.beginPath();
+    ctx.moveTo(0, r * 0.9);
+    ctx.bezierCurveTo(-r * 1.4, -r * 0.1, -r * 0.6, -r * 1.2, 0, -r * 0.45);
+    ctx.bezierCurveTo(r * 0.6, -r * 1.2, r * 1.4, -r * 0.1, 0, r * 0.9);
+    ctx.closePath();
+  }
+  function roundRect(x, y, w, h, r) { rr(ctx, x, y, w, h, r); }
+
+  function drawCockpit() {
+    const Hd = SPR.hood, Wh = SPR.wheel;
+    ctx.drawImage(Hd.c, 0, H - Hd.h, W, Hd.h);
+    // The steering wheel turns with your phone
+    ctx.save(); ctx.translate(W / 2, H + H * 0.05); ctx.rotate(input.steer * Math.PI / 2);
+    ctx.drawImage(Wh.c, -Wh.w / 2, -Wh.h / 2, Wh.w, Wh.h);
+    ctx.restore();
+  }
+
+  function drawHUD() {
+    const pad = Math.max(12, H * 0.03);
+    const fs = Math.max(14, Math.round(H * 0.05));
+    ctx.textBaseline = 'top';
+    // Score panel sits top right; the top-left corner is left empty on purpose.
+    const pw = fs * 6.2, x0 = W - pad - pw + 8;
+    ctx.fillStyle = 'rgba(18,6,42,0.62)'; roundRect(x0 - 8, pad - 6, pw, fs * 4.25, 12); ctx.fill();
+    ctx.strokeStyle = 'rgba(255,41,117,0.8)'; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.font = `800 ${fs}px system-ui, sans-serif`;
+    ctx.fillStyle = '#fff'; ctx.textAlign = 'left';
+    ctx.fillText(String(G.score), x0, pad);
+    ctx.font = `600 ${Math.round(fs * 0.62)}px system-ui, sans-serif`;
+    ctx.fillStyle = '#ffd319';
+    ctx.fillText(`${Math.round((G.speed / TOP) * 260)} km/h  •  ${G.coins} coin${G.coins === 1 ? '' : 's'}`, x0, pad + fs * 1.15);
+    const hr = fs * 0.34;
+    for (let i = 0; i < MAX_LIVES; i++) {
+      ctx.save(); ctx.translate(x0 + hr + i * hr * 2.7, pad + fs * 2.4 + hr);
+      ctx.fillStyle = i < G.lives ? '#ff2975' : 'rgba(255,255,255,0.22)'; heartPath(hr); ctx.fill();
+      ctx.restore();
+    }
+    const mode = input.source === 'none' ? (isTouch ? 'touch' : 'keys') : 'tilt';
+    ctx.font = `700 ${Math.round(fs * 0.58)}px system-ui, sans-serif`;
+    ctx.fillStyle = '#6ff7ff'; ctx.fillText('BEST ' + G.best, x0, pad + fs * 3.3);
+    ctx.textAlign = 'right'; ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    ctx.fillText(mode, x0 - 16 + pw, pad + fs * 3.3);
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'bottom'; ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.font = `700 ${Math.round(fs * 0.55)}px system-ui, sans-serif`;
+    ctx.fillText('@seltos.gtx', pad, H - pad * 0.5);
+  }
+
+  function draw() {
+    ctx.save();
+    if (G.shake > 0) { const m = G.shake * H * 0.03; ctx.translate((Math.random() - 0.5) * m, (Math.random() - 0.5) * m); }
+    drawWorld();
+    if (G.state !== 'menu') drawCockpit();
+    ctx.restore();
+    if (G.inv > 0 && Math.floor(G.inv * 8) % 2) { ctx.fillStyle = 'rgba(255,41,117,0.12)'; ctx.fillRect(0, 0, W, H); }
+    if (G.flash > 0) { ctx.fillStyle = `rgba(255,41,117,${G.flash * 0.4})`; ctx.fillRect(0, 0, W, H); }
+
+    for (const p of PARTS) {
+      if (p.life <= 0) continue;
+      ctx.globalAlpha = Math.min(1, p.life * 2); ctx.fillStyle = p.c;
+      ctx.fillRect(p.x * W - 2, p.y * H - 2, 4, 4);
+    }
+    ctx.globalAlpha = 1;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    for (const p of G.popups) {
+      ctx.globalAlpha = Math.min(1, p.life * 2);
+      ctx.font = `800 ${Math.round(H * 0.07)}px system-ui, sans-serif`;
+      ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(18,6,42,0.8)';
+      ctx.strokeText(p.text, p.x * W, p.y * H);
+      ctx.fillStyle = p.color; ctx.fillText(p.text, p.x * W, p.y * H);
+    }
+    ctx.globalAlpha = 1;
+
+    if (G.state === 'countdown') {
+      const n = Math.ceil(G.countdown), f = G.countdown - Math.floor(G.countdown);
+      ctx.save(); ctx.translate(W / 2, H * 0.32); ctx.scale(1 + f * 0.4, 1 + f * 0.4);
+      ctx.font = `900 ${Math.round(H * 0.2)}px Orbitron, system-ui, sans-serif`;
+      ctx.lineWidth = 8; ctx.strokeStyle = 'rgba(18,6,42,0.8)'; ctx.strokeText(String(n), 0, 0);
+      ctx.fillStyle = '#ffd319'; ctx.fillText(String(n), 0, 0);
+      ctx.restore();
+      ctx.font = `700 ${Math.round(H * 0.05)}px system-ui, sans-serif`;
+      ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(18,6,42,0.8)';
+      ctx.strokeText('Hold your phone steady', W / 2, H * 0.48);
+      ctx.fillStyle = '#6ff7ff'; ctx.fillText('Hold your phone steady', W / 2, H * 0.48);
+    }
+
+    if (G.state !== 'menu') drawHUD();
+  }
+
+  buildTrack();
+  for (let i = 0; i < 22; i++) addCar();
+
+  // ---------- Loop ----------
+  let last = performance.now();
+  function frame(now) {
+    const dt = Math.min(0.05, Math.max(0, (now - last) / 1000));   // the first frame's timestamp can be slightly in the past
+    last = now;
+    const portraitPhone = isTouch && H > W;
+    if (!portraitPhone) update(dt);
+    draw();
+    requestAnimationFrame(frame);
+  }
+
+  // ---------- UI flow ----------
+  function show(id) {
+    for (const o of ['menu', 'over', 'paused']) $(o).classList.toggle('hidden', o !== id);
+    document.body.classList.toggle('playing', !id);   // settings buttons hide while playing
+  }
+
+  function startOrResume() {
+    const permission = requestSensorPermission();   // must be first, inside the gesture
+    initAudio();
+    keepAwake();
+    attachSensors();
+    permission.then((res) => {
+      if (res !== 'granted') {
+        const m = $('menuMsg');
+        m.textContent = 'Motion access was denied, so touch controls are on. To use tilt, reload the page and tap Allow.';
+        m.classList.remove('hidden');
+      }
+    });
+    const wasPaused = G.state === 'paused';
+    if (!wasPaused) reset();
+    G.state = 'countdown';
+    G.countdown = wasPaused ? 1.5 : COUNTDOWN;
+    show(null);
+    beep(440, 0.12, 'triangle', 0.1);
+  }
+
+  $('startBtn').addEventListener('click', startOrResume);
+  $('againBtn').addEventListener('click', startOrResume);
+  $('resumeBtn').addEventListener('click', startOrResume);
+
+  // Pause button (and P / Esc): the pause screen has Resume and All games.
+  function pauseGame() {
+    if (G.state !== 'play' && G.state !== 'countdown') return;
+    G.state = 'paused';
+    show('paused');
+  }
+  $('pauseBtn').addEventListener('click', (e) => { e.stopPropagation(); pauseGame(); });
+  window.addEventListener('keydown', (e) => { if (e.key === 'p' || e.key === 'P' || e.key === 'Escape') pauseGame(); });
+  $('soundBtn').textContent = muted ? '🔇 Muted' : '🔊 Sound on';
+  $('soundBtn').addEventListener('click', (e) => { e.stopPropagation(); setMuted(!muted); });
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      if (G.state === 'play' || G.state === 'countdown') { G.state = 'paused'; show('paused'); }
+    } else {
+      keepAwake();
+    }
+  });
+
+  requestAnimationFrame(frame);
+
+  // Hook for automated tests.
+  window.__neonDrive = { G, input, segments };
+})();
+</script>
+</body>
+</html>

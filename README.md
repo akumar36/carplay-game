@@ -15,6 +15,7 @@ The home page lists every game; tap one to play it.
 | Neon Bricks | https://carplay-game.seltosgtx.workers.dev/bricks/ |
 | Neon Blaster | https://carplay-game.seltosgtx.workers.dev/blaster/ |
 | Neon Snake | https://carplay-game.seltosgtx.workers.dev/snake/ |
+| Neon Drive | https://carplay-game.seltosgtx.workers.dev/drive/ |
 | Racer Lite (the original, no music) | https://carplay-game.seltosgtx.workers.dev/racer-lite/ |
 
 ## Racer: how to play
@@ -56,6 +57,7 @@ The site goes live at `https://akumar36.github.io/carplay-game/` within a minute
 - `bricks/index.html`: Neon Bricks, a brick breaker: tilt to slide the paddle (← → / A D or touch left/right as fallback, M mutes)
 - `blaster/index.html`: Neon Blaster, a space shooter: tilt to move the ship, which fires by itself (← → / A D or touch left/right as fallback, M mutes)
 - `snake/index.html`: Neon Snake: turn the phone like a wheel to steer; eat orbs to grow, avoid walls and your own trail (← → / A D or touch left/right as fallback, M mutes)
+- `drive/index.html`: Neon Drive, a first-person pseudo-3D driving game: turn the phone to steer, the car accelerates by itself; overtake traffic and stay on the road (← → / A D or touch left/right as fallback, M mutes)
 - `racer-lite/index.html`: Racer Lite, the original single-theme racer with simple beeps
 - `fonts/`: Orbitron (title font, latin subset, SIL Open Font License, see `fonts/OFL.txt`)
 - `manifest.webmanifest`, `icon*`: home-screen / PWA metadata, shared by all games
