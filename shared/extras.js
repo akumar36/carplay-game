@@ -237,7 +237,7 @@
       <!-- thumbs on the front edges -->
       <path d="M40 40 Q56 34 66 44 Q70 52 60 56 Q48 58 40 54 Z" fill="url(#hgSkin)" stroke="#b97a4e" stroke-width="2"/>
       <path d="M200 40 Q184 34 174 44 Q170 52 180 56 Q192 58 200 54 Z" fill="url(#hgSkin)" stroke="#b97a4e" stroke-width="2"/>
-    </svg><span>Hold it sideways, like this</span>`;
+    </svg><span>Hold the phone sideways, like this</span>`;
   document.body.appendChild(guide);
   let hook = null;
   setInterval(() => {
