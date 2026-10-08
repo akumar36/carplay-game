@@ -1,6 +1,6 @@
 <!doctype html>
 <!--
-  Neon Snake (CarPlay Games)
+  Light Trail (CarPlay Games)
   Copyright (c) 2026 @seltos.gtx (https://www.instagram.com/seltos.gtx/). All rights reserved.
   Copying, modifying or redistributing this code without permission is not allowed.
 -->
@@ -16,7 +16,7 @@
 <link rel="manifest" href="../manifest.webmanifest">
 <link rel="icon" href="../icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="../icon-180.png">
-<title>Neon Snake</title>
+<title>Light Trail</title>
 <style>
   @font-face { font-family: 'Orbitron'; font-weight: 900; font-display: swap; src: url(../fonts/orbitron-900.woff2) format('woff2'); }
   :root { --fg: #fff; --accent: #ffd319; --pink: #ff2975; --cyan: #00e5ff; }
@@ -204,7 +204,7 @@
 </a>
 
 <div id="menu" class="overlay">
-  <h1>NEON SNAKE</h1>
+  <h1>LIGHT TRAIL</h1>
   <p class="byline small">by <a href="https://www.instagram.com/seltos.gtx/" target="_blank" rel="noopener">@seltos.gtx</a></p>
   <p>Hold your phone like a steering wheel and <b>turn it to steer</b>. Eat the orbs to grow,
      and don't hit the walls or your own trail. You have <b>3 lives</b>.</p>
@@ -318,7 +318,7 @@
     if (!m) initAudio();
   }
 
-  // ---------- Input (same tilt model as Racer) ----------
+  // ---------- Input (same tilt model as Lane Rush) ----------
   const input = {
     tilt: null,        // sideways component of "up" in screen coordinates (-1..1)
     neutral: null,     // calibrated tilt at start

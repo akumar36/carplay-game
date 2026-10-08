@@ -1,6 +1,6 @@
 <!doctype html>
 <!--
-  Neon Drive (CarPlay Games)
+  Midnight Run (CarPlay Games)
   Copyright (c) 2026 @seltos.gtx (https://www.instagram.com/seltos.gtx/). All rights reserved.
   Copying, modifying or redistributing this code without permission is not allowed.
 -->
@@ -16,7 +16,7 @@
 <link rel="manifest" href="../manifest.webmanifest">
 <link rel="icon" href="../icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="../icon-180.png">
-<title>Neon Drive</title>
+<title>Midnight Run</title>
 <style>
   @font-face { font-family: 'Orbitron'; font-weight: 900; font-display: swap; src: url(../fonts/orbitron-900.woff2) format('woff2'); }
   :root { --fg: #fff; --accent: #ffd319; --pink: #ff2975; --cyan: #00e5ff; }
@@ -205,7 +205,7 @@
 </a>
 
 <div id="menu" class="overlay">
-  <h1>NEON DRIVE</h1>
+  <h1>MIDNIGHT RUN</h1>
   <p class="byline small">by <a href="https://www.instagram.com/seltos.gtx/" target="_blank" rel="noopener">@seltos.gtx</a></p>
   <p>You're behind the wheel: <b>turn your phone to steer</b>. The car speeds up by itself.
      Overtake traffic, hold the road in the curves and grab coins. You have <b>3 lives</b>.</p>
@@ -314,7 +314,7 @@
     if (!m) initAudio();
   }
 
-  // ---------- Input (same tilt model as Racer) ----------
+  // ---------- Input (same tilt model as Lane Rush) ----------
   const input = {
     tilt: null,        // sideways component of "up" in screen coordinates (-1..1)
     neutral: null,     // calibrated tilt at start
@@ -800,33 +800,90 @@
     });
   }
 
-  function makeHood() {
-    // First-person view: the car's bonnet along the bottom, with a neon edge
-    const hh = H * 0.2;
-    return makeSprite(W, hh, (g) => {
-      const body = g.createLinearGradient(0, 0, 0, hh);
-      body.addColorStop(0, '#2a0838'); body.addColorStop(1, '#0b0418');
-      g.fillStyle = body;
-      g.beginPath(); g.moveTo(-10, hh); g.lineTo(-10, hh * 0.75); g.quadraticCurveTo(W * 0.5, hh * 0.05, W + 10, hh * 0.75); g.lineTo(W + 10, hh); g.closePath(); g.fill();
-      g.strokeStyle = '#ff2975'; g.lineWidth = 3;
-      g.beginPath(); g.moveTo(-10, hh * 0.75); g.quadraticCurveTo(W * 0.5, hh * 0.05, W + 10, hh * 0.75); g.stroke();
-      g.strokeStyle = 'rgba(255,255,255,0.12)'; g.lineWidth = 2;
-      g.beginPath(); g.moveTo(W * 0.32, hh); g.quadraticCurveTo(W * 0.5, hh * 0.35, W * 0.68, hh); g.stroke();
+  // ---------- Cockpit: graphite dashboard, gauges, windscreen pillars and wheel (contrasts with the purple road) ----------
+  const dashH = () => H * 0.27;
+  const wheelR = () => H * 0.23;
+  const gauge = () => {
+    const r = Math.min(dashH() * 0.34, W * 0.065), off = wheelR() * 1.25 + r * 1.15;
+    return { r, y: H - dashH() * 0.42, xl: W / 2 - off, xr: W / 2 + off };
+  };
+
+  function makeDash() {
+    const dh = dashH(), G2 = gauge();
+    return makeSprite(W, dh, (g) => {
+      const top = (x) => dh * 0.4 - Math.sin((x / W) * Math.PI) * dh * 0.28;      // curved top edge
+      g.beginPath(); g.moveTo(0, dh);
+      for (let i = 0; i <= 24; i++) { const x = (i / 24) * W; g.lineTo(x, top(x)); }
+      g.lineTo(W, dh); g.closePath();
+      const body = g.createLinearGradient(0, dh * 0.1, 0, dh);
+      body.addColorStop(0, '#5a5470'); body.addColorStop(0.18, '#3a3448'); body.addColorStop(1, '#151119');
+      g.fillStyle = body; g.fill();
+      // Light metal trim with a cyan ambient strip just under it
+      g.beginPath(); for (let i = 0; i <= 24; i++) { const x = (i / 24) * W; if (i) g.lineTo(x, top(x)); else g.moveTo(x, top(x)); }
+      g.strokeStyle = '#b9b2d6'; g.lineWidth = 3; g.stroke();
+      g.save(); g.translate(0, 6);
+      g.beginPath(); for (let i = 0; i <= 24; i++) { const x = (i / 24) * W; if (i) g.lineTo(x, top(x)); else g.moveTo(x, top(x)); }
+      g.strokeStyle = 'rgba(0,229,255,0.85)'; g.lineWidth = 2; g.stroke(); g.restore();
+      // Air vents at both ends
+      for (const vx of [W * 0.07, W * 0.93]) {
+        const vw = Math.min(W * 0.09, dh * 0.7), vh = dh * 0.26, vy = dh * 0.55;
+        g.fillStyle = '#0e0b14'; rr(g, vx - vw / 2, vy, vw, vh, vh * 0.3); g.fill();
+        g.strokeStyle = '#6d6688'; g.lineWidth = 1.5; rr(g, vx - vw / 2, vy, vw, vh, vh * 0.3); g.stroke();
+        g.strokeStyle = '#3a3448'; g.lineWidth = 2;
+        for (let k = 1; k < 4; k++) { g.beginPath(); g.moveTo(vx - vw / 2 + 4, vy + (vh * k) / 4); g.lineTo(vx + vw / 2 - 4, vy + (vh * k) / 4); g.stroke(); }
+      }
+      // Gauge pods (faces and ticks; the needles are drawn live)
+      for (const [gx, col, label] of [[G2.xl, '0,229,255', 'km/h'], [G2.xr, '255,41,117', 'rpm']]) {
+        const gy = G2.y - (H - dh), r = G2.r;
+        g.fillStyle = '#0b0716'; g.beginPath(); g.arc(gx, gy, r * 1.12, 0, 7); g.fill();
+        g.strokeStyle = '#b9b2d6'; g.lineWidth = Math.max(2, r * 0.08); g.beginPath(); g.arc(gx, gy, r * 1.12, 0, 7); g.stroke();
+        const glowG = g.createRadialGradient(gx, gy, r * 0.2, gx, gy, r);
+        glowG.addColorStop(0, `rgba(${col},0.22)`); glowG.addColorStop(1, `rgba(${col},0)`);
+        g.fillStyle = glowG; g.beginPath(); g.arc(gx, gy, r, 0, 7); g.fill();
+        for (let k = 0; k <= 10; k++) {
+          const a = (-225 + k * 27) * D2R, r0 = r * (k % 2 ? 0.8 : 0.7);
+          g.strokeStyle = k >= 8 ? '#ff2975' : `rgb(${col})`; g.lineWidth = k % 2 ? 1.2 : 2;
+          g.beginPath(); g.moveTo(gx + Math.cos(a) * r0, gy + Math.sin(a) * r0); g.lineTo(gx + Math.cos(a) * r * 0.92, gy + Math.sin(a) * r * 0.92); g.stroke();
+        }
+        g.fillStyle = 'rgba(255,255,255,0.6)'; g.font = `700 ${Math.max(8, r * 0.26)}px system-ui, sans-serif`;
+        g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(label, gx, gy + r * 0.7);
+      }
+    });
+  }
+
+  function makePillar() {
+    // Left windscreen pillar (the right one is drawn mirrored)
+    const pw = Math.max(26, W * 0.06);
+    return makeSprite(pw, H, (g) => {
+      g.beginPath(); g.moveTo(0, 0); g.lineTo(pw * 0.55, 0); g.lineTo(pw, H * 0.8); g.lineTo(0, H * 0.8); g.closePath();
+      const body = g.createLinearGradient(0, 0, pw, 0);
+      body.addColorStop(0, '#120e18'); body.addColorStop(0.7, '#2c2638'); body.addColorStop(1, '#4a4460');
+      g.fillStyle = body; g.fill();
+      g.strokeStyle = 'rgba(185,178,214,0.7)'; g.lineWidth = 1.5;
+      g.beginPath(); g.moveTo(pw * 0.55, 0); g.lineTo(pw, H * 0.8); g.stroke();
     });
   }
 
   function makeWheel() {
-    const r = H * 0.2, s = r * 2.4;
+    const r = wheelR(), s = r * 2.5;
     return makeSprite(s, s, (g) => {
       const c = s / 2;
       g.lineCap = 'round';
-      g.strokeStyle = 'rgba(0,229,255,0.25)'; g.lineWidth = r * 0.3; g.beginPath(); g.arc(c, c, r, 0, 7); g.stroke();
-      g.strokeStyle = '#1d1030'; g.lineWidth = r * 0.17; g.beginPath(); g.arc(c, c, r, 0, 7); g.stroke();
-      g.strokeStyle = '#6ff7ff'; g.lineWidth = r * 0.04; g.beginPath(); g.arc(c, c, r + r * 0.07, 0, 7); g.stroke();
-      g.strokeStyle = '#1d1030'; g.lineWidth = r * 0.13;
-      g.beginPath(); g.moveTo(c - r, c); g.lineTo(c + r, c); g.moveTo(c, c); g.lineTo(c, c + r); g.stroke();
-      g.fillStyle = '#2a1844'; g.beginPath(); g.arc(c, c, r * 0.28, 0, 7); g.fill();
-      g.fillStyle = '#ff2975'; g.fillRect(c - r * 0.06, c - r * 1.1, r * 0.12, r * 0.2);
+      g.strokeStyle = 'rgba(0,229,255,0.28)'; g.lineWidth = r * 0.34; g.beginPath(); g.arc(c, c, r, 0, 7); g.stroke();
+      const rim = g.createLinearGradient(0, c - r, 0, c + r);
+      rim.addColorStop(0, '#6d6688'); rim.addColorStop(0.5, '#3a3448'); rim.addColorStop(1, '#1d1828');
+      g.strokeStyle = rim; g.lineWidth = r * 0.2; g.beginPath(); g.arc(c, c, r, 0, 7); g.stroke();
+      g.strokeStyle = 'rgba(255,255,255,0.35)'; g.lineWidth = r * 0.035; g.beginPath(); g.arc(c, c, r + r * 0.07, Math.PI * 1.1, Math.PI * 1.9); g.stroke();
+      g.strokeStyle = '#141019'; g.lineWidth = r * 0.22;                      // hand grips
+      for (const a0 of [Math.PI * 0.85, Math.PI * 1.95]) { g.beginPath(); g.arc(c, c, r, a0, a0 + 0.4); g.stroke(); }
+      g.strokeStyle = '#2c2638'; g.lineWidth = r * 0.14;
+      g.beginPath(); g.moveTo(c - r * 0.95, c + r * 0.05); g.lineTo(c - r * 0.25, c); g.moveTo(c + r * 0.25, c); g.lineTo(c + r * 0.95, c + r * 0.05);
+      g.moveTo(c, c + r * 0.25); g.lineTo(c, c + r * 0.95); g.stroke();
+      const hub = g.createRadialGradient(c - r * 0.08, c - r * 0.08, r * 0.05, c, c, r * 0.3);
+      hub.addColorStop(0, '#5a5470'); hub.addColorStop(1, '#1d1828');
+      g.fillStyle = hub; g.beginPath(); g.arc(c, c, r * 0.3, 0, 7); g.fill();
+      g.strokeStyle = '#ff2975'; g.lineWidth = 2; g.beginPath(); g.arc(c, c, r * 0.18, 0, 7); g.stroke();
+      g.fillStyle = '#ff2975'; g.fillRect(c - r * 0.06, c - r * 1.12, r * 0.12, r * 0.24);       // top-centre marker
     });
   }
 
@@ -841,7 +898,7 @@
     const key = `${W}x${H}@${window.devicePixelRatio}`;
     if (SPR.key === key) return;
     SPR.key = key;
-    SPR.sky = makeSky(); SPR.sun = makeSun(); SPR.mtn = makeMountains(); SPR.hood = makeHood(); SPR.wheel = makeWheel();
+    SPR.sky = makeSky(); SPR.sun = makeSun(); SPR.mtn = makeMountains(); SPR.dash = makeDash(); SPR.pillar = makePillar(); SPR.wheel = makeWheel();
   }
 
   // ---------- Drawing ----------
@@ -953,10 +1010,23 @@
   function roundRect(x, y, w, h, r) { rr(ctx, x, y, w, h, r); }
 
   function drawCockpit() {
-    const Hd = SPR.hood, Wh = SPR.wheel;
-    ctx.drawImage(Hd.c, 0, H - Hd.h, W, Hd.h);
+    const P = SPR.pillar, D = SPR.dash, Wh = SPR.wheel, gg = gauge();
+    ctx.drawImage(P.c, 0, 0, P.w, P.h);
+    ctx.save(); ctx.translate(W, 0); ctx.scale(-1, 1); ctx.drawImage(P.c, 0, 0, P.w, P.h); ctx.restore();
+    ctx.drawImage(D.c, 0, H - D.h, W, D.h);
+    // Live gauge needles: speed, and revs that climb through each "gear"
+    const sp = G.speed / TOP, rpm = 0.25 + ((sp * 5) % 1) * 0.6 + (G.state === 'play' ? Math.sin(G.clock * 30) * 0.01 : 0);
+    ctx.lineCap = 'round'; ctx.lineWidth = Math.max(2, gg.r * 0.09);
+    for (const [gx, v, col] of [[gg.xl, sp, '#6ff7ff'], [gg.xr, Math.min(1, rpm), '#ff5c96']]) {
+      const a = (-225 + v * 270) * D2R;
+      ctx.strokeStyle = col; ctx.beginPath(); ctx.moveTo(gx, gg.y); ctx.lineTo(gx + Math.cos(a) * gg.r * 0.82, gg.y + Math.sin(a) * gg.r * 0.82); ctx.stroke();
+      ctx.fillStyle = '#b9b2d6'; ctx.beginPath(); ctx.arc(gx, gg.y, gg.r * 0.12, 0, 7); ctx.fill();
+    }
+    ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.font = `800 ${Math.max(10, Math.round(gg.r * 0.4))}px system-ui, sans-serif`;
+    ctx.fillText(String(Math.round(sp * 260)), gg.xl, gg.y + gg.r * 0.36);
     // The steering wheel turns with your phone
-    ctx.save(); ctx.translate(W / 2, H + H * 0.05); ctx.rotate(input.steer * Math.PI / 2);
+    ctx.save(); ctx.translate(W / 2, H + H * 0.03); ctx.rotate(input.steer * Math.PI / 2);
     ctx.drawImage(Wh.c, -Wh.w / 2, -Wh.h / 2, Wh.w, Wh.h);
     ctx.restore();
   }
