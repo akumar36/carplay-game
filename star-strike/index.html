@@ -17,6 +17,7 @@
 <link rel="icon" href="../icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="../icon-180.png">
 <title>Star Strike</title>
+<script>try { if (localStorage.getItem('tiltMode') === 'light') document.documentElement.dataset.mode = 'light'; } catch (e) {}</script>
 <style>
   @font-face { font-family: 'Orbitron'; font-weight: 900; font-display: swap; src: url(../fonts/orbitron-900.woff2) format('woff2'); }
   :root { --fg: #fff; --accent: #ffd319; --pink: #ff2975; --cyan: #00e5ff; }
@@ -178,6 +179,26 @@
   body.playing #pauseBtn { display: flex; }
   /* Safety reminder sits in the footer line so it's visible on every screen size */
   .copyright .safety { color: #ffd319; font-weight: 800; font-size: 12.5px; }
+  /* ----- Light mode (chosen on the home page): bright screens that stay readable in daylight ----- */
+  html[data-mode="light"] body { background: #eef2fb; color: #1b1f33; }
+  html[data-mode="light"] .overlay { background: radial-gradient(ellipse 80% 55% at 50% 115%, rgba(255, 138, 61, 0.28), transparent 70%), linear-gradient(180deg, rgba(246, 248, 255, 0.94), rgba(226, 233, 252, 0.93)); color: #1b1f33; }
+  html[data-mode="light"] .sunset::before { opacity: 0.4; }
+  html[data-mode="light"] h1, html[data-mode="light"] .big {
+    background: linear-gradient(180deg, #ff6a00 0%, #ff2975 55%, #8c1eff 100%); -webkit-background-clip: text; background-clip: text; color: transparent;
+    filter: drop-shadow(0 2px 0 rgba(255, 255, 255, 0.9));
+  }
+  html[data-mode="light"] h1 span { color: #d97706; }
+  html[data-mode="light"] p { color: #1b1f33; }
+  html[data-mode="light"] .byline a { color: #0077b6; }
+  html[data-mode="light"] .msg { color: #c62828; }
+  html[data-mode="light"] .copyright { color: rgba(27, 31, 51, 0.65); text-shadow: none; }
+  html[data-mode="light"] .copyright .safety { color: #b45309; }
+  html[data-mode="light"] .actions .homeLink { color: #1b1f33; background: rgba(255, 255, 255, 0.75); border-color: rgba(27, 31, 51, 0.35); }
+  html[data-mode="light"] .igBtn { color: #1b1f33; background: rgba(255, 255, 255, 0.8); border-color: rgba(27, 31, 51, 0.2); }
+  html[data-mode="light"] #soundBtn, html[data-mode="light"] #themeBtn { background: rgba(255, 255, 255, 0.85); color: #1b1f33; border-color: rgba(255, 41, 117, 0.55); box-shadow: none; }
+  html[data-mode="light"] #pauseBtn { background: rgba(255, 255, 255, 0.88); color: #1b1f33; border-color: rgba(255, 41, 117, 0.7); box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15); }
+  html[data-mode="light"] #rotate { background: #eef2fb; }
+  html[data-mode="light"] #rotate .phone { border-color: #1b1f33; box-shadow: none; }
 </style>
 </head>
 <body>
@@ -256,6 +277,7 @@
   const SHOT_SPEED = 1.5, FIRE_EVERY = 0.2;
   const MAX_LIVES = 3, INVINCIBLE_TIME = 2, COUNTDOWN = 2.4, DOUBLE_TIME = 10;
   const isTouch = matchMedia('(pointer: coarse)').matches;
+  const LIGHT = document.documentElement.dataset.mode === 'light';   // light mode, picked on the home page
 
   let W = 0, H = 0, FW = 0, FX = 0, FH = 1;
   let adBottom = 0;             // bottom edge of the roadside billboard, so the HUD wheel can avoid it
@@ -729,7 +751,7 @@
     return makeSprite(w * 3, h * 1.4, (g) => {
       const cx = w * 1.5;
       g.fillStyle = 'rgba(0,229,255,0.3)'; rr(g, cx - w * 1.2, 0, w * 2.4, h * 1.4, w * 1.2); g.fill();
-      g.fillStyle = '#b8fbff'; rr(g, cx - w / 2, h * 0.2, w, h, w / 2); g.fill();
+      g.fillStyle = LIGHT ? '#0d47a1' : '#b8fbff'; rr(g, cx - w / 2, h * 0.2, w, h, w / 2); g.fill();
     });
   }
 
@@ -772,9 +794,9 @@
     return makeSprite(FW, H, (g) => {
       for (let i = 0; i < n; i++) {
         const x = hash(seed * 97 + i * 3.1) * FW, y = hash(seed * 31 + i * 7.7) * H;
-        g.fillStyle = hash(i * 1.3 + seed) < 0.2 ? '#ff8fd0' : hash(i * 2.1 + seed) < 0.3 ? '#6ff7ff' : '#ffffff';
+        g.fillStyle = LIGHT ? '#ffffff' : hash(i * 1.3 + seed) < 0.2 ? '#ff8fd0' : hash(i * 2.1 + seed) < 0.3 ? '#6ff7ff' : '#ffffff';
         g.globalAlpha = 0.4 + hash(i * 5.3 + seed) * 0.6;
-        g.fillRect(x, y, size, size);
+        if (LIGHT) g.fillRect(x, y, size * 0.8, size * 6); else g.fillRect(x, y, size, size);      // daytime: little speed streaks
       }
     });
   }
@@ -784,22 +806,24 @@
     const fx = FX, fw = FW;
     return makeSprite(W, H, (g) => {
       const sky = g.createLinearGradient(0, 0, 0, H);
-      sky.addColorStop(0, '#12062a'); sky.addColorStop(0.7, '#2b0a4e'); sky.addColorStop(1, '#46105a');
+      if (LIGHT) { sky.addColorStop(0, '#eef1ff'); sky.addColorStop(0.7, '#e2e7fd'); sky.addColorStop(1, '#d6ddfa'); }
+      else { sky.addColorStop(0, '#12062a'); sky.addColorStop(0.7, '#2b0a4e'); sky.addColorStop(1, '#46105a'); }
       g.fillStyle = sky; g.fillRect(0, 0, W, H);
       const gs = H * 0.08;
-      g.strokeStyle = 'rgba(255,41,117,0.18)'; g.lineWidth = 1;
+      g.strokeStyle = LIGHT ? 'rgba(140,30,255,0.12)' : 'rgba(255,41,117,0.18)'; g.lineWidth = 1;
       g.beginPath();
       for (let y = gs; y < H; y += gs) { g.moveTo(0, y); g.lineTo(W, y); }
       for (let x = fx - gs; x > 0; x -= gs) { g.moveTo(x, 0); g.lineTo(x, H); }
       for (let x = fx + fw + gs; x < W; x += gs) { g.moveTo(x, 0); g.lineTo(x, H); }
       g.stroke();
       const space = g.createLinearGradient(0, 0, 0, H);
-      space.addColorStop(0, '#05010e'); space.addColorStop(0.75, '#140630'); space.addColorStop(1, '#2a0838');
+      if (LIGHT) { space.addColorStop(0, '#7cc8ff'); space.addColorStop(0.75, '#b5e1ff'); space.addColorStop(1, '#dff2ff'); }
+      else { space.addColorStop(0, '#05010e'); space.addColorStop(0.75, '#140630'); space.addColorStop(1, '#2a0838'); }
       g.fillStyle = space; g.fillRect(fx, 0, fw, H);
       glow(g, fx + fw * 0.75, H * 0.25, 0, fw * 0.35, '140,30,255', 0.18);    // faint nebulae
       glow(g, fx + fw * 0.2, H * 0.6, 0, fw * 0.3, '255,41,117', 0.12);
       g.fillStyle = 'rgba(0,229,255,0.16)'; g.fillRect(fx - 6, 0, 12, H); g.fillRect(fx + fw - 6, 0, 12, H);
-      g.fillStyle = '#6ff7ff'; g.fillRect(fx - 1.5, 0, 3, H); g.fillRect(fx + fw - 1.5, 0, 3, H);
+      g.fillStyle = LIGHT ? '#00a6c4' : '#6ff7ff'; g.fillRect(fx - 1.5, 0, 3, H); g.fillRect(fx + fw - 1.5, 0, 3, H);
     });
   }
 

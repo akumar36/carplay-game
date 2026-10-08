@@ -18,6 +18,7 @@
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon-180.png">
 <title>Tilt Arcade</title>
+<script>try { if (localStorage.getItem('tiltMode') === 'light') document.documentElement.dataset.mode = 'light'; } catch (e) {}</script>
 <style>
   @font-face { font-family: 'Orbitron'; font-weight: 900; font-display: swap; src: url(fonts/orbitron-900.woff2) format('woff2'); }
   :root { --fg: #fff; --accent: #ffd319; --pink: #ff2975; --cyan: #00e5ff; --purple: #8c1eff; --card: rgba(18, 6, 42, 0.72); }
@@ -145,9 +146,40 @@
     color: #fff3c4; background: rgba(255, 211, 25, 0.1); border: 1px solid rgba(255, 211, 25, 0.55);
   }
   .safety b { color: #ffd319; }
+
+  /* Light / dark switch, top right (the top-left corner stays empty) */
+  #modeBtn {
+    position: fixed; z-index: 20; top: max(12px, env(safe-area-inset-top)); right: max(12px, env(safe-area-inset-right));
+    min-height: 52px; padding: 0 18px; border-radius: 999px; cursor: pointer;
+    font: 800 16px system-ui, sans-serif; color: #fff; background: rgba(18, 6, 42, 0.7);
+    border: 2px solid rgba(255, 211, 25, 0.7); box-shadow: 0 0 14px rgba(255, 211, 25, 0.25);
+  }
+  #modeBtn:active { transform: scale(0.96); }
+  @media (max-width: 560px) { header { padding-top: 56px; } }
+
+  /* ----- Light mode: bright and readable in daylight; every game follows this choice ----- */
+  html[data-mode="light"] { background: #eef2fb; }
+  html[data-mode="light"] body {
+    color: #1b1f33;
+    background: radial-gradient(ellipse 90% 45% at 50% 100%, rgba(255, 138, 61, 0.22), transparent 70%), linear-gradient(180deg, #f7f9ff 0%, #e6ecfb 70%, #dfe3f7 100%) fixed;
+  }
+  html[data-mode="light"] body::before { opacity: 0.45; }
+  html[data-mode="light"] h1 { background: linear-gradient(180deg, #ff6a00 0%, #ff2975 55%, #8c1eff 100%); -webkit-background-clip: text; background-clip: text; filter: drop-shadow(0 2px 0 rgba(255, 255, 255, 0.9)); }
+  html[data-mode="light"] .byline a { color: #0077b6; }
+  html[data-mode="light"] .tagline, html[data-mode="light"] .byline { opacity: 0.85; }
+  html[data-mode="light"] .card { background: rgba(255, 255, 255, 0.9); border-color: rgba(27, 31, 51, 0.12); box-shadow: 0 6px 20px rgba(60, 40, 120, 0.14); }
+  html[data-mode="light"] a.card:hover, html[data-mode="light"] a.card:focus-visible { box-shadow: 0 8px 26px rgba(255, 41, 117, 0.3); }
+  html[data-mode="light"] .info p { opacity: 0.85; }
+  html[data-mode="light"] .tags span { color: #00657a; background: rgba(0, 151, 167, 0.1); border-color: rgba(0, 151, 167, 0.4); }
+  html[data-mode="light"] .soon .thumb { background: rgba(27, 31, 51, 0.04); }
+  html[data-mode="light"] .safety { color: #3d2a00; background: rgba(255, 179, 0, 0.14); border-color: rgba(217, 119, 6, 0.6); }
+  html[data-mode="light"] .safety b { color: #b45309; }
+  html[data-mode="light"] .copyright { opacity: 0.75; }
+  html[data-mode="light"] #modeBtn { color: #1b1f33; background: rgba(255, 255, 255, 0.9); border-color: rgba(140, 30, 255, 0.5); box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12); }
 </style>
 </head>
 <body>
+<button id="modeBtn" type="button" aria-label="Switch between light and dark mode"></button>
 <main>
   <header>
     <h1>TILT ARCADE</h1>
@@ -541,6 +573,19 @@
       <span class="thumb">🎮</span>
       <span class="info"><h2>More games soon</h2><p>New games are on the way. Follow @seltos.gtx so you don't miss them.</p></span>
     </div>`;
+})();
+
+// Light / dark mode: remembered on this device and used by every game.
+(() => {
+  const btn = document.getElementById('modeBtn'), root = document.documentElement;
+  const label = () => { btn.textContent = root.dataset.mode === 'light' ? '🌙 Dark mode' : '☀️ Light mode'; };
+  btn.addEventListener('click', () => {
+    if (root.dataset.mode === 'light') delete root.dataset.mode; else root.dataset.mode = 'light';
+    try { localStorage.setItem('tiltMode', root.dataset.mode === 'light' ? 'light' : 'dark'); } catch (e) {}
+    const meta = document.querySelector('meta[name="theme-color"]'); if (meta) meta.content = root.dataset.mode === 'light' ? '#eef2fb' : '#12062a';
+    label();
+  });
+  label();
 })();
 </script>
 </body>

@@ -17,6 +17,7 @@
 <link rel="icon" href="../icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="../icon-180.png">
 <title>Brick Smash</title>
+<script>try { if (localStorage.getItem('tiltMode') === 'light') document.documentElement.dataset.mode = 'light'; } catch (e) {}</script>
 <style>
   @font-face { font-family: 'Orbitron'; font-weight: 900; font-display: swap; src: url(../fonts/orbitron-900.woff2) format('woff2'); }
   :root { --fg: #fff; --accent: #ffd319; --pink: #ff2975; --cyan: #00e5ff; }
@@ -178,6 +179,26 @@
   body.playing #pauseBtn { display: flex; }
   /* Safety reminder sits in the footer line so it's visible on every screen size */
   .copyright .safety { color: #ffd319; font-weight: 800; font-size: 12.5px; }
+  /* ----- Light mode (chosen on the home page): bright screens that stay readable in daylight ----- */
+  html[data-mode="light"] body { background: #eef2fb; color: #1b1f33; }
+  html[data-mode="light"] .overlay { background: radial-gradient(ellipse 80% 55% at 50% 115%, rgba(255, 138, 61, 0.28), transparent 70%), linear-gradient(180deg, rgba(246, 248, 255, 0.94), rgba(226, 233, 252, 0.93)); color: #1b1f33; }
+  html[data-mode="light"] .sunset::before { opacity: 0.4; }
+  html[data-mode="light"] h1, html[data-mode="light"] .big {
+    background: linear-gradient(180deg, #ff6a00 0%, #ff2975 55%, #8c1eff 100%); -webkit-background-clip: text; background-clip: text; color: transparent;
+    filter: drop-shadow(0 2px 0 rgba(255, 255, 255, 0.9));
+  }
+  html[data-mode="light"] h1 span { color: #d97706; }
+  html[data-mode="light"] p { color: #1b1f33; }
+  html[data-mode="light"] .byline a { color: #0077b6; }
+  html[data-mode="light"] .msg { color: #c62828; }
+  html[data-mode="light"] .copyright { color: rgba(27, 31, 51, 0.65); text-shadow: none; }
+  html[data-mode="light"] .copyright .safety { color: #b45309; }
+  html[data-mode="light"] .actions .homeLink { color: #1b1f33; background: rgba(255, 255, 255, 0.75); border-color: rgba(27, 31, 51, 0.35); }
+  html[data-mode="light"] .igBtn { color: #1b1f33; background: rgba(255, 255, 255, 0.8); border-color: rgba(27, 31, 51, 0.2); }
+  html[data-mode="light"] #soundBtn, html[data-mode="light"] #themeBtn { background: rgba(255, 255, 255, 0.85); color: #1b1f33; border-color: rgba(255, 41, 117, 0.55); box-shadow: none; }
+  html[data-mode="light"] #pauseBtn { background: rgba(255, 255, 255, 0.88); color: #1b1f33; border-color: rgba(255, 41, 117, 0.7); box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15); }
+  html[data-mode="light"] #rotate { background: #eef2fb; }
+  html[data-mode="light"] #rotate .phone { border-color: #1b1f33; box-shadow: none; }
 </style>
 </head>
 <body>
@@ -257,6 +278,7 @@
   const COLS = 10, BRICK_GAP = 0.008, BRICK_H = 0.034;
   const MAX_LIVES = 3, COUNTDOWN = 2.4, SERVE_TIME = 1.2, WIDE_TIME = 12;
   const isTouch = matchMedia('(pointer: coarse)').matches;
+  const LIGHT = document.documentElement.dataset.mode === 'light';   // light mode, picked on the home page
 
   let W = 0, H = 0, FW = 0, FX = 0, FH = 1;
   let adBottom = 0;             // bottom edge of the roadside billboard, so the HUD wheel can avoid it
@@ -723,7 +745,8 @@
       halo.addColorStop(0, 'rgba(0,229,255,0.55)'); halo.addColorStop(1, 'rgba(0,229,255,0)');
       g.fillStyle = halo; g.beginPath(); g.arc(c, c, r * 2.5, 0, 7); g.fill();
       const body = g.createRadialGradient(c - r * 0.35, c - r * 0.35, r * 0.1, c, c, r);
-      body.addColorStop(0, '#ffffff'); body.addColorStop(0.5, '#b8fbff'); body.addColorStop(1, '#00a6c4');
+      if (LIGHT) { body.addColorStop(0, '#9fa8ff'); body.addColorStop(0.5, '#3949ab'); body.addColorStop(1, '#1a237e'); }   // darker ball shows up on a light field
+      else { body.addColorStop(0, '#ffffff'); body.addColorStop(0.5, '#b8fbff'); body.addColorStop(1, '#00a6c4'); }
       g.fillStyle = body; g.beginPath(); g.arc(c, c, r, 0, 7); g.fill();
     });
   }
@@ -779,10 +802,11 @@
     const fx = FX, fw = FW;
     return makeSprite(W, H, (g) => {
       const sky = g.createLinearGradient(0, 0, 0, H);
-      sky.addColorStop(0, '#12062a'); sky.addColorStop(0.7, '#2b0a4e'); sky.addColorStop(1, '#46105a');
+      if (LIGHT) { sky.addColorStop(0, '#eef1ff'); sky.addColorStop(0.7, '#e2e7fd'); sky.addColorStop(1, '#d6ddfa'); }
+      else { sky.addColorStop(0, '#12062a'); sky.addColorStop(0.7, '#2b0a4e'); sky.addColorStop(1, '#46105a'); }
       g.fillStyle = sky; g.fillRect(0, 0, W, H);
       const gs = H * 0.08;
-      g.strokeStyle = 'rgba(255,41,117,0.18)'; g.lineWidth = 1;
+      g.strokeStyle = LIGHT ? 'rgba(140,30,255,0.12)' : 'rgba(255,41,117,0.18)'; g.lineWidth = 1;
       g.beginPath();
       for (let y = gs; y < H; y += gs) { g.moveTo(0, y); g.lineTo(W, y); }
       for (let x = fx - gs; x > 0; x -= gs) { g.moveTo(x, 0); g.lineTo(x, H); }
@@ -790,15 +814,15 @@
       g.stroke();
       // Playfield
       const field = g.createLinearGradient(0, 0, 0, H);
-      field.addColorStop(0, '#0b0418'); field.addColorStop(1, '#1a0832');
+      if (LIGHT) { field.addColorStop(0, '#ffffff'); field.addColorStop(1, '#eceffd'); } else { field.addColorStop(0, '#0b0418'); field.addColorStop(1, '#1a0832'); }
       g.fillStyle = field; g.fillRect(fx, 0, fw, H);
-      g.strokeStyle = 'rgba(0,229,255,0.07)';
+      g.strokeStyle = LIGHT ? 'rgba(0,120,200,0.09)' : 'rgba(0,229,255,0.07)';
       g.beginPath();
       for (let x = fx + fw / 10; x < fx + fw - 1; x += fw / 10) { g.moveTo(x, 0); g.lineTo(x, H); }
       g.stroke();
       // Neon frame: wide soft pass + thin bright pass
       g.fillStyle = 'rgba(0,229,255,0.16)'; g.fillRect(fx - 6, 0, 12, H); g.fillRect(fx + fw - 6, 0, 12, H);
-      g.fillStyle = '#6ff7ff'; g.fillRect(fx - 1.5, 0, 3, H); g.fillRect(fx + fw - 1.5, 0, 3, H);
+      g.fillStyle = LIGHT ? '#00a6c4' : '#6ff7ff'; g.fillRect(fx - 1.5, 0, 3, H); g.fillRect(fx + fw - 1.5, 0, 3, H);
       // Danger line glow at the bottom
       const fl = g.createLinearGradient(0, H * 0.9, 0, H);
       fl.addColorStop(0, 'rgba(255,41,117,0)'); fl.addColorStop(1, 'rgba(255,41,117,0.28)');

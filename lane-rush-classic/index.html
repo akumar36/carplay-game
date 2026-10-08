@@ -17,6 +17,7 @@
 <link rel="icon" href="../icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="../icon-180.png">
 <title>Lane Rush Classic</title>
+<script>try { if (localStorage.getItem('tiltMode') === 'light') document.documentElement.dataset.mode = 'light'; } catch (e) {}</script>
 <style>
   @font-face { font-family: 'Orbitron'; font-weight: 900; font-display: swap; src: url(../fonts/orbitron-900.woff2) format('woff2'); }
   :root { --fg: #fff; --accent: #ffcc00; --panel: rgba(10, 12, 18, 0.82); }
@@ -158,6 +159,26 @@
   body.playing #pauseBtn { display: flex; }
   /* Safety reminder sits in the footer line so it's visible on every screen size */
   .copyright .safety { color: #ffd319; font-weight: 800; font-size: 12.5px; }
+  /* ----- Light mode (chosen on the home page): bright screens that stay readable in daylight ----- */
+  html[data-mode="light"] body { background: #eef2fb; color: #1b1f33; }
+  html[data-mode="light"] .overlay { background: radial-gradient(ellipse 80% 55% at 50% 115%, rgba(255, 138, 61, 0.28), transparent 70%), linear-gradient(180deg, rgba(246, 248, 255, 0.94), rgba(226, 233, 252, 0.93)); color: #1b1f33; }
+  html[data-mode="light"] .sunset::before { opacity: 0.4; }
+  html[data-mode="light"] h1, html[data-mode="light"] .big {
+    background: linear-gradient(180deg, #ff6a00 0%, #ff2975 55%, #8c1eff 100%); -webkit-background-clip: text; background-clip: text; color: transparent;
+    filter: drop-shadow(0 2px 0 rgba(255, 255, 255, 0.9));
+  }
+  html[data-mode="light"] h1 span { color: #d97706; }
+  html[data-mode="light"] p { color: #1b1f33; }
+  html[data-mode="light"] .byline a { color: #0077b6; }
+  html[data-mode="light"] .msg { color: #c62828; }
+  html[data-mode="light"] .copyright { color: rgba(27, 31, 51, 0.65); text-shadow: none; }
+  html[data-mode="light"] .copyright .safety { color: #b45309; }
+  html[data-mode="light"] .actions .homeLink { color: #1b1f33; background: rgba(255, 255, 255, 0.75); border-color: rgba(27, 31, 51, 0.35); }
+  html[data-mode="light"] .igBtn { color: #1b1f33; background: rgba(255, 255, 255, 0.8); border-color: rgba(27, 31, 51, 0.2); }
+  html[data-mode="light"] #soundBtn, html[data-mode="light"] #themeBtn { background: rgba(255, 255, 255, 0.85); color: #1b1f33; border-color: rgba(255, 41, 117, 0.55); box-shadow: none; }
+  html[data-mode="light"] #pauseBtn { background: rgba(255, 255, 255, 0.88); color: #1b1f33; border-color: rgba(255, 41, 117, 0.7); box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15); }
+  html[data-mode="light"] #rotate { background: #eef2fb; }
+  html[data-mode="light"] #rotate .phone { border-color: #1b1f33; box-shadow: none; }
 </style>
 </head>
 <body>
@@ -236,6 +257,7 @@
   const MAX_LIVES = 3, INVINCIBLE_TIME = 2;
   const COUNTDOWN = 2.4;
   const isTouch = matchMedia('(pointer: coarse)').matches;
+  const LIGHT = document.documentElement.dataset.mode === 'light';   // light mode, picked on the home page
 
   let W = 0, H = 0, roadW = 0, roadX = 0, carW = 0, carH = 0;
   let adBottom = 0;             // bottom edge of the roadside billboard, so the HUD wheel can avoid it
