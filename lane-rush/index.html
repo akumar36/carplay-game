@@ -221,9 +221,18 @@
   body.playing #pauseBtn { display: flex; }
   /* Safety reminder sits in the footer line so it's visible on every screen size */
   .copyright .safety { color: #ffd319; font-weight: 800; font-size: 12.5px; }
+  .overlay > .copyright { max-width: none; }
   /* ----- Light mode (chosen on the home page): bright screens that stay readable in daylight ----- */
   html[data-mode="light"] body { background: #eef2fb; color: #1b1f33; }
-  html[data-mode="light"] .overlay { background: radial-gradient(ellipse 80% 55% at 50% 115%, rgba(255, 138, 61, 0.28), transparent 70%), linear-gradient(180deg, rgba(246, 248, 255, 0.94), rgba(226, 233, 252, 0.93)); color: #1b1f33; }
+  /* A soft spotlight behind the text and buttons; the game stays visible around the edges */
+  html[data-mode="light"] .overlay {
+    color: #1b1f33;
+    background:
+      radial-gradient(ellipse 40% 72% at 50% 50%, rgba(250, 251, 255, 0.95) 0%, rgba(250, 251, 255, 0.9) 62%, rgba(250, 251, 255, 0) 100%),
+      radial-gradient(ellipse 80% 55% at 50% 115%, rgba(255, 138, 61, 0.22), transparent 70%),
+      linear-gradient(180deg, rgba(238, 242, 252, 0.5), rgba(226, 233, 252, 0.45));
+  }
+  @media (max-width: 700px) { html[data-mode="light"] .overlay { background: radial-gradient(ellipse 52% 75% at 50% 50%, rgba(250, 251, 255, 0.95) 0%, rgba(250, 251, 255, 0.9) 65%, rgba(250, 251, 255, 0.35) 100%), linear-gradient(180deg, rgba(238, 242, 252, 0.5), rgba(226, 233, 252, 0.45)); } }
   html[data-mode="light"] .sunset::before { opacity: 0.4; }
   html[data-mode="light"] h1, html[data-mode="light"] .big {
     background: linear-gradient(180deg, #ff6a00 0%, #ff2975 55%, #8c1eff 100%); -webkit-background-clip: text; background-clip: text; color: transparent;
