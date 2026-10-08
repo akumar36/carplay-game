@@ -140,6 +140,11 @@
   }
   footer { text-align: center; display: flex; flex-direction: column; gap: 6px; align-items: center; }
   .copyright { margin: 0; font-size: 11px; opacity: 0.6; }
+  .safety {
+    margin: 4px 0 0; max-width: 40em; padding: 10px 16px; border-radius: 14px; font-size: 14px; line-height: 1.45; text-align: center;
+    color: #fff3c4; background: rgba(255, 211, 25, 0.1); border: 1px solid rgba(255, 211, 25, 0.55);
+  }
+  .safety b { color: #ffd319; }
 </style>
 </head>
 <body>
@@ -148,6 +153,8 @@
     <h1>CARPLAY GAMES</h1>
     <p class="byline">by <a href="https://www.instagram.com/seltos.gtx/" target="_blank" rel="noopener">@seltos.gtx</a></p>
     <p class="tagline">Free games you play by tilting your phone. No downloads, no sign-up. Just tap and play.</p>
+    <p class="safety" role="note"><b>⚠ Safety first:</b> never play while driving. If you open these games on a car's screen,
+      only play when the car is safely parked, and follow your local laws.</p>
   </header>
 
   <section class="grid" id="games" aria-label="Games"></section>
@@ -172,6 +179,7 @@
 
   <footer>
     <p class="copyright">© 2026 @seltos.gtx · All rights reserved</p>
+    <p class="copyright">CarPlay is a trademark of Apple Inc. CarPlay Games is not affiliated with or endorsed by Apple.</p>
   </footer>
 </main>
 

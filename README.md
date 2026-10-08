@@ -18,6 +18,12 @@ The home page lists every game; tap one to play it.
 | Midnight Run | https://carplay-game.seltosgtx.workers.dev/midnight-run/ |
 | Lane Rush Classic (the original, no music) | https://carplay-game.seltosgtx.workers.dev/lane-rush-classic/ |
 
+## Safety
+
+**Never play while driving.** Some apps can show web pages on a car's screen (for example Apple CarPlay). If you play these games on a car screen, only do it while the car is safely parked, and follow your local laws. Every game shows an "Only play when parked" reminder on its menu and game-over screens, and the home page shows a safety note.
+
+CarPlay is a trademark of Apple Inc. CarPlay Games is not affiliated with or endorsed by Apple.
+
 ## Lane Rush: how to play
 
 1. Open the link on your phone and rotate to **landscape**.
