@@ -1,0 +1,991 @@
+<!doctype html>
+<!--
+  Hill Climb (CarPlay Games)
+  Copyright (c) 2026 @seltos.gtx (https://www.instagram.com/seltos.gtx/). All rights reserved.
+  Copying, modifying or redistributing this code without permission is not allowed.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="CarPlay Games">
+<meta name="theme-color" content="#12062a">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="icon" href="../icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../icon-180.png">
+<title>Hill Climb</title>
+<style>
+  @font-face { font-family: 'Orbitron'; font-weight: 900; font-display: swap; src: url(../fonts/orbitron-900.woff2) format('woff2'); }
+  :root { --fg: #fff; --accent: #ffd319; --pink: #ff2975; --cyan: #00e5ff; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; height: 100%; overflow: hidden; background: #12062a; color: var(--fg);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    touch-action: none; user-select: none; -webkit-user-select: none; overscroll-behavior: none;
+  }
+  canvas { position: fixed; inset: 0; width: 100vw; height: 100vh; display: block; }
+  .overlay {
+    position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 12px; padding: 24px; text-align: center; z-index: 10; overflow: hidden;
+    background:
+      radial-gradient(ellipse 80% 55% at 50% 115%, rgba(255, 41, 117, 0.5), transparent 70%),
+      linear-gradient(180deg, rgba(18, 6, 42, 0.9) 0%, rgba(43, 10, 78, 0.86) 70%, rgba(70, 12, 90, 0.84) 100%);
+  }
+  .hidden { display: none !important; }
+  h1 {
+    margin: 0; font-family: 'Orbitron', system-ui, sans-serif; font-size: clamp(24px, 7vh, 54px); letter-spacing: 2px; font-weight: 900; font-style: italic;
+    background: linear-gradient(180deg, #ffffff 0%, #fff3a0 30%, #ffd319 48%, #ff2975 78%, #c23cff 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    filter: drop-shadow(0 0 14px rgba(255, 41, 117, 0.55)) drop-shadow(0 2px 0 rgba(18, 6, 42, 0.9));
+  }
+  p { margin: 0; font-size: clamp(13px, 3.4vh, 18px); opacity: 0.9; max-width: 34em; line-height: 1.4; }
+  .big {
+    font-size: clamp(36px, 11vh, 80px); font-weight: 900; font-style: italic; color: transparent;
+    background: linear-gradient(180deg, #fff3a0, #ffd319 45%, #ff2975); -webkit-background-clip: text; background-clip: text;
+  }
+  button {
+    font: inherit; font-size: clamp(20px, 6vh, 30px); font-weight: 800; padding: 0.7em 1.9em; border: 0;
+    border-radius: 999px; color: #fff; cursor: pointer; margin-top: 6px; letter-spacing: 0.5px;
+    background: linear-gradient(90deg, #ff2975, #ff901f);
+    box-shadow: 0 0 22px rgba(255, 41, 117, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  }
+  .small { font-size: 13px; opacity: 0.65; }
+  .msg { color: #ff8a80; font-weight: 600; }
+  .copyright { font-size: 11px; color: rgba(255, 255, 255, 0.6); margin-top: 4px; }
+  .byline a { color: var(--cyan); font-weight: 700; text-decoration: none; }
+  /* Big touch targets: these games are meant for car screens too */
+  .actions { display: flex; flex-direction: column; gap: 10px; align-items: center; }
+  .actions button { margin: 0; }
+  .actions .homeLink {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 56px; min-width: 56px; white-space: nowrap;
+    padding: 0 22px; border-radius: 999px; font-size: clamp(17px, 4.8vh, 22px); font-weight: 800; color: #fff;
+    text-decoration: none; background: rgba(0, 0, 0, 0.35); border: 2px solid rgba(255, 255, 255, 0.4);
+  }
+  .actions .homeLink:active { transform: scale(0.96); }
+  .actions .homeLink svg { width: 24px; height: 24px; flex: none; }
+  /* Keep menu content below the top buttons and between the side badges (--side is set from JS) */
+  .overlay { padding: 78px calc(var(--side, 0px) + 16px) 14px; }
+  @media (max-height: 420px) { .overlay { gap: 6px; } }
+  @media (max-height: 360px) {
+    .overlay { padding-top: 70px; }
+    .actions { gap: 6px; }
+    .actions .homeLink { min-height: 46px; }
+    .overlay .big { font-size: 34px; }
+    .overlay .igBtn { padding-top: 0.25em; padding-bottom: 0.25em; }
+  }
+  @media (max-height: 460px) {
+    .overlay p.small:not(.byline) { display: none; }
+    .overlay { padding-bottom: 26px; }
+    .overlay > .copyright { position: absolute; left: 0; right: 0; bottom: 6px; margin: 0; max-width: none; }
+    /* Main button on top; the buttons below it share one row */
+    .actions { display: grid; grid-template-columns: auto auto; justify-content: center; justify-items: center; }
+    .actions > button, .actions > :last-child:nth-child(2) { grid-column: 1 / -1; }
+  }
+  #rotate { display: none; z-index: 20; background: #12062a; }
+  #rotate .phone {
+    width: 44px; height: 76px; border: 4px solid var(--cyan); border-radius: 9px;
+    animation: turn 1.8s ease-in-out infinite;
+  }
+  @keyframes turn { 0%, 30% { transform: rotate(0); } 60%, 100% { transform: rotate(-90deg); } }
+  @media (orientation: portrait) and (pointer: coarse) { #rotate { display: flex; } }
+
+  #topBar { position: fixed; top: max(8px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); z-index: 16; }
+  #soundBtn {
+    font: 700 17px system-ui, sans-serif; color: #fff; background: rgba(18, 6, 42, 0.6);
+    border: 1px solid rgba(255, 41, 117, 0.6); box-shadow: none; margin: 0; cursor: pointer;
+  }
+  #soundBtn { min-height: 56px; padding: 0 22px; border-radius: 999px; white-space: nowrap; }
+  /* The road fills the screen while driving, so the side badges step aside (billboards stand by the road instead) */
+  body.playing #topBar, body.playing #brand, body.playing #adBanner { display: none; }
+
+  /* Instagram branding, in the space left of the playfield */
+  .ig-logo {
+    display: inline-flex; align-items: center; justify-content: center; flex: none;
+    width: 40px; height: 40px; border-radius: 12px;
+    background: radial-gradient(circle at 30% 107%, #fdf497 0%, #fdf497 5%, #fd5949 45%, #d6249f 60%, #285aeb 90%);
+  }
+  .ig-logo svg { width: 64%; height: 64%; }
+  /* "Developed by" creator card (left). Sizes follow the card's width (container units), so it fits any gap. */
+  #brand {
+    position: fixed; top: 50%; left: 12px; transform: translateY(-50%); z-index: 15; container-type: inline-size;
+    display: flex; flex-direction: column; align-items: center; gap: 7px; padding: 14px 8px 12px; border-radius: 20px;
+    color: #fff; text-decoration: none; text-align: center; border: 2px solid transparent;
+    background: linear-gradient(170deg, #1c0b38, #0d0620) padding-box,
+                linear-gradient(135deg, #feda75, #fa7e1e, #d62976, #962fbf, #4f5bd5) border-box;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 22px rgba(214, 41, 118, 0.35);
+  }
+  #brand .dev { font-size: 8.5px; font-weight: 800; letter-spacing: 1px; letter-spacing: max(0.3px, min(2px, calc(2.6cqw - 1.4px))); color: #ffb3d9; white-space: nowrap; }
+  #brand .ring { display: flex; padding: 3px; border-radius: 16px; background: linear-gradient(135deg, #feda75, #fa7e1e, #d62976, #962fbf, #4f5bd5); }
+  #brand .ring .ig-logo { width: 42px; height: 42px; width: min(46px, 50cqw); height: min(46px, 50cqw); border: 3px solid #160830; border-radius: 13px; }
+  #brand .handle { font-weight: 800; font-size: 13px; font-size: min(15px, 16.5cqw); white-space: nowrap; }
+  #brand .follow {
+    display: inline-flex; padding: 0.5em 1.1em; border-radius: 999px; font-size: 11px; font-size: min(12px, 14cqw); font-weight: 800; white-space: nowrap;
+    background: linear-gradient(90deg, #fa7e1e, #d62976, #962fbf); box-shadow: 0 4px 12px rgba(214, 41, 118, 0.45);
+  }
+  #brand:active { transform: translateY(-50%) scale(0.96); }
+
+  /* Roadside "ad space" billboard (right): lamps, metal frame, catwalk and legs */
+  #adBanner {
+    position: fixed; top: 50%; right: 12px; transform: translateY(-50%); z-index: 15; container-type: inline-size;
+    display: flex; flex-direction: column; align-items: center; text-decoration: none; color: #fff;
+  }
+  #adBanner .lamps { display: flex; justify-content: space-around; width: 86%; height: 9px; position: relative; z-index: 1; }
+  #adBanner .lamps i { width: 12px; height: 9px; border-radius: 6px 6px 2px 2px; background: #2a2a38; position: relative; }
+  #adBanner .lamps i::before { content: ""; position: absolute; left: 3px; right: 3px; bottom: 0; height: 3px; border-radius: 2px; background: #fff3c4; box-shadow: 0 0 6px #ffe9a0; }
+  #adBanner .lamps i::after {
+    content: ""; position: absolute; left: 50%; top: 8px; width: 46px; height: 34px; transform: translateX(-50%); pointer-events: none;
+    background: radial-gradient(ellipse at 50% 0, rgba(255, 240, 200, 0.28), rgba(255, 240, 200, 0) 65%);
+  }
+  #adBanner .board { width: 100%; padding: 4px; border-radius: 6px; background: linear-gradient(180deg, #4a4458, #262230); box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5); }
+  #adBanner .panel {
+    position: relative; overflow: hidden; display: flex; flex-direction: column; align-items: center; gap: 5px;
+    padding: 10px 6px 9px; border-radius: 3px; text-align: center;
+    background: linear-gradient(160deg, #ff2975 0%, #8c1eff 55%, #2b0a4e 100%);
+  }
+  #adBanner .panel::after {      /* light sweep across the board */
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(110deg, transparent 35%, rgba(255, 255, 255, 0.22) 50%, transparent 65%);
+    transform: translateX(-120%); animation: adSweep 3.5s ease-in-out infinite;
+  }
+  #adBanner .tag { font-size: 8.5px; font-weight: 800; letter-spacing: 1px; letter-spacing: max(0.5px, min(2px, calc(2cqw - 0.8px))); color: #12062a; background: #ffd319; padding: 2px 7px; border-radius: 3px; white-space: nowrap; }
+  #adBanner .main { font: 900 13px/1.08 'Orbitron', system-ui, sans-serif; font-size: min(15px, 14cqw); letter-spacing: 0.5px; color: #fff; text-shadow: 0 2px 0 rgba(18, 6, 42, 0.5); }
+  #adBanner .cta { margin-top: 2px; font-size: 9.5px; font-size: min(10.5px, 9.6cqw); font-weight: 800; padding: 0.4em 0.8em; border-radius: 999px; background: #12062a; color: #6ff7ff; white-space: nowrap; }
+  #adBanner .walk { width: 92%; height: 5px; background: repeating-linear-gradient(90deg, #5a5368 0 3px, #2a2633 3px 6px); }
+  #adBanner .legs { display: flex; justify-content: space-between; width: 58%; height: 18px; }
+  #adBanner .legs i { width: 6px; background: linear-gradient(90deg, #3a3446, #6b6280, #3a3446); }
+  #adBanner:active .board { transform: scale(0.96); }
+  @keyframes adSweep { 0%, 55% { transform: translateX(-120%); } 85%, 100% { transform: translateX(120%); } }
+  @media (prefers-reduced-motion: reduce) { #adBanner .panel::after { animation: none; } }
+  .igBtn {
+    display: inline-flex; align-items: center; gap: 10px; padding: 0.45em 1.2em 0.45em 0.5em;
+    border-radius: 999px; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.18); color: #fff; text-decoration: none;
+    font-weight: 700; font-size: clamp(14px, 3.6vh, 18px);
+  }
+  .igBtn .ig-logo { width: 32px; height: 32px; border-radius: 10px; }
+
+  /* Pause button: bottom right, only while playing; big enough for car screens */
+  #pauseBtn {
+    display: none; position: fixed; z-index: 16;
+    right: max(12px, env(safe-area-inset-right)); bottom: max(12px, env(safe-area-inset-bottom));
+    width: 60px; height: 60px; padding: 0; margin: 0; border-radius: 16px; animation: none; cursor: pointer;
+    align-items: center; justify-content: center; color: #fff;
+    background: rgba(18, 6, 42, 0.6); border: 2px solid rgba(255, 41, 117, 0.7); box-shadow: 0 0 14px rgba(255, 41, 117, 0.35);
+  }
+  #pauseBtn svg { width: 26px; height: 26px; }
+  #pauseBtn:active { transform: scale(0.94); }
+  body.playing #pauseBtn { display: flex; }
+  /* Safety reminder sits in the footer line so it's visible on every screen size */
+  .copyright .safety { color: #ffd319; font-weight: 800; font-size: 12.5px; }
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+
+<button id="pauseBtn" type="button" aria-label="Pause"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4.5" width="4.2" height="15" rx="1.2"/><rect x="13.8" y="4.5" width="4.2" height="15" rx="1.2"/></svg></button>
+
+<div id="topBar"><button id="soundBtn" type="button" aria-label="Change sound setting">🔊 Sound on</button></div>
+
+<a id="brand" href="https://www.instagram.com/seltos.gtx/" target="_blank" rel="noopener" aria-label="Developed by @seltos.gtx: follow on Instagram">
+  <span class="dev">DEVELOPED BY</span>
+  <span class="ring"><span class="ig-logo"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.4" cy="6.6" r="1.1" fill="#fff" stroke="none"/></svg></span></span>
+  <span class="handle">@seltos.gtx</span>
+  <span class="follow">＋ Follow</span>
+</a>
+
+<a id="adBanner" href="https://www.instagram.com/seltos.gtx/" target="_blank" rel="noopener" aria-label="Advertise here: message @seltos.gtx on Instagram">
+  <span class="lamps"><i></i><i></i><i></i></span>
+  <span class="board"><span class="panel">
+    <span class="tag">AD SPACE</span>
+    <span class="main">YOUR<br>BRAND<br>HERE</span>
+    <span class="cta">DM @seltos.gtx</span>
+  </span></span>
+  <span class="walk"></span>
+  <span class="legs"><i></i><i></i></span>
+</a>
+
+<div id="menu" class="overlay">
+  <h1>HILL CLIMB</h1>
+  <p class="byline small">by <a href="https://www.instagram.com/seltos.gtx/" target="_blank" rel="noopener">@seltos.gtx</a></p>
+  <p>Lean your phone <b>right to accelerate</b> and <b>left to brake</b>; in the air, leaning tips the jeep.
+     Don't land on your head and don't run out of fuel. You have <b>3 lives</b>.</p>
+  <div class="actions"><button id="startBtn">Tap to start</button><a class="homeLink" href="../" aria-label="All games"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg><span>All games</span></a></div>
+  <p class="small">No tilt sensor? Use → / D for gas and ← / A to brake, or touch the right or left half of the screen.</p>
+  <p id="menuMsg" class="msg hidden"></p>
+  <p class="copyright"><span class="safety">⚠ Only play when parked</span> · © 2026 @seltos.gtx · All rights reserved</p>
+</div>
+
+<div id="over" class="overlay hidden">
+  <p>GAME OVER</p>
+  <div class="big" id="finalScore">0</div>
+  <p id="bestLine"></p>
+  <div class="actions"><button id="againBtn">Play again</button><a class="homeLink" href="../" aria-label="All games"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg><span>All games</span></a><a class="igBtn" href="https://www.instagram.com/seltos.gtx/" target="_blank" rel="noopener">
+    <span class="ig-logo"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.4" cy="6.6" r="1.1" fill="#fff" stroke="none"/></svg></span>
+    Follow @seltos.gtx
+  </a></div>
+  <p class="copyright"><span class="safety">⚠ Only play when parked</span> · © 2026 @seltos.gtx · All rights reserved</p>
+</div>
+
+<div id="paused" class="overlay hidden">
+  <h1>Paused</h1>
+  <div class="actions"><button id="resumeBtn">Resume</button><a class="homeLink" href="../" aria-label="All games"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg><span>All games</span></a></div>
+</div>
+
+<div id="rotate" class="overlay">
+  <div class="phone"></div>
+  <p>Rotate your phone to <b>landscape</b>.</p>
+  <p class="small">On iPhone, turn off Portrait Orientation Lock in Control Center.</p>
+</div>
+
+<script>
+(() => {
+  'use strict';
+
+  // ---------- Setup ----------
+  // Field units: the playfield is 1 unit wide and FH units tall; everything in the game lives in these units.
+  const cvs = document.getElementById('game');
+  const ctx = cvs.getContext('2d');
+  const $ = (id) => document.getElementById(id);
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const D2R = Math.PI / 180;
+  const SENSITIVITY = 0.36;      // ~21 degrees of tilt = full speed
+  const DEAD_ZONE = 0.07;
+  const MAX_LIVES = 3, INVINCIBLE_TIME = 2, COUNTDOWN = 2.4;
+  const isTouch = matchMedia('(pointer: coarse)').matches;
+
+  let W = 0, H = 0, FW = 0, FX = 0, FH = 1;
+  let adBottom = 0;             // bottom edge of the roadside billboard, so the HUD wheel can avoid it
+
+  function resize() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth; H = window.innerHeight;
+    cvs.width = Math.round(W * dpr); cvs.height = Math.round(H * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    FW = Math.min(W * 0.62, H * 1.3);
+    FX = (W - FW) / 2;
+    FH = H / FW;
+    placeSide($('brand'), 'left', 150);
+    placeSide($('adBanner'), 'right', 140);
+    const ad = $('adBanner');
+    adBottom = ad.classList.contains('hidden') ? 0 : ad.getBoundingClientRect().bottom;
+    document.documentElement.style.setProperty('--side', (FX - 6 >= 84 ? FX - 6 : 0) + 'px');
+  }
+
+  // Badge and billboard sit centred in the space beside the playfield, and hide if there's no room.
+  function placeSide(el, side, maxW) {
+    const margin = FX - 6;
+    if (margin < 84) { el.classList.add('hidden'); return; }
+    el.classList.remove('hidden');
+    const bw = Math.min(margin - 16, maxW);
+    el.style.width = bw + 'px';
+    el.style[side] = (margin - bw) / 2 + 'px';
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  // ---------- Storage ----------
+  function load(key, fallback) { try { const v = localStorage.getItem(key); return v == null ? fallback : v; } catch (e) { return fallback; } }
+  function save(key, v) { try { localStorage.setItem(key, String(v)); } catch (e) {} }
+
+  // ---------- Audio (tiny synth blips) ----------
+  let ac = null, muted = load('hillSound', 'on') === 'off';
+  function initAudio() {
+    if (muted) return;
+    try {
+      ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+      if (ac.state === 'suspended') ac.resume();
+    } catch (e) { ac = null; }
+  }
+  function beep(freq, dur, type = 'sine', vol = 0.12, slide = 0) {
+    if (!ac || muted) return;
+    try {
+      const t = ac.currentTime, o = ac.createOscillator(), g = ac.createGain();
+      o.type = type; o.frequency.setValueAtTime(freq, t);
+      if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(20, freq + slide), t + dur);
+      g.gain.setValueAtTime(vol, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(g).connect(ac.destination); o.start(t); o.stop(t + dur);
+    } catch (e) {}
+  }
+  function setMuted(m) {
+    muted = m; save('hillSound', m ? 'off' : 'on');
+    $('soundBtn').textContent = m ? '🔇 Muted' : '🔊 Sound on';
+    if (m && ac) try { ac.suspend(); } catch (e) {}
+    if (!m) initAudio();
+  }
+
+  // ---------- Input (same tilt model as Lane Rush) ----------
+  const input = {
+    tilt: null,        // sideways component of "up" in screen coordinates (-1..1)
+    neutral: null,     // calibrated tilt at start
+    source: 'none',    // 'orientation' | 'motion' | 'none'
+    steer: 0,          // smoothed steering, -1 (left) .. 1 (right)
+    left: false, right: false, touch: 0,
+  };
+
+  function screenAngle() {
+    const so = screen.orientation;
+    let a = so && typeof so.angle === 'number' ? so.angle : (window.orientation || 0);
+    // Some browsers report 0 even when the page is landscape; assume the common landscape rotation.
+    if (a % 180 === 0 && window.innerWidth > window.innerHeight) a = 90;
+    return a * D2R;
+  }
+
+  // Project the world "up" vector (in device coords) onto the screen's horizontal axis.
+  function upToScreenX(ux, uy) {
+    const a = screenAngle();
+    return ux * Math.cos(a) - uy * Math.sin(a);
+  }
+
+  function onOrientation(e) {
+    if (e.beta == null || e.gamma == null) return;
+    const b = e.beta * D2R, g = e.gamma * D2R;
+    const ux = -Math.cos(b) * Math.sin(g);
+    const uy = Math.sin(b);
+    input.tilt = upToScreenX(ux, uy);
+    input.source = 'orientation';
+  }
+
+  function onMotion(e) {
+    if (input.source === 'orientation') return; // prefer the fused orientation sensor
+    const a = e.accelerationIncludingGravity;
+    if (!a || a.x == null) return;
+    const n = Math.hypot(a.x, a.y, a.z) || 1;
+    input.tilt = upToScreenX(a.x / n, a.y / n);
+    input.source = 'motion';
+  }
+
+  let sensorsAttached = false;
+  function attachSensors() {
+    if (sensorsAttached) return;
+    sensorsAttached = true;
+    window.addEventListener('deviceorientation', onOrientation);
+    window.addEventListener('devicemotion', onMotion);
+  }
+
+  function requestSensorPermission() {
+    // iOS 13+: must be called synchronously inside a user gesture.
+    const DOE = window.DeviceOrientationEvent, DME = window.DeviceMotionEvent;
+    let p = null;
+    if (DOE && typeof DOE.requestPermission === 'function') p = DOE.requestPermission();
+    else if (DME && typeof DME.requestPermission === 'function') p = DME.requestPermission();
+    return p ? p.catch(() => 'denied') : Promise.resolve('granted');
+  }
+
+  function updateSteer(dt) {
+    let target = 0;
+    if (input.tilt != null) {
+      if (input.neutral == null || G.state === 'countdown') input.neutral = input.tilt;
+      let d = -(input.tilt - input.neutral) / SENSITIVITY;
+      d = Math.abs(d) < DEAD_ZONE ? 0 : (d - Math.sign(d) * DEAD_ZONE) / (1 - DEAD_ZONE);
+      target = clamp(d, -1, 1);
+    }
+    const manual = (input.right ? 1 : 0) - (input.left ? 1 : 0) + input.touch;
+    if (manual) target = clamp(manual, -1, 1);
+    input.steer += (target - input.steer) * Math.min(1, dt * 14);
+  }
+
+  const keyMap = { ArrowLeft: 'left', a: 'left', A: 'left', ArrowRight: 'right', d: 'right', D: 'right' };
+  window.addEventListener('keydown', (e) => {
+    if (keyMap[e.key]) { input[keyMap[e.key]] = true; e.preventDefault(); }
+    if (e.key === ' ' || e.key === 'Enter') {
+      if (['menu', 'over', 'paused'].includes(G.state)) { startOrResume(); e.preventDefault(); }
+    }
+    if (e.key === 'm' || e.key === 'M') setMuted(!muted);
+  });
+  window.addEventListener('keyup', (e) => { if (keyMap[e.key]) input[keyMap[e.key]] = false; });
+
+  function touchSteer(e) {
+    if (G.state !== 'play') return;
+    let dir = 0;
+    for (const t of e.touches) dir += t.clientX < W / 2 ? -1 : 1;
+    input.touch = clamp(dir, -1, 1);
+    e.preventDefault();
+  }
+  cvs.addEventListener('touchstart', touchSteer, { passive: false });
+  cvs.addEventListener('touchmove', touchSteer, { passive: false });
+  cvs.addEventListener('touchend', touchSteer, { passive: false });
+  cvs.addEventListener('touchcancel', () => { input.touch = 0; });
+
+  // ---------- Wake lock (keeps the screen on while playing) ----------
+  let wakeLock = null;
+  async function keepAwake() {
+    try { if ('wakeLock' in navigator && !wakeLock) { wakeLock = await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release', () => { wakeLock = null; }); } } catch (e) {}
+  }
+
+  // ---------- World (metres, y up) ----------
+  // The hills are a smooth sum of waves that get taller the further you go (capped so they stay climbable).
+  const GRAV = 9.8, WHEEL_R = 0.5, SUSP_K = 320, SUSP_C = 24, GRIP = 1.15;
+  const DRIVE = 9.5, BRAKE = 12, AIR_TILT = 4.5, INERTIA = 0.9;
+  const WHEELS = [[-1.2, -0.45], [1.2, -0.45]];                 // wheel centres relative to the body (x forward, y up)
+  const HEAD = [[-0.15, 1.15], [0.55, 0.98], [-1.25, 0.78]];   // driver's head and the roof: these must not touch the ground
+  const smooth = (t) => (t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t));
+  function hillH(x) {
+    const amp = (1.6 + Math.min(5.4, Math.max(0, x) / 140)) * smooth((x + 10) / 50);
+    return amp * (0.6 * Math.sin(x * 0.045 + 1) + 0.3 * Math.sin(x * 0.11 + 2) + 0.15 * Math.sin(x * 0.27 + 0.5)) + x * 0.015;
+  }
+  const slope = (x) => (hillH(x + 0.05) - hillH(x - 0.05)) / 0.1;
+
+  // Pickups along the hills: fuel cans (further apart as you go) and coin arcs
+  function pickupsUpTo(x) {
+    while (G.nextFuel < x) { G.items.push({ kind: 'fuel', x: G.nextFuel, taken: false }); G.nextFuel += 190 + G.fuelGap; G.fuelGap += 20; }
+    while (G.nextCoins < x) {
+      const n = 3;
+      for (let k = 0; k < n; k++) G.items.push({ kind: 'coin', x: G.nextCoins + k * 1.6, lift: 1.3 + Math.sin((k / (n - 1)) * Math.PI) * 0.7, taken: false });
+      G.nextCoins += 80 + Math.random() * 60;
+    }
+    while (G.nextSign < x) { G.signs.push(G.nextSign); G.nextSign += 100; }
+  }
+
+  // ---------- Game state ----------
+  const G = {
+    state: 'menu', t: 0, clock: 0, score: 0, coins: 0, best: +load('hillBest', 0) || 0,
+    lives: MAX_LIVES, inv: 0, countdown: 0, fuel: 100, dist: 0, emptyT: 0,
+    car: { x: 0, y: 3, vx: 0, vy: 0, a: 0, w: 0, wheelRot: 0, grounded: 0 }, throttle: 0,
+    items: [], signs: [], nextFuel: 150, fuelGap: 0, nextCoins: 30, nextSign: 100,
+    camX: 0, camY: 0, popups: [], shake: 0, flash: 0,
+  };
+  const PARTS = []; for (let i = 0; i < 60; i++) PARTS.push({ life: 0, x: 0, y: 0, vx: 0, vy: 0, c: '#fff' });
+
+  function placeCar(x) {
+    const c = G.car;
+    c.x = x; c.a = Math.atan(slope(x)); c.y = hillH(x) + 1.05; c.vx = 0; c.vy = 0; c.w = 0;
+    G.camX = c.x; G.camY = c.y;
+  }
+
+  function reset() {
+    G.t = 0; G.score = 0; G.coins = 0; G.lives = MAX_LIVES; G.inv = 0; G.fuel = 100; G.dist = 0; G.emptyT = 0;
+    G.items.length = 0; G.signs.length = 0; G.nextFuel = 150; G.fuelGap = 0; G.nextCoins = 30; G.nextSign = 100;
+    G.popups.length = 0; G.shake = 0; G.flash = 0;
+    for (const p of PARTS) p.life = 0;
+    placeCar(0);
+    input.steer = 0; input.touch = 0; input.neutral = input.tilt;
+  }
+
+  function popup(text, color, big) { G.popups.push({ x: 0.5, y: 0.4, text, color, life: big ? 1.4 : 1, big }); }
+
+  function burst(x, y, color, n) {
+    for (const p of PARTS) {
+      if (p.life > 0) continue;
+      const a = Math.random() * Math.PI, s = 2 + Math.random() * 5;
+      p.life = 0.5 + Math.random() * 0.5; p.x = x; p.y = y; p.vx = Math.cos(a) * s; p.vy = Math.sin(a) * s; p.c = color;
+      if (--n === 0) break;
+    }
+  }
+
+  function loseLife(msg) {
+    G.lives--; G.shake = 0.45; G.flash = 0.9;
+    if (navigator.vibrate) try { navigator.vibrate(G.lives > 0 ? 140 : [80, 40, 160]); } catch (e) {}
+    burst(G.car.x, G.car.y + 0.5, '#ffd319', 18);
+    if (G.lives > 0) {
+      beep(140, 0.4, 'sawtooth', 0.18, -80);
+      popup(msg, '#ff5a5a', true);
+      // Back on your wheels a little way behind, with some fuel, after a short countdown
+      placeCar(Math.max(0, G.car.x - 4));
+      G.fuel = Math.max(G.fuel, 60); G.emptyT = 0; G.inv = 1.5;
+      G.state = 'countdown'; G.countdown = 1.5;
+      return;
+    }
+    gameOver(msg);
+  }
+
+  function gameOver(msg) {
+    G.state = 'crashing'; G.shake = 0.5; G.flash = 1;
+    beep(120, 0.6, 'sawtooth', 0.2, -80);
+    popup(msg, '#ff5a5a', true);
+    const final = G.score;
+    const newBest = final > G.best;
+    if (newBest) { G.best = final; save('hillBest', final); }
+    setTimeout(() => {
+      G.state = 'over';
+      $('finalScore').textContent = final;
+      $('bestLine').textContent = (newBest ? 'New best score! ' : 'Best: ' + G.best + ' · ') + Math.floor(G.dist) + ' m';
+      show('over');
+    }, 1000);
+  }
+
+  // One physics step: gravity, a spring per wheel against the ground, engine/brake grip, air tilt.
+  function physics(h) {
+    const c = G.car, ca = Math.cos(c.a), sa = Math.sin(c.a);
+    let fx = 0, fy = -GRAV, tq = 0, grounded = 0;
+    const thr = G.fuel > 0 ? G.throttle : Math.min(0, G.throttle);
+    for (const [lx, ly] of WHEELS) {
+      const rx = lx * ca - ly * sa, ry = lx * sa + ly * ca;          // wheel centre relative to the body centre
+      const wx = c.x + rx, wy = c.y + ry;
+      const gy = hillH(wx), s = slope(wx), nl = Math.hypot(1, s), nx = -s / nl, ny = 1 / nl;
+      const dist = (wy - gy) * ny;                                     // distance from the ground along its normal
+      if (dist >= WHEEL_R) continue;
+      grounded++;
+      const pvx = c.vx - c.w * ry, pvy = c.vy + c.w * rx;            // velocity of the wheel centre
+      const vn = pvx * nx + pvy * ny;
+      const N = Math.max(0, SUSP_K * (WHEEL_R - dist) - SUSP_C * vn);
+      const tx = ny, ty = -nx;                                         // along the ground, pointing forwards
+      const vt = pvx * tx + pvy * ty;
+      let F;                                                           // drive / brake / rolling resistance along the ground
+      if (thr > 0) F = thr * DRIVE * 0.5;
+      else if (thr < 0) F = vt > 0.6 ? thr * BRAKE * 0.5 : thr * 3 * 0.5;
+      else F = -vt * 0.25;
+      F = clamp(F, -GRIP * N, GRIP * N);
+      const Fx = nx * N + tx * F, Fy = ny * N + ty * F;
+      const px = rx - nx * WHEEL_R, py = ry - ny * WHEEL_R;           // contact point, relative to the body centre
+      fx += Fx; fy += Fy; tq += px * Fy - py * Fx;
+    }
+    if (!grounded) tq += -G.throttle * AIR_TILT * INERTIA;            // lean forward = tip nose down, back = nose up
+    c.vx += fx * h; c.vy += fy * h; c.w += (tq / INERTIA) * h;
+    c.w *= 1 - 0.6 * h; c.vx *= 1 - 0.02 * h;
+    c.x += c.vx * h; c.y += c.vy * h; c.a += c.w * h;
+    c.grounded = grounded;
+  }
+
+  function update(dt) {
+    updateSteer(dt);
+    G.clock += dt;
+    if (G.shake > 0) G.shake = Math.max(0, G.shake - dt);
+    if (G.flash > 0) G.flash = Math.max(0, G.flash - dt * 2.5);
+    for (const p of G.popups) p.life -= dt;
+    let j = 0; for (const p of G.popups) if (p.life > 0) G.popups[j++] = p; G.popups.length = j;
+    for (const p of PARTS) if (p.life > 0) { p.life -= dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vy -= GRAV * dt; }
+
+    const c = G.car;
+    if (G.state === 'menu') {                                          // attract mode: the hills slide by
+      G.camX += 6 * dt; G.camY += (hillH(G.camX) + 1 - G.camY) * Math.min(1, dt * 2);
+      return;
+    }
+    if (G.state === 'countdown') {
+      const before = Math.ceil(G.countdown);
+      G.countdown -= dt;
+      if (G.countdown <= 0) { G.state = 'play'; beep(880, 0.25, 'triangle', 0.12); }
+      else if (Math.ceil(G.countdown) !== before) beep(440, 0.12, 'triangle', 0.1);
+      followCam(dt);
+      return;
+    }
+    if (G.state !== 'play') { followCam(dt); return; }
+
+    G.t += dt;
+    if (G.inv > 0) G.inv = Math.max(0, G.inv - dt);
+    G.throttle = input.steer;                                          // lean right = gas, lean left = brake / reverse
+    const STEPS = 8, h = dt / STEPS;
+    for (let k = 0; k < STEPS; k++) physics(h);
+    c.wheelRot -= (c.vx / WHEEL_R) * dt;
+
+    G.fuel = Math.max(0, G.fuel - dt * (0.35 + Math.max(0, G.throttle) * 3.2));
+    G.dist = Math.max(G.dist, c.x);
+    G.score = Math.floor(G.dist) + G.coins * 50;
+    pickupsUpTo(c.x + 60);
+
+    // Crash: the driver's head or the roof touches the ground
+    if (!G.inv) {
+      const ca = Math.cos(c.a), sa = Math.sin(c.a);
+      for (const [lx, ly] of HEAD) {
+        const px = c.x + lx * ca - ly * sa, py = c.y + lx * sa + ly * ca;
+        if (py < hillH(px) + 0.05) { loseLife('CRASHED!'); return; }
+      }
+    }
+    // Out of fuel: once the jeep has rolled to a stop
+    if (G.fuel <= 0 && Math.hypot(c.vx, c.vy) < 0.6) { if ((G.emptyT += dt) > 1.5) { loseLife('OUT OF FUEL!'); return; } }
+    else G.emptyT = 0;
+
+    for (const it of G.items) {
+      if (it.taken) continue;
+      const iy = hillH(it.x) + (it.kind === 'fuel' ? 0.7 : it.lift);
+      if (Math.abs(it.x - c.x) < 1.6 && Math.abs(iy - c.y) < 1.6) {
+        it.taken = true;
+        if (it.kind === 'fuel') { G.fuel = 100; popup('FUEL FULL!', '#2ec27e'); beep(523, 0.1, 'triangle', 0.1); setTimeout(() => beep(784, 0.18, 'triangle', 0.1), 100); }
+        else { G.coins++; beep(880, 0.08, 'square', 0.08); setTimeout(() => beep(1320, 0.12, 'square', 0.08), 70); }
+      }
+    }
+    j = 0; for (const it of G.items) if (!it.taken && it.x > c.x - 30) G.items[j++] = it; G.items.length = j;
+    j = 0; for (const s of G.signs) if (s > c.x - 40) G.signs[j++] = s; G.signs.length = j;
+    followCam(dt);
+  }
+
+  function followCam(dt) {
+    const c = G.car, look = clamp(c.vx * 0.35, -3, 6);
+    G.camX += (c.x + look - G.camX) * Math.min(1, dt * 3);
+    G.camY += (c.y - G.camY) * Math.min(1, dt * 3);
+  }
+
+  // ---------- Sprites (pre-rendered once per screen size) ----------
+  function hash(n) { const s = Math.sin(n * 127.1) * 43758.5453; return s - Math.floor(s); }
+  function rr(g, x, y, w, h, r) {
+    g.beginPath();
+    g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r);
+    g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath();
+  }
+  function makeSprite(w, h, paint) {
+    const d = Math.min(window.devicePixelRatio || 1, 2);
+    const c = document.createElement('canvas');
+    c.width = Math.max(1, Math.ceil(w * d)); c.height = Math.max(1, Math.ceil(h * d));
+    const g = c.getContext('2d'); g.scale(d, d); paint(g);
+    return { c, w, h };
+  }
+  let S = 30;                                                        // pixels per metre
+
+  function makeJeep() {
+    // Side view, body centre at the sprite's (ox, oy); 1 metre = S pixels
+    const w = 3.4 * S, h = 2.6 * S, ox = 1.7 * S, oy = 1.5 * S;
+    const s = makeSprite(w, h, (g) => {
+      const P = (x, y) => [ox + x * S, oy - y * S];
+      g.lineJoin = 'round';
+      // Roll bar and driver
+      g.strokeStyle = '#2b2b2b'; g.lineWidth = S * 0.12;
+      g.beginPath(); g.moveTo(...P(-0.85, 0.3)); g.lineTo(...P(-0.75, 0.95)); g.lineTo(...P(0.15, 0.95)); g.lineTo(...P(0.35, 0.3)); g.stroke();
+      g.fillStyle = '#3949ab'; g.beginPath(); g.moveTo(...P(-0.45, 0.3)); g.lineTo(...P(-0.4, 0.8)); g.lineTo(...P(0.05, 0.8)); g.lineTo(...P(0.1, 0.3)); g.closePath(); g.fill();
+      g.fillStyle = '#f1c27d'; g.beginPath(); g.arc(...P(-0.15, 1.08), S * 0.2, 0, 7); g.fill();          // head
+      g.fillStyle = '#e53935'; g.beginPath(); g.arc(...P(-0.15, 1.13), S * 0.21, Math.PI, 0); g.fill();    // helmet
+      g.fillStyle = '#ffffff'; g.fillRect(...P(-0.17, 1.12), S * 0.3, S * 0.05);
+      // Body
+      const body = g.createLinearGradient(0, oy - 0.5 * S, 0, oy + 0.3 * S);
+      body.addColorStop(0, '#ffb300'); body.addColorStop(1, '#e65100');
+      g.fillStyle = body;
+      g.beginPath(); g.moveTo(...P(-1.55, -0.2)); g.lineTo(...P(-1.55, 0.35)); g.lineTo(...P(0.3, 0.35)); g.lineTo(...P(0.75, 0.55));
+      g.lineTo(...P(1.5, 0.45)); g.lineTo(...P(1.6, 0.05)); g.lineTo(...P(1.55, -0.2)); g.closePath(); g.fill();
+      g.strokeStyle = 'rgba(0,0,0,0.35)'; g.lineWidth = 2; g.stroke();
+      g.fillStyle = '#1d2a38'; g.beginPath(); g.moveTo(...P(0.38, 0.38)); g.lineTo(...P(0.68, 0.52)); g.lineTo(...P(0.75, 0.38)); g.closePath(); g.fill();   // windscreen
+      g.fillStyle = '#fff6b0'; g.fillRect(...P(1.45, 0.3), S * 0.14, S * 0.14);                                // headlight
+      g.fillStyle = '#c62828'; g.fillRect(...P(-1.6, 0.25), S * 0.1, S * 0.14);                               // tail light
+      // Wheel arches
+      g.fillStyle = '#5d2c00';
+      for (const [wx] of WHEELS) { g.beginPath(); g.arc(...P(wx, -0.45), S * 0.62, Math.PI * 1.08, Math.PI * 1.92); g.fill(); }
+    });
+    s.ox = ox; s.oy = oy;
+    return s;
+  }
+
+  function makeWheelSprite() {
+    const r = WHEEL_R * S, s = r * 2.2;
+    return makeSprite(s, s, (g) => {
+      const c = s / 2;
+      g.fillStyle = '#1a1a1a'; g.beginPath(); g.arc(c, c, r, 0, 7); g.fill();
+      g.strokeStyle = '#333'; g.lineWidth = r * 0.12;
+      for (let k = 0; k < 12; k++) { const a = (k / 12) * Math.PI * 2; g.beginPath(); g.moveTo(c + Math.cos(a) * r * 0.82, c + Math.sin(a) * r * 0.82); g.lineTo(c + Math.cos(a) * r, c + Math.sin(a) * r); g.stroke(); }
+      g.fillStyle = '#b0bec5'; g.beginPath(); g.arc(c, c, r * 0.55, 0, 7); g.fill();
+      g.fillStyle = '#78909c';
+      for (let k = 0; k < 5; k++) { const a = (k / 5) * Math.PI * 2; g.beginPath(); g.arc(c + Math.cos(a) * r * 0.32, c + Math.sin(a) * r * 0.32, r * 0.09, 0, 7); g.fill(); }
+      g.fillStyle = '#455a64'; g.beginPath(); g.arc(c, c, r * 0.16, 0, 7); g.fill();
+    });
+  }
+
+  function makeFuel() {
+    const w = 0.9 * S, h = 1.05 * S;
+    return makeSprite(w, h, (g) => {
+      g.fillStyle = '#d32f2f'; rr(g, w * 0.08, h * 0.18, w * 0.84, h * 0.8, w * 0.12); g.fill();
+      g.fillStyle = '#b71c1c'; g.fillRect(w * 0.55, h * 0.02, w * 0.25, h * 0.2);
+      g.strokeStyle = '#ffcdd2'; g.lineWidth = w * 0.07; g.beginPath(); g.moveTo(w * 0.25, h * 0.35); g.lineTo(w * 0.75, h * 0.85); g.moveTo(w * 0.75, h * 0.35); g.lineTo(w * 0.25, h * 0.85); g.stroke();
+      g.fillStyle = '#fff'; g.font = `900 ${h * 0.22}px system-ui, sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('FUEL', w / 2, h * 0.6);
+    });
+  }
+
+  function makeCoin() {
+    const r = 0.35 * S, size = r * 2.6;
+    return makeSprite(size, size, (g) => {
+      const c = size / 2;
+      g.fillStyle = 'rgba(0,0,0,0.2)'; g.beginPath(); g.arc(c + 2, c + 2, r, 0, 7); g.fill();
+      const face = g.createLinearGradient(c - r, c - r, c + r, c + r);
+      face.addColorStop(0, '#fff3a0'); face.addColorStop(0.45, '#ffd319'); face.addColorStop(1, '#e07b00');
+      g.fillStyle = face; g.beginPath(); g.arc(c, c, r, 0, 7); g.fill();
+      g.strokeStyle = 'rgba(160,80,0,0.6)'; g.lineWidth = r * 0.12; g.beginPath(); g.arc(c, c, r * 0.72, 0, 7); g.stroke();
+      g.fillStyle = '#fff8cf'; g.font = `900 ${r * 1.05}px system-ui, sans-serif`;
+      g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('★', c, c + r * 0.04);
+    });
+  }
+
+  function makeSign() {
+    // Hilltop "ad space" billboard, so the branding stays visible during play
+    const w = 6 * S, h = 4.2 * S;
+    return makeSprite(w, h, (g) => {
+      g.fillStyle = '#5d4037'; g.fillRect(w * 0.22, h * 0.6, S * 0.22, h * 0.4); g.fillRect(w * 0.74, h * 0.6, S * 0.22, h * 0.4);
+      g.fillStyle = '#4a4458'; rr(g, 0, 0, w, h * 0.66, 8); g.fill();
+      const panel = g.createLinearGradient(0, 0, w, h * 0.66);
+      panel.addColorStop(0, '#ff2975'); panel.addColorStop(0.55, '#8c1eff'); panel.addColorStop(1, '#2b0a4e');
+      g.fillStyle = panel; rr(g, S * 0.15, S * 0.15, w - S * 0.3, h * 0.66 - S * 0.3, 4); g.fill();
+      g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.fillStyle = '#ffd319'; rr(g, w / 2 - S * 1.2, h * 0.08, S * 2.4, S * 0.5, 4); g.fill();
+      g.fillStyle = '#12062a'; g.font = `800 ${S * 0.32}px system-ui, sans-serif`; g.fillText('AD SPACE', w / 2, h * 0.08 + S * 0.25);
+      g.fillStyle = '#fff'; g.font = `900 ${S * 0.6}px Orbitron, system-ui, sans-serif`; g.fillText('YOUR BRAND HERE', w / 2, h * 0.33);
+      g.fillStyle = '#12062a'; rr(g, w / 2 - S * 1.6, h * 0.44, S * 3.2, S * 0.56, S * 0.28); g.fill();
+      g.fillStyle = '#6ff7ff'; g.font = `800 ${S * 0.34}px system-ui, sans-serif`; g.fillText('DM @seltos.gtx', w / 2, h * 0.44 + S * 0.28);
+    });
+  }
+
+  function makeSky() {
+    return makeSprite(W, H, (g) => {
+      const sky = g.createLinearGradient(0, 0, 0, H);
+      sky.addColorStop(0, '#4fc3f7'); sky.addColorStop(0.7, '#b3e5fc'); sky.addColorStop(1, '#fff3e0');
+      g.fillStyle = sky; g.fillRect(0, 0, W, H);
+      const sun = g.createRadialGradient(W * 0.8, H * 0.2, 0, W * 0.8, H * 0.2, H * 0.25);
+      sun.addColorStop(0, 'rgba(255,250,210,1)'); sun.addColorStop(0.25, 'rgba(255,240,170,0.9)'); sun.addColorStop(1, 'rgba(255,240,170,0)');
+      g.fillStyle = sun; g.beginPath(); g.arc(W * 0.8, H * 0.2, H * 0.25, 0, 7); g.fill();
+    });
+  }
+
+  function makeLayer(color, amp, base, seed, clouds) {
+    // A tileable strip: distant hills, or clouds
+    const tw = Math.max(W, 900), th = H;
+    return makeSprite(tw, th, (g) => {
+      if (clouds) {
+        for (let i = 0; i < 6; i++) {
+          const cx = (i + 0.5) * (tw / 6) + (hash(i * 3.3) - 0.5) * 60, cy = th * (0.12 + hash(i * 5.1) * 0.2), r = th * (0.04 + hash(i) * 0.03);
+          g.fillStyle = 'rgba(255,255,255,0.85)';
+          for (const [dx, dy, k] of [[0, 0, 1], [r * 1.1, r * 0.2, 0.8], [-r * 1.1, r * 0.25, 0.75], [r * 0.4, -r * 0.5, 0.8]]) { g.beginPath(); g.arc(cx + dx, cy + dy, r * k, 0, 7); g.fill(); }
+        }
+        return;
+      }
+      g.fillStyle = color; g.beginPath(); g.moveTo(0, th);
+      for (let i = 0; i <= 60; i++) { const x = (i / 60) * tw; g.lineTo(x, th * base - th * amp * (0.5 + 0.5 * Math.sin((i / 60) * Math.PI * 2 * 3 + seed) * Math.cos((i / 60) * Math.PI * 2 * 2 + seed * 2))); }
+      g.lineTo(tw, th); g.closePath(); g.fill();
+    });
+  }
+
+  const SPR = { key: '' };
+  function ensureSprites() {
+    const key = `${W}x${H}@${window.devicePixelRatio}`;
+    if (SPR.key === key && SPR.sign) return;
+    if (SPR.key !== key) {
+      SPR.key = key; S = H / 15;
+      SPR.jeep = makeJeep(); SPR.wheel = makeWheelSprite(); SPR.fuel = makeFuel(); SPR.coin = makeCoin();
+      SPR.sky = makeSky(); SPR.clouds = makeLayer(0, 0, 0, 0, true); SPR.far = makeLayer('#9ccc9c', 0.22, 0.72, 1); SPR.near = makeLayer('#7cb87c', 0.18, 0.84, 4);
+      SPR.dirt = ctx.createLinearGradient(0, H * 0.4, 0, H); SPR.dirt.addColorStop(0, '#8d6e63'); SPR.dirt.addColorStop(1, '#4e342e');
+      SPR.sign = null;
+    }
+    // The billboard uses the title font; wait (briefly) for it to load before painting it
+    if (!SPR.sign && (!document.fonts || document.fonts.check('900 20px Orbitron') || G.clock > 3)) SPR.sign = makeSign();
+  }
+
+  // ---------- Drawing ----------
+  const CAR_SX = 0.32;                                               // the jeep sits about a third of the way across
+  const SX = (x) => (x - G.camX) * S + W * CAR_SX, SY = (y) => H * 0.6 - (y - G.camY) * S;
+
+  function heartPath(r) {
+    ctx.beginPath();
+    ctx.moveTo(0, r * 0.9);
+    ctx.bezierCurveTo(-r * 1.4, -r * 0.1, -r * 0.6, -r * 1.2, 0, -r * 0.45);
+    ctx.bezierCurveTo(r * 0.6, -r * 1.2, r * 1.4, -r * 0.1, 0, r * 0.9);
+    ctx.closePath();
+  }
+  function roundRect(x, y, w, h, r) { rr(ctx, x, y, w, h, r); }
+  function drawLayer(L, factor, dy) {
+    const off = ((G.camX * S * factor) % L.w + L.w) % L.w;
+    ctx.drawImage(L.c, -off, dy, L.w, L.h);
+    if (L.w - off < W) ctx.drawImage(L.c, L.w - off, dy, L.w, L.h);
+  }
+
+  function drawWorld() {
+    ensureSprites();
+    ctx.drawImage(SPR.sky.c, 0, 0, W, H);
+    drawLayer(SPR.clouds, 0.05, 0);
+    const par = clamp((G.camY - hillH(G.camX)) * S * 0.1, -H * 0.05, H * 0.05);
+    drawLayer(SPR.far, 0.15, par * 0.5);
+    drawLayer(SPR.near, 0.3, par);
+
+    // Billboards every 500 m and distance posts every 100 m stand behind the road
+    const x0 = G.camX - (W * CAR_SX) / S - 4, x1 = G.camX + (W * (1 - CAR_SX)) / S + 4;
+    if (SPR.sign) for (let bx = Math.ceil(x0 / 500) * 500 + 250; bx < x1 + 6; bx += 500) {
+      const B = SPR.sign; ctx.drawImage(B.c, SX(bx) - B.w / 2, SY(hillH(bx)) - B.h + S * 0.3, B.w, B.h);
+    }
+    ctx.font = `800 ${Math.round(S * 0.45)}px system-ui, sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    for (const s of G.signs) {
+      if (s < x0 || s > x1) continue;
+      const x = SX(s), y = SY(hillH(s));
+      ctx.fillStyle = '#5d4037'; ctx.fillRect(x - S * 0.06, y - S * 1.6, S * 0.12, S * 1.6);
+      ctx.fillStyle = '#fff'; roundRect(x - S * 0.75, y - S * 2.2, S * 1.5, S * 0.7, 5); ctx.fill();
+      ctx.fillStyle = '#e65100'; ctx.fillText(s + ' m', x, y - S * 1.85);
+    }
+
+    // The ground: dirt with a thick grass edge
+    ctx.beginPath(); ctx.moveTo(0, H);
+    const stepPx = 6;
+    for (let px = 0; px <= W + stepPx; px += stepPx) ctx.lineTo(px, SY(hillH(G.camX + (px - W * CAR_SX) / S)));
+    ctx.lineTo(W + stepPx, H); ctx.closePath();
+    ctx.fillStyle = SPR.dirt; ctx.fill();
+    ctx.beginPath();
+    for (let px = 0; px <= W + stepPx; px += stepPx) { const y = SY(hillH(G.camX + (px - W * CAR_SX) / S)); if (px) ctx.lineTo(px, y); else ctx.moveTo(px, y); }
+    ctx.strokeStyle = '#4caf50'; ctx.lineWidth = S * 0.35; ctx.lineJoin = 'round'; ctx.stroke();
+    ctx.strokeStyle = '#81c784'; ctx.lineWidth = S * 0.08; ctx.stroke();
+
+    // Pickups
+    for (const it of G.items) {
+      if (it.taken || it.x < x0 || it.x > x1) continue;
+      if (it.kind === 'fuel') { const F = SPR.fuel, bob = Math.sin(G.clock * 3 + it.x) * S * 0.08; ctx.drawImage(F.c, SX(it.x) - F.w / 2, SY(hillH(it.x) + 0.2) - F.h + bob, F.w, F.h); }
+      else { const C = SPR.coin, k = Math.abs(Math.cos(G.clock * 4 + it.x)) * 0.7 + 0.3; ctx.drawImage(C.c, SX(it.x) - (C.w * k) / 2, SY(hillH(it.x) + it.lift) - C.h / 2, C.w * k, C.h); }
+    }
+
+    for (const p of PARTS) {
+      if (p.life <= 0) continue;
+      ctx.globalAlpha = Math.min(1, p.life * 2); ctx.fillStyle = p.c;
+      ctx.fillRect(SX(p.x) - 3, SY(p.y) - 3, 6, 6);
+    }
+    ctx.globalAlpha = 1;
+
+    // The jeep: wheels (spinning), then the body, tilted with the hill
+    if (G.state !== 'menu' && !(G.inv > 0 && Math.floor(G.inv * 10) % 2)) {
+      const c = G.car, Wh = SPR.wheel, J = SPR.jeep, ca = Math.cos(c.a), sa = Math.sin(c.a);
+      for (const [lx, ly] of WHEELS) {
+        const wx = c.x + lx * ca - ly * sa, wy = c.y + lx * sa + ly * ca;
+        ctx.save(); ctx.translate(SX(wx), SY(wy)); ctx.rotate(-c.wheelRot);
+        ctx.drawImage(Wh.c, -Wh.w / 2, -Wh.h / 2, Wh.w, Wh.h); ctx.restore();
+      }
+      ctx.save(); ctx.translate(SX(c.x), SY(c.y)); ctx.rotate(-c.a);
+      ctx.drawImage(J.c, -J.ox, -J.oy, J.w, J.h);
+      ctx.restore();
+    }
+  }
+
+  function drawLean(cx, cy, r) {
+    // Shows which way you're leaning: right = gas, left = brake
+    ctx.save(); ctx.translate(cx, cy);
+    ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.beginPath(); ctx.arc(0, 0, r * 1.25, 0, 7); ctx.fill();
+    ctx.rotate(input.steer * 0.6);
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = r * 0.16; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(-r * 0.85, 0); ctx.lineTo(r * 0.85, 0); ctx.stroke();
+    ctx.restore();
+    ctx.font = `800 ${Math.round(r * 0.34)}px system-ui, sans-serif`; ctx.textBaseline = 'middle';
+    ctx.textAlign = 'left'; ctx.fillStyle = G.throttle > 0.1 ? '#2ec27e' : 'rgba(255,255,255,0.75)'; ctx.fillText('GAS', cx + r * 0.12, cy + r * 0.6);
+    ctx.textAlign = 'right'; ctx.fillStyle = G.throttle < -0.1 ? '#ff5a5a' : 'rgba(255,255,255,0.75)'; ctx.fillText('BRAKE', cx - r * 0.12, cy + r * 0.6);
+    ctx.textAlign = 'left';
+  }
+
+  function drawHUD() {
+    const pad = Math.max(12, H * 0.03);
+    const fs = Math.max(14, Math.round(H * 0.05));
+    ctx.textBaseline = 'top';
+    // Score panel sits top right; the top-left corner is left empty on purpose.
+    const pw = fs * 6.4, x0 = W - pad - pw + 8;
+    ctx.fillStyle = 'rgba(20,24,30,0.65)'; roundRect(x0 - 8, pad - 6, pw, fs * 4.25, 12); ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.5)'; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.font = `800 ${fs}px system-ui, sans-serif`;
+    ctx.fillStyle = '#fff'; ctx.textAlign = 'left';
+    ctx.fillText(`${Math.floor(G.dist)} m`, x0, pad);
+    ctx.textAlign = 'right'; ctx.font = `700 ${Math.round(fs * 0.62)}px system-ui, sans-serif`; ctx.fillStyle = '#ffd319';
+    ctx.fillText(`★ ${G.coins}`, x0 - 16 + pw, pad + fs * 0.25);
+    // Fuel gauge
+    const gx = x0, gy = pad + fs * 1.25, gw = pw - 24, gh = fs * 0.45, f = G.fuel / 100;
+    ctx.fillStyle = 'rgba(255,255,255,0.18)'; roundRect(gx, gy, gw, gh, gh / 2); ctx.fill();
+    ctx.fillStyle = f > 0.3 ? '#2ec27e' : f > 0.15 ? '#ffb300' : (Math.floor(G.clock * 4) % 2 ? '#ff3b3b' : '#7a1c1c');
+    if (f > 0) { roundRect(gx, gy, Math.max(gh, gw * f), gh, gh / 2); ctx.fill(); }
+    ctx.fillStyle = '#fff'; ctx.textAlign = 'left'; ctx.font = `800 ${Math.round(gh * 0.8)}px system-ui, sans-serif`; ctx.fillText('FUEL', gx + 6, gy + gh * 0.12);
+    const hr = fs * 0.34;
+    for (let i = 0; i < MAX_LIVES; i++) {
+      ctx.save(); ctx.translate(x0 + hr + i * hr * 2.7, pad + fs * 2.4 + hr);
+      ctx.fillStyle = i < G.lives ? '#ff3b5c' : 'rgba(255,255,255,0.25)'; heartPath(hr); ctx.fill();
+      ctx.restore();
+    }
+    const mode = input.source === 'none' ? (isTouch ? 'touch' : 'keys') : 'tilt';
+    ctx.font = `700 ${Math.round(fs * 0.58)}px system-ui, sans-serif`;
+    ctx.fillStyle = '#ffd319'; ctx.fillText('BEST ' + G.best, x0, pad + fs * 3.3);
+    ctx.textAlign = 'right'; ctx.fillStyle = 'rgba(255,255,255,0.6)';
+    ctx.fillText(mode, x0 - 16 + pw, pad + fs * 3.3);
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'bottom'; ctx.fillStyle = 'rgba(0,0,0,0.45)';
+    ctx.font = `700 ${Math.round(fs * 0.55)}px system-ui, sans-serif`;
+    ctx.fillText('@seltos.gtx', pad, H - pad * 0.5);
+
+    const lr = Math.max(20, H * 0.065);
+    drawLean(W - pad - lr * 1.4, H - pad - 72 - lr * 1.4, lr);
+  }
+
+  function draw() {
+    ctx.save();
+    if (G.shake > 0) { const m = G.shake * H * 0.03; ctx.translate((Math.random() - 0.5) * m, (Math.random() - 0.5) * m); }
+    drawWorld();
+    ctx.restore();
+    if (G.flash > 0) { ctx.fillStyle = `rgba(255,80,60,${G.flash * 0.35})`; ctx.fillRect(0, 0, W, H); }
+
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    for (const p of G.popups) {
+      ctx.globalAlpha = Math.min(1, p.life * 2);
+      ctx.font = `900 ${Math.round(H * (p.big ? 0.08 : 0.06))}px system-ui, sans-serif`;
+      ctx.lineWidth = 5; ctx.strokeStyle = 'rgba(0,0,0,0.6)';
+      ctx.strokeText(p.text, p.x * W, p.y * H);
+      ctx.fillStyle = p.color; ctx.fillText(p.text, p.x * W, p.y * H);
+    }
+    ctx.globalAlpha = 1;
+
+    if (G.state === 'countdown') {
+      const n = Math.ceil(G.countdown), f = G.countdown - Math.floor(G.countdown);
+      ctx.save(); ctx.translate(W / 2, H * 0.32); ctx.scale(1 + f * 0.4, 1 + f * 0.4);
+      ctx.font = `900 ${Math.round(H * 0.2)}px Orbitron, system-ui, sans-serif`;
+      ctx.lineWidth = 8; ctx.strokeStyle = 'rgba(0,0,0,0.6)'; ctx.strokeText(String(n), 0, 0);
+      ctx.fillStyle = '#ffd319'; ctx.fillText(String(n), 0, 0);
+      ctx.restore();
+      ctx.font = `800 ${Math.round(H * 0.048)}px system-ui, sans-serif`;
+      ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(0,0,0,0.6)';
+      const tip = 'Hold steady · lean right = gas, left = brake';
+      ctx.strokeText(tip, W / 2, H * 0.48); ctx.fillStyle = '#fff'; ctx.fillText(tip, W / 2, H * 0.48);
+    }
+
+    if (G.state !== 'menu') drawHUD();
+  }
+
+  placeCar(0);
+
+  // ---------- Loop ----------
+  let last = performance.now();
+  function frame(now) {
+    const dt = Math.min(0.05, Math.max(0, (now - last) / 1000));   // the first frame's timestamp can be slightly in the past
+    last = now;
+    const portraitPhone = isTouch && H > W;
+    if (!portraitPhone) update(dt);
+    draw();
+    requestAnimationFrame(frame);
+  }
+
+  // ---------- UI flow ----------
+  function show(id) {
+    for (const o of ['menu', 'over', 'paused']) $(o).classList.toggle('hidden', o !== id);
+    document.body.classList.toggle('playing', !id);   // settings buttons hide while playing
+  }
+
+  function startOrResume() {
+    const permission = requestSensorPermission();   // must be first, inside the gesture
+    initAudio();
+    keepAwake();
+    attachSensors();
+    permission.then((res) => {
+      if (res !== 'granted') {
+        const m = $('menuMsg');
+        m.textContent = 'Motion access was denied, so touch controls are on. To use tilt, reload the page and tap Allow.';
+        m.classList.remove('hidden');
+      }
+    });
+    const wasPaused = G.state === 'paused';
+    if (!wasPaused) reset();
+    G.state = 'countdown';
+    G.countdown = wasPaused ? 1.5 : COUNTDOWN;
+    show(null);
+    beep(440, 0.12, 'triangle', 0.1);
+  }
+
+  $('startBtn').addEventListener('click', startOrResume);
+  $('againBtn').addEventListener('click', startOrResume);
+  $('resumeBtn').addEventListener('click', startOrResume);
+
+  // Pause button (and P / Esc): the pause screen has Resume and All games.
+  function pauseGame() {
+    if (G.state !== 'play' && G.state !== 'countdown') return;
+    G.state = 'paused';
+    show('paused');
+  }
+  $('pauseBtn').addEventListener('click', (e) => { e.stopPropagation(); pauseGame(); });
+  window.addEventListener('keydown', (e) => { if (e.key === 'p' || e.key === 'P' || e.key === 'Escape') pauseGame(); });
+  $('soundBtn').textContent = muted ? '🔇 Muted' : '🔊 Sound on';
+  $('soundBtn').addEventListener('click', (e) => { e.stopPropagation(); setMuted(!muted); });
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      if (G.state === 'play' || G.state === 'countdown') { G.state = 'paused'; show('paused'); }
+    } else {
+      keepAwake();
+    }
+  });
+
+  requestAnimationFrame(frame);
+
+  // Hook for automated tests.
+  window.__hillClimb = { G, input };
+})();
+</script>
+</body>
+</html>

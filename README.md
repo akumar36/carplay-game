@@ -16,6 +16,9 @@ The home page lists every game; tap one to play it.
 | Star Strike | https://carplay-game.seltosgtx.workers.dev/star-strike/ |
 | Light Trail | https://carplay-game.seltosgtx.workers.dev/light-trail/ |
 | Midnight Run | https://carplay-game.seltosgtx.workers.dev/midnight-run/ |
+| Pothole Panic | https://carplay-game.seltosgtx.workers.dev/pothole-panic/ |
+| Park It! | https://carplay-game.seltosgtx.workers.dev/park-it/ |
+| Hill Climb | https://carplay-game.seltosgtx.workers.dev/hill-climb/ |
 | Lane Rush Classic (the original, no music) | https://carplay-game.seltosgtx.workers.dev/lane-rush-classic/ |
 
 ## Safety
@@ -64,6 +67,9 @@ The site goes live at `https://akumar36.github.io/carplay-game/` within a minute
 - `star-strike/index.html`: Star Strike, a space shooter: tilt to move the ship, which fires by itself (← → / A D or touch left/right as fallback, M mutes)
 - `light-trail/index.html`: Light Trail: turn the phone like a wheel to steer; eat orbs to grow, avoid walls and your own trail (← → / A D or touch left/right as fallback, M mutes)
 - `midnight-run/index.html`: Midnight Run, a first-person pseudo-3D driving game: turn the phone to steer, the car accelerates by itself; overtake traffic and stay on the road (← → / A D or touch left/right as fallback, M mutes)
+- `pothole-panic/index.html`: Pothole Panic: tilt to dodge potholes, cows, autos, trucks and wrong-side scooters; speed breakers and near-miss bonuses
+- `park-it/index.html`: Park It!: tilt to steer, hold D / R (or ↑ ↓) to drive and reverse; 8 parking levels with stars and parking sensors
+- `hill-climb/index.html`: Hill Climb: side-view jeep physics; lean right for gas, left to brake, and lean in the air to tip the jeep; watch the fuel
 - `lane-rush-classic/index.html`: Lane Rush Classic, the original single-theme racer with simple beeps
 - `fonts/`: Orbitron (title font, latin subset, SIL Open Font License, see `fonts/OFL.txt`)
 - `manifest.webmanifest`, `icon*`: home-screen / PWA metadata, shared by all games
