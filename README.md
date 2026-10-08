@@ -10,13 +10,13 @@ The home page lists every game; tap one to play it.
 
 | Game | Link |
 |---|---|
-| Lane Rush | https://carplay-game.seltosgtx.workers.dev/racer/ |
-| Sky Dash | https://carplay-game.seltosgtx.workers.dev/jet/ |
-| Brick Smash | https://carplay-game.seltosgtx.workers.dev/bricks/ |
-| Star Strike | https://carplay-game.seltosgtx.workers.dev/blaster/ |
-| Light Trail | https://carplay-game.seltosgtx.workers.dev/snake/ |
-| Midnight Run | https://carplay-game.seltosgtx.workers.dev/drive/ |
-| Lane Rush Classic (the original, no music) | https://carplay-game.seltosgtx.workers.dev/racer-lite/ |
+| Lane Rush | https://carplay-game.seltosgtx.workers.dev/lane-rush/ |
+| Sky Dash | https://carplay-game.seltosgtx.workers.dev/sky-dash/ |
+| Brick Smash | https://carplay-game.seltosgtx.workers.dev/brick-smash/ |
+| Star Strike | https://carplay-game.seltosgtx.workers.dev/star-strike/ |
+| Light Trail | https://carplay-game.seltosgtx.workers.dev/light-trail/ |
+| Midnight Run | https://carplay-game.seltosgtx.workers.dev/midnight-run/ |
+| Lane Rush Classic (the original, no music) | https://carplay-game.seltosgtx.workers.dev/lane-rush-classic/ |
 
 ## Lane Rush: how to play
 
@@ -52,13 +52,13 @@ The site goes live at `https://akumar36.github.io/carplay-game/` within a minute
 ## Files
 
 - `index.html`: the home page. The game list is the `GAMES` array near the bottom.
-- `racer/index.html`: Lane Rush (canvas rendering, sensor input, music and sound, Neon/Classic themes, UI)
-- `jet/index.html`: Sky Dash, a side-scroller: tilt to climb and dive through gaps between neon towers (↑ ↓ / W S or touch top/bottom as fallback, M mutes)
-- `bricks/index.html`: Brick Smash, a brick breaker: tilt to slide the paddle (← → / A D or touch left/right as fallback, M mutes)
-- `blaster/index.html`: Star Strike, a space shooter: tilt to move the ship, which fires by itself (← → / A D or touch left/right as fallback, M mutes)
-- `snake/index.html`: Light Trail: turn the phone like a wheel to steer; eat orbs to grow, avoid walls and your own trail (← → / A D or touch left/right as fallback, M mutes)
-- `drive/index.html`: Midnight Run, a first-person pseudo-3D driving game: turn the phone to steer, the car accelerates by itself; overtake traffic and stay on the road (← → / A D or touch left/right as fallback, M mutes)
-- `racer-lite/index.html`: Lane Rush Classic, the original single-theme racer with simple beeps
+- `lane-rush/index.html`: Lane Rush (canvas rendering, sensor input, music and sound, Neon/Classic themes, UI)
+- `sky-dash/index.html`: Sky Dash, a side-scroller: tilt to climb and dive through gaps between neon towers (↑ ↓ / W S or touch top/bottom as fallback, M mutes)
+- `brick-smash/index.html`: Brick Smash, a brick breaker: tilt to slide the paddle (← → / A D or touch left/right as fallback, M mutes)
+- `star-strike/index.html`: Star Strike, a space shooter: tilt to move the ship, which fires by itself (← → / A D or touch left/right as fallback, M mutes)
+- `light-trail/index.html`: Light Trail: turn the phone like a wheel to steer; eat orbs to grow, avoid walls and your own trail (← → / A D or touch left/right as fallback, M mutes)
+- `midnight-run/index.html`: Midnight Run, a first-person pseudo-3D driving game: turn the phone to steer, the car accelerates by itself; overtake traffic and stay on the road (← → / A D or touch left/right as fallback, M mutes)
+- `lane-rush-classic/index.html`: Lane Rush Classic, the original single-theme racer with simple beeps
 - `fonts/`: Orbitron (title font, latin subset, SIL Open Font License, see `fonts/OFL.txt`)
 - `manifest.webmanifest`, `icon*`: home-screen / PWA metadata, shared by all games
 
