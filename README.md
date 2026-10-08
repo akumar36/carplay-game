@@ -23,7 +23,7 @@ The home page lists every game; tap one to play it.
 
 ## Safety
 
-**Play safe:** never play while driving, cycling or walking in traffic. In a vehicle, only passengers should play. If a car's screen can show these games (for example through Apple CarPlay or Android Auto), only use it while the car is safely parked. Follow your local laws. Every game shows a "Never play while driving" reminder on its start menu, and the home page shows the full note.
+**Play safe:** never play while driving, cycling or walking in traffic. In a vehicle, only passengers should play. If a car's screen can show these games (for example through Apple CarPlay or Android Auto), only use it while the car is safely parked. Follow your local laws. Every game shows a short "Play safe: stay aware of your surroundings" reminder on its start menu and game-over screens, and the home page shows the full note.
 
 Apple CarPlay is a trademark of Apple Inc. Android Auto is a trademark of Google LLC. Tilt Arcade is not affiliated with or endorsed by Apple or Google.
 
