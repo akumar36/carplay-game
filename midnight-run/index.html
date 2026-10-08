@@ -903,12 +903,12 @@
     // Left windscreen pillar (the right one is drawn mirrored)
     const pw = Math.max(26, W * 0.06);
     return makeSprite(pw, H, (g) => {
-      g.beginPath(); g.moveTo(0, 0); g.lineTo(pw * 0.55, 0); g.lineTo(pw, H * 0.8); g.lineTo(0, H * 0.8); g.closePath();
+      g.beginPath(); g.moveTo(0, 0); g.lineTo(pw * 0.55, 0); g.lineTo(pw, H); g.lineTo(0, H); g.closePath();   // down to the bottom, so it meets the dashboard
       const body = g.createLinearGradient(0, 0, pw, 0);
       body.addColorStop(0, '#120e18'); body.addColorStop(0.7, '#2c2638'); body.addColorStop(1, '#4a4460');
       g.fillStyle = body; g.fill();
       g.strokeStyle = 'rgba(185,178,214,0.7)'; g.lineWidth = 1.5;
-      g.beginPath(); g.moveTo(pw * 0.55, 0); g.lineTo(pw, H * 0.8); g.stroke();
+      g.beginPath(); g.moveTo(pw * 0.55, 0); g.lineTo(pw, H); g.stroke();
     });
   }
 
