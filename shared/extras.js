@@ -46,6 +46,19 @@
     @keyframes tiltRock { 0%, 100% { transform: rotate(-22deg); } 50% { transform: rotate(22deg); } }
     @media (prefers-reduced-motion: reduce) { #tiltHint .phone { animation: none; } }
     html[data-mode="light"] #tiltHint { color: #1b1f33; background: rgba(255, 255, 255, 0.92); border-color: rgba(27, 31, 51, 0.2); }
+    /* "Hold it like this": phone held sideways in two hands, shown during every 3-2-1 countdown */
+    #holdGuide {
+      position: fixed; z-index: 17; left: 50%; top: max(8px, env(safe-area-inset-top)); transform: translateX(-50%);
+      display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 18px 6px; border-radius: 22px;
+      background: rgba(18, 6, 42, 0.72); border: 1px solid rgba(255, 255, 255, 0.22);
+      pointer-events: none; opacity: 0; transition: opacity 0.15s;
+    }
+    #holdGuide.on { opacity: 1; }
+    #holdGuide svg { width: min(30vh, 210px); height: auto; display: block; }
+    @media (max-height: 460px) { #holdGuide { padding: 4px 10px; border-radius: 16px; } #holdGuide svg { width: 25vh; } #holdGuide span { display: none; } }
+    #holdGuide span { font: 800 13px system-ui, -apple-system, sans-serif; color: #fff; letter-spacing: 0.3px; }
+    html[data-mode="light"] #holdGuide { background: rgba(255, 255, 255, 0.9); border-color: rgba(27, 31, 51, 0.18); }
+    html[data-mode="light"] #holdGuide span { color: #1b1f33; }
   `;
   document.head.appendChild(css);
 
@@ -189,19 +202,48 @@
         <circle cx="23" cy="23" r="3" fill="none" stroke="#6ff7ff" stroke-width="1.6"/></g></svg>
       <span>${hintText()}</span>`;
     document.body.appendChild(hint);
-    let hideT = 0, shown = seen;
-    const body = document.body;
-    const mo = new MutationObserver(() => {
-      const playing = body.classList.contains('playing');
-      if (playing && !hint.classList.contains('on') && shown < SHOW_TIMES && !hideT) {
+    let hideT = 0, shown = seen, prev = '';
+    window.__tiltHintTick = (state) => {        // called by the countdown watcher below
+      if (prev === 'countdown' && state === 'play' && shown < SHOW_TIMES) {
         shown++;
         try { localStorage.setItem(KEY, String(shown)); } catch (e) {}
-        hint.classList.add('on');
-        hideT = setTimeout(() => { hint.classList.remove('on'); hideT = 0; if (shown >= SHOW_TIMES) mo.disconnect(); }, 4200);
-      } else if (!playing && hint.classList.contains('on')) {
-        hint.classList.remove('on'); clearTimeout(hideT); hideT = 0;
-      }
-    });
-    mo.observe(body, { attributes: true, attributeFilter: ['class'] });
+        hint.classList.add('on'); clearTimeout(hideT);
+        hideT = setTimeout(() => hint.classList.remove('on'), 3500);
+      } else if (state !== 'play' && hint.classList.contains('on')) { hint.classList.remove('on'); clearTimeout(hideT); }
+      prev = state;
+    };
   }
+  // ---------- 3. "Hold it like this" during the countdown ----------
+  // Every game exposes its state as window.__<name> = { G, ... }; show the guide while G.state is 'countdown'.
+  const guide = document.createElement('div');
+  guide.id = 'holdGuide';
+  guide.setAttribute('aria-hidden', 'true');
+  guide.innerHTML = `<svg viewBox="0 0 240 132">
+      <defs>
+        <linearGradient id="hgScreen" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3fa9f5"/><stop offset=".55" stop-color="#9fd8ff"/><stop offset=".56" stop-color="#4aae45"/><stop offset="1" stop-color="#3f9e3a"/></linearGradient>
+        <linearGradient id="hgSkin" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f6cfa0"/><stop offset="1" stop-color="#d9a273"/></linearGradient>
+      </defs>
+      <!-- palms and fingers behind the phone -->
+      <path d="M8 132 L14 92 Q12 60 30 50 Q46 44 56 52 L58 108 Q52 124 40 132 Z" fill="url(#hgSkin)" stroke="#b97a4e" stroke-width="2"/>
+      <path d="M232 132 L226 92 Q228 60 210 50 Q194 44 184 52 L182 108 Q188 124 200 132 Z" fill="url(#hgSkin)" stroke="#b97a4e" stroke-width="2"/>
+      <!-- iPhone, landscape -->
+      <rect x="40" y="28" width="160" height="80" rx="17" fill="#18181c" stroke="#9aa0ab" stroke-width="3"/>
+      <rect x="48" y="35" width="144" height="66" rx="11" fill="url(#hgScreen)"/>
+      <path d="M112 71 L128 71 L150 101 L90 101 Z" fill="#5a5d63"/><path d="M119 75h2v6h-2zM119 86h2v8h-2z" fill="#fff"/>
+      <rect x="111" y="86" width="9" height="12" rx="2.5" fill="#e53935"/>
+      <rect x="52" y="56" width="7" height="24" rx="3.5" fill="#000"/>
+      <!-- level line: hold it steady -->
+      <path d="M70 46H170" stroke="#fff" stroke-width="2.5" stroke-dasharray="6 5" stroke-linecap="round" opacity=".85"/>
+      <!-- thumbs on the front edges -->
+      <path d="M40 40 Q56 34 66 44 Q70 52 60 56 Q48 58 40 54 Z" fill="url(#hgSkin)" stroke="#b97a4e" stroke-width="2"/>
+      <path d="M200 40 Q184 34 174 44 Q170 52 180 56 Q192 58 200 54 Z" fill="url(#hgSkin)" stroke="#b97a4e" stroke-width="2"/>
+    </svg><span>Hold it sideways, like this</span>`;
+  document.body.appendChild(guide);
+  let hook = null;
+  setInterval(() => {
+    if (!hook) for (const k of Object.keys(window)) if (k.startsWith('__') && window[k] && window[k].G) { hook = window[k]; break; }
+    const state = hook ? hook.G.state : '', on = state === 'countdown';
+    if (window.__tiltHintTick) window.__tiltHintTick(state);
+    if (on !== guide.classList.contains('on')) guide.classList.toggle('on', on);
+  }, 100);
 })();
