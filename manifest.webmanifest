@@ -1,6 +1,6 @@
 {
-  "name": "CarPlay Games",
-  "short_name": "CarPlay Games",
+  "name": "Tilt Arcade",
+  "short_name": "Tilt Arcade",
   "start_url": "./",
   "scope": "./",
   "display": "fullscreen",

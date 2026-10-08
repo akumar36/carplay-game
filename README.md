@@ -1,4 +1,4 @@
-# CarPlay Games
+# Tilt Arcade
 
 by [@seltos.gtx](https://www.instagram.com/seltos.gtx/) on Instagram
 
@@ -23,9 +23,9 @@ The home page lists every game; tap one to play it.
 
 ## Safety
 
-**Never play while driving.** Some apps can show web pages on a car's screen (for example Apple CarPlay). If you play these games on a car screen, only do it while the car is safely parked, and follow your local laws. Every game shows an "Only play when parked" reminder on its menu and game-over screens, and the home page shows a safety note.
+If you're playing inside a car, the games are for **passengers only, never the driver**. The car's own screen (Apple CarPlay, Android Auto) is in the driver's view, so only play on it while the car is safely parked. Keep the sound low so the driver can focus, and follow your local laws. Every game shows an "In a car? Passengers only, never the driver" reminder on its menu and game-over screens, and the home page shows the full safety note.
 
-CarPlay is a trademark of Apple Inc. CarPlay Games is not affiliated with or endorsed by Apple.
+Apple CarPlay is a trademark of Apple Inc. Android Auto is a trademark of Google LLC. Tilt Arcade is not affiliated with or endorsed by Apple or Google.
 
 ## Lane Rush: how to play
 
