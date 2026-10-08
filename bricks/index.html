@@ -965,7 +965,7 @@
   // ---------- Loop ----------
   let last = performance.now();
   function frame(now) {
-    const dt = Math.min(0.05, (now - last) / 1000);
+    const dt = Math.min(0.05, Math.max(0, (now - last) / 1000));   // the first frame's timestamp can be slightly in the past
     last = now;
     const portraitPhone = isTouch && H > W;
     if (!portraitPhone) update(dt);
